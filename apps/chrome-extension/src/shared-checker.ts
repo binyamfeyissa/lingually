@@ -89,6 +89,28 @@ export const DETERMINISTIC_TYPOS: Record<string, { replacement: string; explanat
   vaccum: { replacement: "vacuum", explanation: "Single 'c', double 'u'." },
   visable: { replacement: "visible", explanation: "Spelled with 'i' in visible." },
   wierdly: { replacement: "weirdly", explanation: "Spelled 'weirdly'." },
+  waws: { replacement: "was", explanation: "Correct spelling is 'was'." },
+  thiinking: { replacement: "thinking", explanation: "Remove redundant 'i' in thinking." },
+  thiis: { replacement: "this", explanation: "Single 'i' in this." },
+  iis: { replacement: "is", explanation: "Single 'i' in is." },
+  iit: { replacement: "it", explanation: "Single 'i' in it." },
+  clrly: { replacement: "clearly", explanation: "Spelled 'clearly'." },
+  allso: { replacement: "also", explanation: "Single 'l' in also." },
+  buton: { replacement: "button", explanation: "Double 't' in button." },
+  vry: { replacement: "very", explanation: "Spelled 'very'." },
+  ky: { replacement: "key", explanation: "Spelled 'key'." },
+  fiix: { replacement: "fix", explanation: "Single 'i' in fix." },
+  instade: { replacement: "instead", explanation: "Spelled 'instead'." },
+  desapears: { replacement: "disappears", explanation: "Spelled 'disappears'." },
+  alway: { replacement: "always", explanation: "Spelled 'always'." },
+  allways: { replacement: "always", explanation: "Single 'l' in always." },
+  remian: { replacement: "remain", explanation: "Spelled 'remain'." },
+  remians: { replacement: "remains", explanation: "Spelled 'remains'." },
+  shud: { replacement: "should", explanation: "Spelled 'should'." },
+  cud: { replacement: "could", explanation: "Spelled 'could'." },
+  wud: { replacement: "would", explanation: "Spelled 'would'." },
+  pls: { replacement: "please", explanation: "Spelled 'please'." },
+  thx: { replacement: "thanks", explanation: "Spelled 'thanks'." },
 };
 
 // 2. Grammar Confusions & Idioms
@@ -202,7 +224,9 @@ const COMMON_VOCABULARY = new Set([
   "watch", "follow", "stop", "allow", "add", "spend", "grow", "open", "walk", "win", "offer",
   "remember", "love", "consider", "appear", "buy", "wait", "serve", "die", "send", "expect",
   "build", "stay", "fall", "cut", "reach", "kill", "remain", "suggest", "raise", "pass",
-  "sell", "require", "report", "decide", "pull"
+  "sell", "require", "report", "decide", "pull", "thinking", "thought", "going", "night", "tonight",
+  "evening", "weekend", "outside", "dinner", "lunch", "breakfast", "food", "movie", "fun", "friend",
+  "friends", "family", "house", "home", "car", "drive", "sleep", "felt", "feel", "wants", "wanted"
 ]);
 
 // Helper: Calculate Levenshtein distance
@@ -243,18 +267,22 @@ function findClosestWord(target: string): string | null {
   return closest;
 }
 
-// Heuristic check for unrecognized words (like 'hgguh', 'iihiu', 'nam')
-function isLikelyGibberishOrMisspelling(word: string): boolean {
-  if (word.length < 3) return false;
-  const lower = word.toLowerCase();
+const VALID_SHORT_WORDS = new Set([
+  "a", "i", "am", "an", "as", "at", "be", "by", "do", "go", "he", "hi", "if", "in", "is", "it",
+  "me", "my", "no", "of", "ok", "on", "or", "so", "to", "up", "us", "we"
+]);
 
-  // Common contractions or pronouns
-  if (["i", "am", "is", "are", "we", "he", "it", "so", "to", "or", "an", "at", "by", "do", "go", "if", "in", "me", "my", "no", "on", "up", "us"].includes(lower)) {
-    return false;
-  }
+// Heuristic check for unrecognized words (like 'hgguh', 'iihiu', 'nam', 'ky', 'vry')
+function isLikelyGibberishOrMisspelling(word: string): boolean {
+  const lower = word.toLowerCase();
 
   // If in standard vocabulary or typos dictionary, it's known
   if (COMMON_VOCABULARY.has(lower) || DETERMINISTIC_TYPOS[lower]) return false;
+
+  // 1 or 2 letter words: check valid English words
+  if (lower.length <= 2) {
+    return !VALID_SHORT_WORDS.has(lower);
+  }
 
   // Check common suffixes (plurals, verb tenses, adverbs)
   const rootS = lower.endsWith("s") ? lower.slice(0, -1) : "";
@@ -263,10 +291,10 @@ function isLikelyGibberishOrMisspelling(word: string): boolean {
   const rootLy = lower.endsWith("ly") ? lower.slice(0, -2) : "";
 
   if (
-    (rootS && (COMMON_VOCABULARY.has(rootS) || rootS.length >= 3)) ||
-    (rootEd && (COMMON_VOCABULARY.has(rootEd) || rootEd.length >= 3)) ||
-    (rootIng && (COMMON_VOCABULARY.has(rootIng) || rootIng.length >= 3)) ||
-    (rootLy && (COMMON_VOCABULARY.has(rootLy) || rootLy.length >= 3))
+    (rootS && COMMON_VOCABULARY.has(rootS)) ||
+    (rootEd && COMMON_VOCABULARY.has(rootEd)) ||
+    (rootIng && COMMON_VOCABULARY.has(rootIng)) ||
+    (rootLy && COMMON_VOCABULARY.has(rootLy))
   ) {
     return false;
   }
@@ -428,7 +456,26 @@ export function runExtensionCheck(
       continue;
     }
 
-    // B. Unrecognized word / Gibberish detection (e.g., 'hgguh', 'iihiu')
+    // B. Redundant double 'i' check (e.g., 'thiis' -> 'this', 'thiinking' -> 'thinking', 'iis' -> 'is', 'fiix' -> 'fix')
+    if (/ii/.test(lower) && !["skiing", "radii", "pompeii", "hawaii"].includes(lower)) {
+      const singleI = lower.replace(/ii/g, "i");
+      if (COMMON_VOCABULARY.has(singleI) || VALID_SHORT_WORDS.has(singleI) || DETERMINISTIC_TYPOS[singleI]) {
+        const isCapitalized = rawWord[0] === rawWord[0].toUpperCase() && rawWord[0] !== rawWord[0].toLowerCase();
+        const replacement = isCapitalized ? singleI.charAt(0).toUpperCase() + singleI.slice(1) : singleI;
+        suggestions.push({
+          id: `ext_double_i_${idCounter++}`,
+          category: "correctness",
+          originalText: rawWord,
+          replacementText: replacement,
+          explanation: `Remove redundant 'i' in '${rawWord}'.`,
+          offset: match.index,
+          length: rawWord.length,
+        });
+        continue;
+      }
+    }
+
+    // C. Unrecognized word / Gibberish detection (e.g., 'hgguh', 'iihiu')
     if (isLikelyGibberishOrMisspelling(rawWord)) {
       const closest = findClosestWord(lower);
       const isCap = rawWord[0] === rawWord[0].toUpperCase();
@@ -510,6 +557,50 @@ export function runExtensionCheck(
     }
   }
 
+  // 8. Full-Sentence Rephrasing: Always suggest rephrase if sentence has multiple issues,
+  // fragmented grammar, or awkward phrasing (Blue wavy underline across sentence)
+  const sentenceMatches = text.match(/[^.!?\n]+[.!?]?/g) || [text];
+  let searchOffset = 0;
+
+  for (const rawSentence of sentenceMatches) {
+    const sStart = text.indexOf(rawSentence, searchOffset);
+    if (sStart === -1) continue;
+    searchOffset = sStart + rawSentence.length;
+    const trimmed = rawSentence.trim();
+    const words = trimmed.split(/\s+/).filter(Boolean);
+
+    if (words.length >= 3) {
+      const sentenceIssues = suggestions.filter(
+        (item) => item.offset >= sStart && item.offset < sStart + rawSentence.length
+      );
+
+      const isFragmented =
+        /\b(a|an|the)\s+[a-zA-Z]+\s+(but|and|or|so|yet)\b/i.test(trimmed) ||
+        /\bI\s+[a-zA-Z]+\s+I\b/i.test(trimmed) ||
+        /\b(can|could|would)\s+you\s+chat\b/i.test(trimmed) ||
+        /\b(waws|thiinking|thiis|iis|iit|clrly|allso|buton|vry|ky|fiix|instade|desapears)\b/i.test(trimmed) ||
+        /\bthinking to go\b/i.test(trimmed) ||
+        /\bgo out this\b/i.test(trimmed) ||
+        /\bnam\b/i.test(trimmed);
+
+      if (sentenceIssues.length >= 1 || isFragmented || words.length >= 4) {
+        const paraphrased = paraphraseText(trimmed, "standard");
+        if (paraphrased.toLowerCase() !== trimmed.toLowerCase()) {
+          const trimmedStart = sStart + rawSentence.indexOf(trimmed);
+          suggestions.push({
+            id: `ext_rephrase_${idCounter++}`,
+            category: "clarity", // Blue wavy underline
+            originalText: trimmed,
+            replacementText: paraphrased,
+            explanation: "Sentence structure is awkward or incomplete. Click to rephrase into clear, natural English.",
+            offset: trimmedStart,
+            length: trimmed.length,
+          });
+        }
+      }
+    }
+  }
+
   // Sort by offset and eliminate overlaps
   return suggestions.sort((a, b) => a.offset - b.offset);
 }
@@ -539,7 +630,26 @@ export function paraphraseText(
   result = result.replace(/\bteh\b/gi, "the");
   result = result.replace(/\boccured\b/gi, "occurred");
 
-  // Fix common fragmented conversational patterns (e.g. 'can you chat a new but I nam I side')
+  // Fix typos
+  result = result.replace(/\bwaws\b/gi, "was");
+  result = result.replace(/\bthiinking\b/gi, "thinking");
+  result = result.replace(/\bthiis\b/gi, "this");
+  result = result.replace(/\biis\b/gi, "is");
+  result = result.replace(/\biit\b/gi, "it");
+  result = result.replace(/\bclrly\b/gi, "clearly");
+  result = result.replace(/\ballso\b/gi, "also");
+  result = result.replace(/\bbuton\b/gi, "button");
+  result = result.replace(/\bvry\b/gi, "very");
+  result = result.replace(/\bky\b/gi, "key");
+  result = result.replace(/\bfiix\b/gi, "fix");
+  result = result.replace(/\binstade\b/gi, "instead");
+  result = result.replace(/\bdesapears\b/gi, "disappears");
+  result = result.replace(/\balway\b/gi, "always");
+  result = result.replace(/\ballways\b/gi, "always");
+
+  // Fix colloquial / awkward idioms
+  result = result.replace(/\bthinking to go\b/gi, "thinking of going");
+  result = result.replace(/\bto go out this\b/gi, "about going out this evening");
   result = result.replace(/\bcan you chat a new\b/gi, "Can you start a new chat");
   result = result.replace(/\bI nam\b/gi, "I am");
   result = result.replace(/\bI side\b/gi, "on my side");

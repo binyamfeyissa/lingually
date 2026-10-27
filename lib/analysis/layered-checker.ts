@@ -24,6 +24,82 @@ const DETERMINISTIC_TYPOS: Record<string, { replacement: string; explanation: st
   accomodate: { replacement: "accommodate", explanation: "Double 'c' and double 'm'." },
   neccessary: { replacement: "necessary", explanation: "One 'c', double 's'." },
   embarass: { replacement: "embarrass", explanation: "Double 'r' and double 's'." },
+  wether: { replacement: "whether", explanation: "Use 'whether' for alternatives or 'weather' for climate." },
+  witch: { replacement: "which", explanation: "Use 'which' for choices/clauses." },
+  thier: { replacement: "their", explanation: "'e' before 'i' in their." },
+  grammer: { replacement: "grammar", explanation: "Spelled with 'ar' at the end." },
+  begining: { replacement: "beginning", explanation: "Double 'n' in beginning." },
+  realy: { replacement: "really", explanation: "Double 'l' in really." },
+  mispell: { replacement: "misspell", explanation: "Double 's' in misspell." },
+  suprise: { replacement: "surprise", explanation: "Contains 'r' in the first syllable." },
+  succesful: { replacement: "successful", explanation: "Double 'c' and double 's'." },
+  publically: { replacement: "publicly", explanation: "Standard spelling is 'publicly'." },
+  noticable: { replacement: "noticeable", explanation: "Retain the 'e' in noticeable." },
+  independant: { replacement: "independent", explanation: "Ends in 'ent'." },
+  gaurantee: { replacement: "guarantee", explanation: "'u' before 'a' in guarantee." },
+  foriegn: { replacement: "foreign", explanation: "'e' before 'i' in foreign." },
+  enviroment: { replacement: "environment", explanation: "Includes 'n' in iron." },
+  dissapear: { replacement: "disappear", explanation: "One 's', double 'p'." },
+  definate: { replacement: "definite", explanation: "Ends with 'ite'." },
+  collegue: { replacement: "colleague", explanation: "Spelled 'colleague'." },
+  catagory: { replacement: "category", explanation: "Spelled with 'e' in category." },
+  alright: { replacement: "all right", explanation: "'All right' is preferred in formal writing." },
+  basicly: { replacement: "basically", explanation: "Spelled 'basically'." },
+  buisness: { replacement: "business", explanation: "'u' before 'i' in business." },
+  concious: { replacement: "conscious", explanation: "Contains 'sc' in conscious." },
+  dilema: { replacement: "dilemma", explanation: "Double 'm' in dilemma." },
+  existance: { replacement: "existence", explanation: "Ends in 'ence'." },
+  fascinating: { replacement: "fascinating", explanation: "Spelled with 'sc'." },
+  greatful: { replacement: "grateful", explanation: "Spelled 'grateful' (not great)." },
+  happend: { replacement: "happened", explanation: "Double 'p' in happened." },
+  harrass: { replacement: "harass", explanation: "One 'r', double 's'." },
+  humourous: { replacement: "humorous", explanation: "Drop 'u' in humorous." },
+  immediatly: { replacement: "immediately", explanation: "Retain 'e' before 'ly'." },
+  incidently: { replacement: "incidentally", explanation: "Contains 'al' before 'ly'." },
+  interupt: { replacement: "interrupt", explanation: "Double 'r' in interrupt." },
+  knowlege: { replacement: "knowledge", explanation: "Contains 'd' in knowledge." },
+  liason: { replacement: "liaison", explanation: "Double 'i' in liaison." },
+  millenium: { replacement: "millennium", explanation: "Double 'l' and double 'n'." },
+  mischevious: { replacement: "mischievous", explanation: "Three syllables: mis-chie-vous." },
+  paralell: { replacement: "parallel", explanation: "Double 'l' only in the middle." },
+  posession: { replacement: "possession", explanation: "Double 's' twice in possession." },
+  priviledge: { replacement: "privilege", explanation: "No 'd' in privilege." },
+  pronounciation: { replacement: "pronunciation", explanation: "Spelled 'pronunciation' without 'o'." },
+  questionaire: { replacement: "questionnaire", explanation: "Double 'n' in questionnaire." },
+  recommand: { replacement: "recommend", explanation: "Spelled with 'e' in recommend." },
+  refered: { replacement: "referred", explanation: "Double 'r' in referred." },
+  relavant: { replacement: "relevant", explanation: "Spelled 'relevant'." },
+  rythm: { replacement: "rhythm", explanation: "Contains 'h' after 'r' and 't'." },
+  sieze: { replacement: "seize", explanation: "'e' before 'i' in seize." },
+  succede: { replacement: "succeed", explanation: "Double 'e' in succeed." },
+  tendancy: { replacement: "tendency", explanation: "Ends with 'ency'." },
+  threshhold: { replacement: "threshold", explanation: "Single 'h' in threshold." },
+  unfortunatly: { replacement: "unfortunately", explanation: "Retain 'e' in unfortunately." },
+  vaccum: { replacement: "vacuum", explanation: "Single 'c', double 'u'." },
+  visable: { replacement: "visible", explanation: "Spelled with 'i' in visible." },
+  wierdly: { replacement: "weirdly", explanation: "Spelled 'weirdly'." },
+  waws: { replacement: "was", explanation: "Correct spelling is 'was'." },
+  thiinking: { replacement: "thinking", explanation: "Remove redundant 'i' in thinking." },
+  thiis: { replacement: "this", explanation: "Single 'i' in this." },
+  iis: { replacement: "is", explanation: "Single 'i' in is." },
+  iit: { replacement: "it", explanation: "Single 'i' in it." },
+  clrly: { replacement: "clearly", explanation: "Spelled 'clearly'." },
+  allso: { replacement: "also", explanation: "Single 'l' in also." },
+  buton: { replacement: "button", explanation: "Double 't' in button." },
+  vry: { replacement: "very", explanation: "Spelled 'very'." },
+  ky: { replacement: "key", explanation: "Spelled 'key'." },
+  fiix: { replacement: "fix", explanation: "Single 'i' in fix." },
+  instade: { replacement: "instead", explanation: "Spelled 'instead'." },
+  desapears: { replacement: "disappears", explanation: "Spelled 'disappears'." },
+  alway: { replacement: "always", explanation: "Spelled 'always'." },
+  allways: { replacement: "always", explanation: "Single 'l' in always." },
+  remian: { replacement: "remain", explanation: "Spelled 'remain'." },
+  remians: { replacement: "remains", explanation: "Spelled 'remains'." },
+  shud: { replacement: "should", explanation: "Spelled 'should'." },
+  cud: { replacement: "could", explanation: "Spelled 'could'." },
+  wud: { replacement: "would", explanation: "Spelled 'would'." },
+  pls: { replacement: "please", explanation: "Spelled 'please'." },
+  thx: { replacement: "thanks", explanation: "Spelled 'thanks'." },
 };
 
 // Layer A: Common grammatical confusions
@@ -93,10 +169,83 @@ export function runLocalDeterministicCheck(
 
   const suggestions: WritingSuggestion[] = [];
   let idCounter = 1;
+  let match: RegExpExecArray | null = null;
 
-  // 1. Repeated words check (e.g. "the the")
+  // 1. Sentence start capitalization check (e.g. 'can you...' -> 'Can you...')
+  const sentenceCapRegex = /(^|[.!?]\s+)([a-z])/g;
+  while ((match = sentenceCapRegex.exec(text)) !== null) {
+    const prefix = match[1];
+    const letter = match[2];
+    const offset = match.index + prefix.length;
+    suggestions.push({
+      id: `det_cap_${idCounter++}`,
+      category: "correctness",
+      originalText: letter,
+      replacementText: letter.toUpperCase(),
+      explanation: "Capitalize the first letter of a sentence.",
+      offset,
+      length: 1,
+      ruleId: "sentence_capitalization",
+      severity: "error",
+    });
+  }
+
+  // 2. Extra consecutive spaces check
+  const multiSpaceRegex = /[^\S\r\n]{2,}/g;
+  while ((match = multiSpaceRegex.exec(text)) !== null) {
+    suggestions.push({
+      id: `det_space_${idCounter++}`,
+      category: "clarity",
+      originalText: match[0],
+      replacementText: " ",
+      explanation: "Remove redundant whitespace.",
+      offset: match.index,
+      length: match[0].length,
+      ruleId: "redundant_whitespace",
+      severity: "info",
+    });
+  }
+
+  // 3. Incomplete / dangling phrases (e.g. 'a new but')
+  const danglingRegex = /\b(a|an|the)\s+([a-zA-Z]+)\s+(but|and|or|so|yet|because|if)\b/gi;
+  while ((match = danglingRegex.exec(text)) !== null) {
+    const article = match[1];
+    const adj = match[2];
+    const conj = match[3];
+    if (["new", "old", "big", "small", "good", "bad", "great", "different"].includes(adj.toLowerCase())) {
+      suggestions.push({
+        id: `det_dangle_${idCounter++}`,
+        category: "clarity",
+        originalText: match[0],
+        replacementText: `${article} ${adj} one, ${conj}`,
+        explanation: `Incomplete phrase: '${article} ${adj}' requires a noun before '${conj}'.`,
+        offset: match.index,
+        length: match[0].length,
+        ruleId: "dangling_phrase",
+        severity: "warning",
+      });
+    }
+  }
+
+  // 4. Missing terminal question mark on interrogatives (e.g. 'can you chat a new...')
+  if (/^(can|could|would|will|do|did|does|is|are|was|were|what|where|when|why|how)\b/i.test(text.trim()) && !/[.?!]$/.test(text.trim())) {
+    const trimmed = text.trim();
+    const lastCharIdx = text.lastIndexOf(trimmed.slice(-1));
+    suggestions.push({
+      id: `det_qmark_${idCounter++}`,
+      category: "correctness",
+      originalText: text.slice(lastCharIdx),
+      replacementText: `${trimmed.slice(-1)}?`,
+      explanation: "Add a question mark at the end of a question.",
+      offset: lastCharIdx,
+      length: 1,
+      ruleId: "missing_question_mark",
+      severity: "error",
+    });
+  }
+
+  // 5. Repeated words check (e.g. "the the")
   const repeatedRegex = /\b([a-zA-Z]+)\s+\1\b/gi;
-  let match: RegExpExecArray | null;
   while ((match = repeatedRegex.exec(text)) !== null) {
     const word = match[1];
     if (!personalDictionary.has(word.toLowerCase())) {
@@ -141,6 +290,28 @@ export function runLocalDeterministicCheck(
         ruleId: "spelling_typo",
         severity: "error",
       });
+      continue;
+    }
+
+    // Double 'i' check (e.g. 'thiis' -> 'this', 'thiinking' -> 'thinking', 'iis' -> 'is', 'fiix' -> 'fix')
+    if (/ii/.test(lower) && !["skiing", "radii", "pompeii", "hawaii"].includes(lower)) {
+      const singleI = lower.replace(/ii/g, "i");
+      if (DETERMINISTIC_TYPOS[singleI] || ["this", "thinking", "is", "it", "fix", "will", "like", "drive", "since"].includes(singleI)) {
+        const isCapitalized = rawWord[0] === rawWord[0].toUpperCase() && rawWord[0] !== rawWord[0].toLowerCase();
+        const replacement = isCapitalized ? singleI.charAt(0).toUpperCase() + singleI.slice(1) : singleI;
+        suggestions.push({
+          id: `det_double_i_${idCounter++}`,
+          category: "correctness",
+          originalText: rawWord,
+          replacementText: replacement,
+          explanation: `Remove redundant 'i' in '${rawWord}'.`,
+          offset: match.index,
+          length: rawWord.length,
+          ruleId: "spelling_double_i",
+          severity: "error",
+        });
+        continue;
+      }
     }
   }
 
@@ -209,6 +380,82 @@ export function runLocalDeterministicCheck(
         ruleId: "delivery_tone",
         severity: "info",
       });
+    }
+  }
+
+  // 7. Full-Sentence Rephrasing for awkward, fragmented, or multi-issue sentences
+  const sentenceMatches = text.match(/[^.!?\n]+[.!?]?/g) || [text];
+  let searchOffset = 0;
+
+  for (const rawSentence of sentenceMatches) {
+    const sStart = text.indexOf(rawSentence, searchOffset);
+    if (sStart === -1) continue;
+    searchOffset = sStart + rawSentence.length;
+    const trimmed = rawSentence.trim();
+    const words = trimmed.split(/\s+/).filter(Boolean);
+
+    if (words.length >= 3) {
+      const sentenceIssues = suggestions.filter(
+        (item) => item.offset >= sStart && item.offset < sStart + rawSentence.length
+      );
+
+      const isFragmented =
+        /\b(a|an|the)\s+[a-zA-Z]+\s+(but|and|or|so|yet)\b/i.test(trimmed) ||
+        /\bI\s+[a-zA-Z]+\s+I\b/i.test(trimmed) ||
+        /\b(can|could|would)\s+you\s+chat\b/i.test(trimmed) ||
+        /\b(waws|thiinking|thiis|iis|iit|clrly|allso|buton|vry|ky|fiix|instade|desapears)\b/i.test(trimmed) ||
+        /\bthinking to go\b/i.test(trimmed) ||
+        /\bgo out this\b/i.test(trimmed) ||
+        /\bnam\b/i.test(trimmed);
+
+      if (sentenceIssues.length >= 1 || isFragmented || words.length >= 4) {
+        let rewritten = trimmed;
+        rewritten = rewritten.replace(/\bcan you chat a new\b/gi, "Can you start a new chat");
+        rewritten = rewritten.replace(/\bI nam\b/gi, "I am");
+        rewritten = rewritten.replace(/\bI side\b/gi, "on my side");
+        rewritten = rewritten.replace(/\ba new but\b/gi, "a new one, but");
+        rewritten = rewritten.replace(/\bwaws\b/gi, "was");
+        rewritten = rewritten.replace(/\bthiinking\b/gi, "thinking");
+        rewritten = rewritten.replace(/\bthiis\b/gi, "this");
+        rewritten = rewritten.replace(/\biis\b/gi, "is");
+        rewritten = rewritten.replace(/\biit\b/gi, "it");
+        rewritten = rewritten.replace(/\bclrly\b/gi, "clearly");
+        rewritten = rewritten.replace(/\ballso\b/gi, "also");
+        rewritten = rewritten.replace(/\bbuton\b/gi, "button");
+        rewritten = rewritten.replace(/\bvry\b/gi, "very");
+        rewritten = rewritten.replace(/\bky\b/gi, "key");
+        rewritten = rewritten.replace(/\bfiix\b/gi, "fix");
+        rewritten = rewritten.replace(/\binstade\b/gi, "instead");
+        rewritten = rewritten.replace(/\bdesapears\b/gi, "disappears");
+        rewritten = rewritten.replace(/\balway\b/gi, "always");
+        rewritten = rewritten.replace(/\ballways\b/gi, "always");
+        rewritten = rewritten.replace(/\bthinking to go\b/gi, "thinking of going");
+        rewritten = rewritten.replace(/\bto go out this\b/gi, "about going out this evening");
+        rewritten = rewritten.replace(/\bdefinately\b/gi, "definitely");
+        rewritten = rewritten.replace(/\bin order to\b/gi, "to");
+        rewritten = rewritten.replace(/\s{2,}/g, " ").trim();
+        if (rewritten.length > 0) {
+          rewritten = rewritten.charAt(0).toUpperCase() + rewritten.slice(1);
+        }
+        if (/^(can|could|would|will|do|did|does|is|are|was|were|what|where|when|why|how)\b/i.test(rewritten.trim()) && !/[.?!]$/.test(rewritten.trim())) {
+          rewritten = `${rewritten.trim()}?`;
+        }
+
+        if (rewritten.toLowerCase() !== trimmed.toLowerCase()) {
+          const trimmedStart = sStart + rawSentence.indexOf(trimmed);
+          suggestions.push({
+            id: `det_rephrase_${idCounter++}`,
+            category: "clarity",
+            originalText: trimmed,
+            replacementText: rewritten,
+            explanation: "Sentence structure is awkward or fragmented. Rephrase for clear, natural flow.",
+            offset: trimmedStart,
+            length: trimmed.length,
+            ruleId: "sentence_rephrase",
+            severity: "warning",
+          });
+        }
+      }
     }
   }
 

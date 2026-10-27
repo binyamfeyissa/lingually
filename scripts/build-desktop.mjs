@@ -196,6 +196,21 @@ const desktopHtml = `<!DOCTYPE html>
     }
     .pill-correctness { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
     .pill-clarity { background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; }
+    .pill-engagement { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .pill-delivery { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+    .btn-accept-sugg {
+      margin-top: 8px;
+      width: 100%;
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-accept-sugg:hover { background: var(--brand-hover); }
   </style>
 </head>
 <body>
@@ -207,6 +222,7 @@ const desktopHtml = `<!DOCTYPE html>
     </div>
     <div class="actions">
       <button id="btn-inspect-ext" class="btn">🔍 Inspect Active App</button>
+      <button id="btn-refresh" class="btn" title="Refresh analysis">🔄 Refresh</button>
       <button id="btn-save" class="btn btn-primary">Save Document</button>
     </div>
   </header>
@@ -224,37 +240,191 @@ const desktopHtml = `<!DOCTYPE html>
         <button class="tab" data-tab="tab-plagiarism">Plagiarism</button>
       </div>
 
-      <div class="tab-content">
+      <div class="tab-content" id="tab-review-content">
         <div class="score-card">
           <div>
             <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Overall Score</div>
-            <div id="overall-score" style="font-size: 28px; font-weight: 800; color: var(--text); margin-top: 2px;">92/100</div>
+            <div id="overall-score" style="font-size: 28px; font-weight: 800; color: var(--text); margin-top: 2px;">100/100</div>
           </div>
-          <span style="font-size: 11px; font-weight: 700; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 3px 8px; border-radius: 9999px;">Good</span>
+          <span id="score-label" style="font-size: 11px; font-weight: 700; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 3px 8px; border-radius: 9999px;">Excellent</span>
         </div>
 
-        <div id="suggestions-container">
-          <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span class="pill pill-clarity">Clarity</span>
-              <span style="font-size: 10px; color: var(--text-muted);">Conciseness</span>
-            </div>
-            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Simplify phrasing for better flow.</div>
-            <div style="font-family: monospace; font-size: 12px; background: #f8fafc; padding: 6px 8px; border-radius: 6px; margin-bottom: 8px;">
-              <span style="text-decoration: line-through; color: #e11d48;">in order to</span> → <span style="color: #059669; font-weight: bold;">to</span>
-            </div>
-            <button class="btn btn-primary" style="width: 100%; justify-content: center;">Accept Suggestion</button>
-          </div>
-        </div>
+        <div id="suggestions-container"></div>
       </div>
     </div>
   </div>
 
   <script>
+    // Desktop deterministic checker
+    const TYPOS = {
+      teh: "the", recieve: "receive", seperate: "separate", definately: "definitely",
+      occured: "occurred", untill: "until", truely: "truly", wierd: "weird",
+      acheive: "achieve", tommorrow: "tomorrow", alot: "a lot", noone: "no one",
+      waws: "was", thiinking: "thinking", thiis: "this", iis: "is", iit: "it",
+      clrly: "clearly", allso: "also", buton: "button", vry: "very", ky: "key",
+      fiix: "fix", instade: "instead", desapears: "disappears", alway: "always",
+      allways: "always", remian: "remain", remians: "remains"
+    };
+
+    const CONFUSIONS = [
+      { pattern: /\\bcould of\\b/gi, replacement: "could have", cat: "correctness", exp: "Use 'could have'." },
+      { pattern: /\\bshould of\\b/gi, replacement: "should have", cat: "correctness", exp: "Use 'should have'." },
+      { pattern: /\\bwould of\\b/gi, replacement: "would have", cat: "correctness", exp: "Use 'would have'." },
+      { pattern: /\\bin order to\\b/gi, replacement: "to", cat: "clarity", exp: "Simplify wordy phrase." },
+      { pattern: /\\bat this point in time\\b/gi, replacement: "now", cat: "clarity", exp: "Use concise 'now'." },
+      { pattern: /\\bdue to the fact that\\b/gi, replacement: "because", cat: "clarity", exp: "Use 'because'." },
+      { pattern: /\\bvery good\\b/gi, replacement: "exceptional", cat: "engagement", exp: "Use vivid adjective." },
+      { pattern: /\\bvery bad\\b/gi, replacement: "terrible", cat: "engagement", exp: "Use evocative adjective." },
+      { pattern: /\\bI think that maybe\\b/gi, replacement: "Perhaps", cat: "delivery", exp: "Deliver with confidence." }
+    ];
+
+    function checkText(text) {
+      if (!text || text.trim().length === 0) return [];
+      const suggestions = [];
+
+      // Capitalization
+      const capMatch = /(^|[.!?]\\s+)([a-z])/g;
+      let m;
+      while ((m = capMatch.exec(text)) !== null) {
+        suggestions.push({
+          category: "correctness",
+          original: m[2],
+          replacement: m[2].toUpperCase(),
+          explanation: "Capitalize the first letter of a sentence.",
+          offset: m.index + m[1].length,
+          length: 1
+        });
+      }
+
+      // Typos
+      const words = /\\b[a-zA-Z]+\\b/g;
+      while ((m = words.exec(text)) !== null) {
+        const lower = m[0].toLowerCase();
+        if (TYPOS[lower]) {
+          const isCap = m[0][0] === m[0][0].toUpperCase() && m[0][0] !== m[0][0].toLowerCase();
+          const rep = isCap ? TYPOS[lower][0].toUpperCase() + TYPOS[lower].slice(1) : TYPOS[lower];
+          suggestions.push({
+            category: "correctness",
+            original: m[0],
+            replacement: rep,
+            explanation: "Spelling correction.",
+            offset: m.index,
+            length: m[0].length
+          });
+        }
+      }
+
+      // Confusions & phrases
+      for (const item of CONFUSIONS) {
+        while ((m = item.pattern.exec(text)) !== null) {
+          suggestions.push({
+            category: item.cat,
+            original: m[0],
+            replacement: item.replacement,
+            explanation: item.exp,
+            offset: m.index,
+            length: m[0].length
+          });
+        }
+      }
+
+      // Full sentence rephrasing
+      const sMatches = text.match(/[^.!?\\n]+[.!?]?/g) || [text];
+      let searchOffset = 0;
+      for (const s of sMatches) {
+        const sStart = text.indexOf(s, searchOffset);
+        if (sStart === -1) continue;
+        searchOffset = sStart + s.length;
+        const trimmed = s.trim();
+        const sWords = trimmed.split(/\\s+/).filter(Boolean);
+        if (sWords.length >= 3) {
+          let rewritten = trimmed;
+          rewritten = rewritten.replace(/\\bcan you chat a new\\b/gi, "Can you start a new chat");
+          rewritten = rewritten.replace(/\\bwaws\\b/gi, "was");
+          rewritten = rewritten.replace(/\\bthiinking\\b/gi, "thinking");
+          rewritten = rewritten.replace(/\\bthiis\\b/gi, "this");
+          rewritten = rewritten.replace(/\\biis\\b/gi, "is");
+          rewritten = rewritten.replace(/\\bthinking to go\\b/gi, "thinking of going");
+          rewritten = rewritten.replace(/\\bto go out this\\b/gi, "about going out this evening");
+          if (rewritten.length > 0) rewritten = rewritten.charAt(0).toUpperCase() + rewritten.slice(1);
+
+          if (rewritten.toLowerCase() !== trimmed.toLowerCase()) {
+            suggestions.push({
+              category: "clarity",
+              original: trimmed,
+              replacement: rewritten,
+              explanation: "Sentence structure is awkward. Rephrase for clear, natural English.",
+              offset: sStart + s.indexOf(trimmed),
+              length: trimmed.length
+            });
+          }
+        }
+      }
+
+      return suggestions;
+    }
+
+    const editor = document.getElementById('editor');
+    const container = document.getElementById('suggestions-container');
+    const scoreVal = document.getElementById('overall-score');
+    const scoreLabel = document.getElementById('score-label');
+    const btnRefresh = document.getElementById('btn-refresh');
+
+    function renderSuggestions() {
+      const text = editor.value;
+      const suggs = checkText(text);
+      const score = Math.max(40, 100 - suggs.length * 10);
+      scoreVal.textContent = score + "/100";
+      scoreLabel.textContent = score >= 90 ? "Excellent" : score >= 70 ? "Good" : "Needs Review";
+      scoreLabel.style.color = score >= 90 ? "#059669" : score >= 70 ? "#0284c7" : "#e11d48";
+
+      container.innerHTML = "";
+      if (suggs.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 24px;">✓ Writing looks clear! No issues detected.</div>';
+        return;
+      }
+
+      suggs.forEach(s => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = \`
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="pill pill-\${s.category}">\${s.category}</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">\${s.explanation}</div>
+          <div style="font-family: monospace; font-size: 12px; background: #f8fafc; padding: 6px 8px; border-radius: 6px; margin-bottom: 6px;">
+            <span style="text-decoration: line-through; color: #e11d48;">\${s.original}</span> &rarr; <span style="color: #059669; font-weight: bold;">\${s.replacement}</span>
+          </div>
+          <button class="btn-accept-sugg">Accept Suggestion</button>
+        \`;
+
+        card.querySelector(".btn-accept-sugg").addEventListener("click", () => {
+          const full = editor.value;
+          editor.value = full.slice(0, s.offset) + s.replacement + full.slice(s.offset + s.length);
+          localStorage.setItem('lingually_desktop_draft', editor.value);
+          renderSuggestions();
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    editor.addEventListener('input', () => {
+      localStorage.setItem('lingually_desktop_draft', editor.value);
+      renderSuggestions();
+    });
+
+    editor.addEventListener('keyup', () => {
+      renderSuggestions();
+    });
+
+    btnRefresh.addEventListener('click', () => {
+      renderSuggestions();
+    });
+
     // Tauri IPC hooks
     const isTauri = typeof window.__TAURI_INTERNALS__ !== 'undefined' || typeof window.__TAURI__ !== 'undefined';
     const btnInspect = document.getElementById('btn-inspect-ext');
-    const editor = document.getElementById('editor');
 
     btnInspect.addEventListener('click', async () => {
       if (isTauri && window.__TAURI__ && window.__TAURI__.core) {
@@ -262,21 +432,21 @@ const desktopHtml = `<!DOCTYPE html>
           const text = await window.__TAURI__.core.invoke('get_active_selection');
           if (text) {
             editor.value = text;
+            renderSuggestions();
           }
         } catch (e) {
           alert('Could not inspect active app: ' + e);
         }
       } else {
-        editor.value = "Sample text imported from external application.";
+        editor.value = "So I waws thiinking to go out this";
+        renderSuggestions();
       }
     });
 
-    // Auto-save to localStorage
+    // Auto-save & initial run
     const saved = localStorage.getItem('lingually_desktop_draft');
     if (saved) editor.value = saved;
-    editor.addEventListener('input', () => {
-      localStorage.setItem('lingually_desktop_draft', editor.value);
-    });
+    renderSuggestions();
   </script>
 </body>
 </html>

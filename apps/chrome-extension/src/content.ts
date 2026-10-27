@@ -173,12 +173,56 @@ function renderFloatingBtn(count: number) {
 
 // 2. Underlines Layer & Highlighting on Flagged Words
 function ensureUnderlineLayer() {
-  if (!underlineLayer) {
+  if (!underlineLayer || !underlineLayer.parentNode) {
     underlineLayer = document.createElement("div");
     underlineLayer.className = "lingually-underline-layer";
-    document.body.appendChild(underlineLayer);
+    document.documentElement.appendChild(underlineLayer);
   }
   underlineLayer.innerHTML = "";
+}
+
+let inputMirror: HTMLDivElement | null = null;
+
+function getInputMirror(): HTMLDivElement {
+  if (!inputMirror) {
+    inputMirror = document.createElement("div");
+    inputMirror.id = "lingually-input-mirror";
+    inputMirror.style.position = "fixed";
+    inputMirror.style.top = "-9999px";
+    inputMirror.style.left = "-9999px";
+    inputMirror.style.visibility = "hidden";
+    inputMirror.style.pointerEvents = "none";
+    inputMirror.style.whiteSpace = "pre-wrap";
+    inputMirror.style.wordWrap = "break-word";
+    inputMirror.style.overflowWrap = "break-word";
+    inputMirror.style.boxSizing = "border-box";
+    document.documentElement.appendChild(inputMirror);
+  }
+  return inputMirror;
+}
+
+function copyInputStyles(source: HTMLElement, target: HTMLDivElement) {
+  const cs = window.getComputedStyle(source);
+  target.style.fontFamily = cs.fontFamily;
+  target.style.fontSize = cs.fontSize;
+  target.style.fontWeight = cs.fontWeight;
+  target.style.fontStyle = cs.fontStyle;
+  target.style.lineHeight = cs.lineHeight;
+  target.style.letterSpacing = cs.letterSpacing;
+  target.style.textTransform = cs.textTransform;
+  target.style.paddingTop = cs.paddingTop;
+  target.style.paddingRight = cs.paddingRight;
+  target.style.paddingBottom = cs.paddingBottom;
+  target.style.paddingLeft = cs.paddingLeft;
+  target.style.borderTopWidth = cs.borderTopWidth;
+  target.style.borderLeftWidth = cs.borderLeftWidth;
+  target.style.boxSizing = cs.boxSizing;
+  target.style.width = `${source.clientWidth}px`;
+  if (source instanceof HTMLInputElement) {
+    target.style.whiteSpace = "pre";
+  } else {
+    target.style.whiteSpace = "pre-wrap";
+  }
 }
 
 function renderUnderlines() {
@@ -281,56 +325,71 @@ function renderInputUnderlines(
   scrollY: number
 ) {
   if (!underlineLayer) return;
-
-  // Approximate coordinate calculation via input metrics
-  const style = window.getComputedStyle(input);
-  const paddingTop = parseFloat(style.paddingTop) || 0;
-  const paddingLeft = parseFloat(style.paddingLeft) || 0;
-  const fontSize = parseFloat(style.fontSize) || 14;
-  const lineHeight = parseFloat(style.lineHeight) || fontSize * 1.4;
   const fullText = input.value;
+  if (!fullText) return;
+
+  const mirror = getInputMirror();
+  copyInputStyles(input, mirror);
 
   currentSuggestions.forEach((s) => {
-    // Estimate word position based on lines
-    const textBefore = fullText.slice(0, s.offset);
-    const lines = textBefore.split("\n");
-    const lineIndex = lines.length - 1;
-    const colIndex = lines[lineIndex].length;
+    const before = fullText.slice(0, s.offset);
+    const target = fullText.slice(s.offset, s.offset + s.length);
 
-    const charWidth = fontSize * 0.58; // Average mono/sans character width
-    const wordWidth = Math.max(14, s.length * charWidth);
+    mirror.textContent = "";
+    mirror.appendChild(document.createTextNode(before));
+    const marker = document.createElement("span");
+    marker.textContent = target;
+    mirror.appendChild(marker);
 
-    const left = elemRect.left + paddingLeft + colIndex * charWidth - input.scrollLeft;
-    const top = elemRect.top + paddingTop + (lineIndex + 1) * lineHeight - input.scrollTop;
+    const mirrorRect = mirror.getBoundingClientRect();
+    const clientRects = marker.getClientRects();
 
-    // Only render if within input bounding box
-    if (left >= elemRect.left && left + wordWidth <= elemRect.right && top <= elemRect.bottom + 4) {
-      const u = document.createElement("div");
-      u.className = `lingually-underline lingually-underline-${s.category}`;
-      u.style.top = `${scrollY + top - 2}px`;
-      u.style.left = `${scrollX + left}px`;
-      u.style.width = `${wordWidth}px`;
+    for (let i = 0; i < clientRects.length; i++) {
+      const cr = clientRects[i];
+      if (cr.width === 0 || cr.height === 0) continue;
 
-      const r = {
-        left,
-        top: top - lineHeight,
-        bottom: top,
-        right: left + wordWidth,
-        width: wordWidth,
-        height: lineHeight,
-      } as DOMRect;
+      const spanLeft = cr.left - mirrorRect.left;
+      const spanTop = cr.top - mirrorRect.top;
+      const spanWidth = cr.width;
+      const spanHeight = cr.height;
 
-      u.addEventListener("mouseenter", (e) => {
-        e.stopPropagation();
-        showTooltip(s, r, scrollX, scrollY);
-      });
+      const left = elemRect.left + spanLeft - input.scrollLeft;
+      const top = elemRect.top + spanTop + spanHeight - input.scrollTop;
 
-      u.addEventListener("click", (e) => {
-        e.stopPropagation();
-        showTooltip(s, r, scrollX, scrollY);
-      });
+      // Only render if within the input viewport bounds
+      if (
+        left >= elemRect.left - 4 &&
+        left + 4 <= elemRect.right &&
+        top >= elemRect.top &&
+        top <= elemRect.bottom + 8
+      ) {
+        const u = document.createElement("div");
+        u.className = `lingually-underline lingually-underline-${s.category}`;
+        u.style.top = `${scrollY + top - 2}px`;
+        u.style.left = `${scrollX + left}px`;
+        u.style.width = `${Math.max(12, spanWidth)}px`;
 
-      underlineLayer?.appendChild(u);
+        const r = {
+          left,
+          top: top - spanHeight,
+          bottom: top,
+          right: left + spanWidth,
+          width: spanWidth,
+          height: spanHeight,
+        } as DOMRect;
+
+        u.addEventListener("mouseenter", (e) => {
+          e.stopPropagation();
+          showTooltip(s, r, scrollX, scrollY);
+        });
+
+        u.addEventListener("click", (e) => {
+          e.stopPropagation();
+          showTooltip(s, r, scrollX, scrollY);
+        });
+
+        underlineLayer?.appendChild(u);
+      }
     }
   });
 }
@@ -352,9 +411,11 @@ function showTooltip(s: ExtensionSuggestion, rect: DOMRect, scrollX: number, scr
   tooltipElement.style.top = `${top}px`;
   tooltipElement.style.left = `${Math.max(scrollX + 8, left)}px`;
 
+  const isRephrase = s.explanation.toLowerCase().includes("rephrase");
+
   tooltipElement.innerHTML = `
     <div class="lingually-tooltip-header">
-      <span class="lingually-cat-badge lingually-cat-${s.category}">${s.category}</span>
+      <span class="lingually-cat-badge lingually-cat-${s.category}">${isRephrase ? "REPHRASE" : s.category}</span>
       <span style="font-size: 11px; color: #94a3b8; cursor: pointer;" id="tooltip-close-btn">&times;</span>
     </div>
     <div class="lingually-tooltip-body">
@@ -364,10 +425,11 @@ function showTooltip(s: ExtensionSuggestion, rect: DOMRect, scrollX: number, scr
     </div>
     <div class="lingually-tooltip-reason">${s.explanation}</div>
     <div class="lingually-tooltip-actions">
-      <button class="lingually-btn-accept" id="tooltip-accept-btn">Accept</button>
+      <button class="lingually-btn-accept" id="tooltip-accept-btn">${isRephrase ? "Accept Rephrase" : "Accept"}</button>
+      ${isRephrase ? `<button class="lingually-btn-dismiss" id="tooltip-open-modal-btn">Paraphrase Modes</button>` : ""}
       <button class="lingually-btn-dismiss" id="tooltip-dismiss-btn">Ignore</button>
     </div>
-    <button class="lingually-btn-dict-link" id="tooltip-dict-btn">Add "${s.originalText}" to dictionary</button>
+    ${!isRephrase ? `<button class="lingually-btn-dict-link" id="tooltip-dict-btn">Add "${s.originalText}" to dictionary</button>` : ""}
   `;
 
   document.body.appendChild(tooltipElement);
@@ -376,6 +438,15 @@ function showTooltip(s: ExtensionSuggestion, rect: DOMRect, scrollX: number, scr
     e.stopPropagation();
     applySuggestion(s);
     dismissTooltip();
+  });
+
+  tooltipElement.querySelector("#tooltip-open-modal-btn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dismissTooltip();
+    openModal();
+    // Switch to paraphrase tab
+    const tabParaBtn = modalElement?.querySelector("#tab-btn-paraphrase") as HTMLButtonElement;
+    tabParaBtn?.click();
   });
 
   tooltipElement.querySelector("#tooltip-dismiss-btn")?.addEventListener("click", (e) => {
@@ -412,7 +483,12 @@ function makeDraggable(modal: HTMLElement, handle: HTMLElement) {
   let initialTop = 0;
 
   handle.addEventListener("mousedown", (e) => {
-    if ((e.target as HTMLElement).closest(".lingually-modal-close")) return;
+    if (
+      (e.target as HTMLElement).closest(".lingually-modal-close") ||
+      (e.target as HTMLElement).closest(".lingually-modal-btn-icon")
+    ) {
+      return;
+    }
     isDragging = true;
     startX = e.clientX;
     startY = e.clientY;
@@ -486,7 +562,14 @@ function openModal() {
         <img src="${brandIconUrl}" style="width: 18px; height: 18px; border-radius: 4px; object-fit: contain;" alt="Lingually" />
         <span>Lingually Assistant</span>
       </div>
-      <button class="lingually-modal-close" id="modal-close-x" title="Close">&times;</button>
+      <div class="lingually-modal-header-actions">
+        <button class="lingually-modal-btn-icon" id="modal-refresh-btn" title="Refresh analysis">
+          <svg class="lingually-refresh-icon" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+        </button>
+        <button class="lingually-modal-close" id="modal-close-x" title="Close">&times;</button>
+      </div>
     </div>
 
     <div class="lingually-modal-tabs">
@@ -509,6 +592,22 @@ function openModal() {
   // Enable dragging via header
   const header = modalElement.querySelector("#modal-drag-header") as HTMLElement;
   if (header) makeDraggable(modalElement, header);
+
+  // Refresh button
+  modalElement.querySelector("#modal-refresh-btn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const btn = modalElement?.querySelector("#modal-refresh-btn");
+    const icon = btn?.querySelector("svg");
+    icon?.classList.add("lingually-spin");
+
+    checkActiveElement();
+    updateReviewPane();
+    updateParaphrasePane();
+
+    setTimeout(() => {
+      icon?.classList.remove("lingually-spin");
+    }, 400);
+  });
 
   // Close button
   modalElement.querySelector("#modal-close-x")?.addEventListener("click", (e) => {
@@ -799,7 +898,24 @@ function checkActiveElement() {
   }
 }
 
-// Global Event Listeners
+// Global Event Listeners & Low-Latency Keystroke Monitoring
+function handleEditorKeystroke(target: HTMLElement) {
+  if (isEditable(target)) {
+    activeElement = target;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      checkActiveElement();
+      if (modalElement) {
+        updateReviewPane();
+        const paraPreview = modalElement.querySelector("#para-input-preview");
+        if (paraPreview) {
+          paraPreview.textContent = getText(activeElement!) || "(No text entered in field)";
+        }
+      }
+    }, 100);
+  }
+}
+
 document.addEventListener(
   "focusin",
   (event) => {
@@ -815,14 +931,33 @@ document.addEventListener(
 document.addEventListener(
   "input",
   (event) => {
-    const target = event.target as HTMLElement;
-    if (isEditable(target)) {
-      activeElement = target;
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        checkActiveElement();
-      }, 300);
-    }
+    handleEditorKeystroke(event.target as HTMLElement);
+  },
+  true
+);
+
+document.addEventListener(
+  "keyup",
+  (event) => {
+    const key = event.key;
+    if (["Shift", "Control", "Alt", "Meta", "Escape"].includes(key)) return;
+    handleEditorKeystroke(event.target as HTMLElement);
+  },
+  true
+);
+
+document.addEventListener(
+  "paste",
+  (event) => {
+    handleEditorKeystroke(event.target as HTMLElement);
+  },
+  true
+);
+
+document.addEventListener(
+  "cut",
+  (event) => {
+    handleEditorKeystroke(event.target as HTMLElement);
   },
   true
 );
