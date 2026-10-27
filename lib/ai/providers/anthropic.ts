@@ -1,0 +1,90 @@
+import { ModelCapability, ProviderConfig } from "@/types/provider";
+import { ProviderAdapter } from "./types";
+import { PROVIDER_CATALOG } from "../model-capabilities";
+
+export class AnthropicAdapter implements ProviderAdapter {
+  id = "anthropic" as const;
+  name = "Anthropic Claude";
+
+  validateConfig(config: ProviderConfig): { isValid: boolean; error?: string } {
+    if (!config.apiKey || !config.apiKey.trim()) {
+      return { isValid: false, error: "Anthropic API key is required." };
+    }
+    if (!config.apiKey.startsWith("sk-ant-")) {
+      return {
+        isValid: false,
+        error: "Anthropic API keys typically start with 'sk-ant-'. Please check your key from console.anthropic.com.",
+      };
+    }
+    return { isValid: true };
+  }
+
+  async testConnection(config: ProviderConfig): Promise<{ success: boolean; message: string; latencyMs?: number }> {
+    const start = Date.now();
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/models", {
+        method: "GET",
+        headers: {
+          "x-api-key": config.apiKey?.trim() || "",
+          "anthropic-version": "2023-06-01",
+        },
+      });
+
+      const latencyMs = Date.now() - start;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const msg = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+        return { success: false, message: msg, latencyMs };
+      }
+
+      return {
+        success: true,
+        message: `Successfully connected to Anthropic Claude (${latencyMs}ms).`,
+        latencyMs,
+      };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        message: this.normalizeError(err),
+        latencyMs: Date.now() - start,
+      };
+    }
+  }
+
+  async listModels(config: ProviderConfig): Promise<ModelCapability[]> {
+    if (!config.apiKey) return PROVIDER_CATALOG.anthropic.popularModels;
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/models", {
+        headers: {
+          "x-api-key": config.apiKey.trim(),
+          "anthropic-version": "2023-06-01",
+        },
+      });
+      if (!res.ok) return PROVIDER_CATALOG.anthropic.popularModels;
+
+      const data = await res.json();
+      const ids = new Set((data.data || []).map((m: { id: string }) => m.id));
+      const matched = PROVIDER_CATALOG.anthropic.popularModels.filter((m) => ids.has(m.id));
+      return matched.length > 0 ? matched : PROVIDER_CATALOG.anthropic.popularModels;
+    } catch {
+      return PROVIDER_CATALOG.anthropic.popularModels;
+    }
+  }
+
+  normalizeError(error: unknown): string {
+    if (typeof error === "string") return error;
+    if (error && typeof error === "object") {
+      const err = error as { message?: string; status?: number };
+      if (err.status === 401) {
+        return "Invalid Anthropic API key. Check your credentials in console.anthropic.com.";
+      }
+      if (err.status === 429) {
+        return "Anthropic rate limit reached. Please wait a moment before trying again.";
+      }
+      if (err.message) return err.message;
+    }
+    return "Failed to connect to Anthropic Claude. Check network and API credentials.";
+  }
+}

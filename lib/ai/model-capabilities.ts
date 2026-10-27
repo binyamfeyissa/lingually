@@ -1,0 +1,243 @@
+import { ModelCapability, ProviderId } from "@/types/provider";
+
+export const DEFAULT_MODELS: Record<ProviderId, string> = {
+  openai: "gpt-4o-mini",
+  gemini: "gemini-2.0-flash",
+  anthropic: "claude-3-5-haiku-20241022",
+  groq: "llama-3.3-70b-versatile",
+  ollama: "llama3.2:latest",
+  "openai-compatible": "default",
+};
+
+export const DEFAULT_BASE_URLS: Partial<Record<ProviderId, string>> = {
+  ollama: "http://localhost:11434",
+  groq: "https://api.groq.com/openai/v1",
+  "openai-compatible": "http://localhost:1234/v1",
+};
+
+export const PROVIDER_CATALOG: Record<
+  ProviderId,
+  {
+    name: string;
+    description: string;
+    websiteUrl: string;
+    docsUrl: string;
+    requiresApiKey: boolean;
+    supportsCustomBaseUrl: boolean;
+    popularModels: ModelCapability[];
+  }
+> = {
+  openai: {
+    name: "OpenAI",
+    description: "Industry-standard models including GPT-4o and lightweight GPT-4o-mini.",
+    websiteUrl: "https://platform.openai.com",
+    docsUrl: "https://platform.openai.com/docs/api-reference",
+    requiresApiKey: true,
+    supportsCustomBaseUrl: false,
+    popularModels: [
+      {
+        id: "gpt-4o-mini",
+        name: "GPT-4o Mini",
+        providerId: "openai",
+        contextWindow: 128000,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["speed", "economy", "grammar", "general"],
+        description: "Fast, cost-efficient model ideal for everyday editing and rewriting.",
+      },
+      {
+        id: "gpt-4o",
+        name: "GPT-4o",
+        providerId: "openai",
+        contextWindow: 128000,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["rewrite", "general"],
+        description: "Flagship versatile multimodal model for advanced writing craft.",
+      },
+      {
+        id: "o3-mini",
+        name: "o3 Mini",
+        providerId: "openai",
+        contextWindow: 200000,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["general"],
+        description: "Reasoning-focused compact model for technical and academic writing.",
+      },
+    ],
+  },
+  gemini: {
+    name: "Google Gemini",
+    description: "High-speed, massive context window models from Google DeepMind.",
+    websiteUrl: "https://aistudio.google.com",
+    docsUrl: "https://ai.google.dev/docs",
+    requiresApiKey: true,
+    supportsCustomBaseUrl: false,
+    popularModels: [
+      {
+        id: "gemini-2.0-flash",
+        name: "Gemini 2.0 Flash",
+        providerId: "gemini",
+        contextWindow: 1048576,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["speed", "grammar", "rewrite", "general"],
+        description: "Next-gen lightning-fast model with exceptional multimodal and text capabilities.",
+      },
+      {
+        id: "gemini-1.5-flash",
+        name: "Gemini 1.5 Flash",
+        providerId: "gemini",
+        contextWindow: 1048576,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["speed", "economy"],
+        description: "Fast and lightweight with 1M token context window.",
+      },
+      {
+        id: "gemini-1.5-pro",
+        name: "Gemini 1.5 Pro",
+        providerId: "gemini",
+        contextWindow: 2097152,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["rewrite", "general"],
+        description: "Top-tier reasoning model for long-document editing up to 2 million tokens.",
+      },
+    ],
+  },
+  anthropic: {
+    name: "Anthropic Claude",
+    description: "Exceptional literary nuance, natural tone, and analytical precision.",
+    websiteUrl: "https://console.anthropic.com",
+    docsUrl: "https://docs.anthropic.com",
+    requiresApiKey: true,
+    supportsCustomBaseUrl: false,
+    popularModels: [
+      {
+        id: "claude-3-5-haiku-20241022",
+        name: "Claude 3.5 Haiku",
+        providerId: "anthropic",
+        contextWindow: 200000,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["speed", "economy", "grammar"],
+        description: "Rapid, highly capable model for real-time writing suggestions.",
+      },
+      {
+        id: "claude-3-5-sonnet-20241022",
+        name: "Claude 3.5 Sonnet",
+        providerId: "anthropic",
+        contextWindow: 200000,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["rewrite", "general"],
+        description: "Superb nuance and prose style, highly acclaimed for professional writing.",
+      },
+      {
+        id: "claude-3-7-sonnet-20250219",
+        name: "Claude 3.7 Sonnet",
+        providerId: "anthropic",
+        contextWindow: 200000,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["rewrite", "general"],
+        description: "Latest hybrid reasoning and creative writing model.",
+      },
+    ],
+  },
+  groq: {
+    name: "Groq",
+    description: "Ultra-low-latency LPU inference for open-weight models.",
+    websiteUrl: "https://console.groq.com",
+    docsUrl: "https://console.groq.com/docs/quickstart",
+    requiresApiKey: true,
+    supportsCustomBaseUrl: false,
+    popularModels: [
+      {
+        id: "llama-3.3-70b-versatile",
+        name: "Llama 3.3 70B Versatile",
+        providerId: "groq",
+        contextWindow: 128000,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["speed", "rewrite", "general"],
+        description: "Near-instantaneous output speeds at 70B parameter quality.",
+      },
+      {
+        id: "llama-3.1-8b-instant",
+        name: "Llama 3.1 8B Instant",
+        providerId: "groq",
+        contextWindow: 128000,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        recommendedFor: ["speed", "economy", "grammar"],
+        description: "Sub-second turnaround for quick grammar and spelling fixes.",
+      },
+    ],
+  },
+  ollama: {
+    name: "Ollama (Local)",
+    description: "Run open models locally on your machine with 100% data privacy and zero API fees.",
+    websiteUrl: "https://ollama.com",
+    docsUrl: "https://github.com/ollama/ollama/blob/main/docs/api.md",
+    requiresApiKey: false,
+    supportsCustomBaseUrl: true,
+    popularModels: [
+      {
+        id: "llama3.2:latest",
+        name: "Llama 3.2 (3B / 1B)",
+        providerId: "ollama",
+        contextWindow: 8192,
+        supportsStreaming: true,
+        supportsStructuredOutput: false,
+        isLocal: true,
+        recommendedFor: ["economy", "speed"],
+        description: "Compact local model with swift response times on modest hardware.",
+      },
+      {
+        id: "mistral:latest",
+        name: "Mistral 7B",
+        providerId: "ollama",
+        contextWindow: 8192,
+        supportsStreaming: true,
+        supportsStructuredOutput: false,
+        isLocal: true,
+        recommendedFor: ["general", "rewrite"],
+        description: "Solid, versatile 7B open model for local drafting.",
+      },
+      {
+        id: "qwen2.5:latest",
+        name: "Qwen 2.5",
+        providerId: "ollama",
+        contextWindow: 32768,
+        supportsStreaming: true,
+        supportsStructuredOutput: false,
+        isLocal: true,
+        recommendedFor: ["general", "rewrite"],
+        description: "Powerful multilingual open weights with high reasoning capacity.",
+      },
+    ],
+  },
+  "openai-compatible": {
+    name: "OpenAI-Compatible Endpoint",
+    description: "Connect to LM Studio, LocalAI, vLLM, OpenRouter, Together, DeepSeek, or any custom gateway.",
+    websiteUrl: "https://github.com/openai/openai-openapi",
+    docsUrl: "https://platform.openai.com/docs/api-reference",
+    requiresApiKey: false,
+    supportsCustomBaseUrl: true,
+    popularModels: [
+      {
+        id: "default",
+        name: "Default Server Model",
+        providerId: "openai-compatible",
+        contextWindow: 32768,
+        supportsStreaming: true,
+        supportsStructuredOutput: false,
+        recommendedFor: ["general"],
+        description: "Use whichever model is loaded or mapped on your compatible endpoint.",
+      },
+    ],
+  },
+};
