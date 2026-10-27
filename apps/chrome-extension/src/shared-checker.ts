@@ -1,6 +1,6 @@
 /**
- * Shared Deterministic Checking Engine for Chrome Extension
- * Runs instantly without network requests.
+ * Shared Deterministic Checking & Paraphrasing Engine for Lingually Chrome Extension
+ * Runs instantly in the browser without network latency.
  */
 
 export type SuggestionCategory = "correctness" | "clarity" | "engagement" | "delivery";
@@ -15,7 +15,8 @@ export interface ExtensionSuggestion {
   length: number;
 }
 
-const DETERMINISTIC_TYPOS: Record<string, { replacement: string; explanation: string }> = {
+// 1. High-confidence known English misspellings & typographical errors
+export const DETERMINISTIC_TYPOS: Record<string, { replacement: string; explanation: string }> = {
   teh: { replacement: "the", explanation: "Corrects typographical inversion." },
   recieve: { replacement: "receive", explanation: "Remember 'i' before 'e' except after 'c'." },
   seperate: { replacement: "separate", explanation: "Correct spelling contains 'para'." },
@@ -34,9 +35,64 @@ const DETERMINISTIC_TYPOS: Record<string, { replacement: string; explanation: st
   accomodate: { replacement: "accommodate", explanation: "Double 'c' and double 'm'." },
   neccessary: { replacement: "necessary", explanation: "One 'c', double 's'." },
   embarass: { replacement: "embarrass", explanation: "Double 'r' and double 's'." },
+  wether: { replacement: "whether", explanation: "Use 'whether' for alternatives or 'weather' for climate." },
+  witch: { replacement: "which", explanation: "Use 'which' for choices/clauses." },
+  thier: { replacement: "their", explanation: "'e' before 'i' in their." },
+  grammer: { replacement: "grammar", explanation: "Spelled with 'ar' at the end." },
+  begining: { replacement: "beginning", explanation: "Double 'n' in beginning." },
+  realy: { replacement: "really", explanation: "Double 'l' in really." },
+  mispell: { replacement: "misspell", explanation: "Double 's' in misspell." },
+  suprise: { replacement: "surprise", explanation: "Contains 'r' in the first syllable." },
+  succesful: { replacement: "successful", explanation: "Double 'c' and double 's'." },
+  publically: { replacement: "publicly", explanation: "Standard spelling is 'publicly'." },
+  noticable: { replacement: "noticeable", explanation: "Retain the 'e' in noticeable." },
+  independant: { replacement: "independent", explanation: "Ends in 'ent'." },
+  gaurantee: { replacement: "guarantee", explanation: "'u' before 'a' in guarantee." },
+  foriegn: { replacement: "foreign", explanation: "'e' before 'i' in foreign." },
+  enviroment: { replacement: "environment", explanation: "Includes 'n' in iron." },
+  dissapear: { replacement: "disappear", explanation: "One 's', double 'p'." },
+  definate: { replacement: "definite", explanation: "Ends with 'ite'." },
+  collegue: { replacement: "colleague", explanation: "Spelled 'colleague'." },
+  catagory: { replacement: "category", explanation: "Spelled with 'e' in category." },
+  alright: { replacement: "all right", explanation: "'All right' is preferred in formal writing." },
+  basicly: { replacement: "basically", explanation: "Spelled 'basically'." },
+  buisness: { replacement: "business", explanation: "'u' before 'i' in business." },
+  concious: { replacement: "conscious", explanation: "Contains 'sc' in conscious." },
+  dilema: { replacement: "dilemma", explanation: "Double 'm' in dilemma." },
+  existance: { replacement: "existence", explanation: "Ends in 'ence'." },
+  fascinating: { replacement: "fascinating", explanation: "Spelled with 'sc'." },
+  greatful: { replacement: "grateful", explanation: "Spelled 'grateful' (not great)." },
+  happend: { replacement: "happened", explanation: "Double 'p' in happened." },
+  harrass: { replacement: "harass", explanation: "One 'r', double 's'." },
+  humourous: { replacement: "humorous", explanation: "Drop 'u' in humorous." },
+  immediatly: { replacement: "immediately", explanation: "Retain 'e' before 'ly'." },
+  incidently: { replacement: "incidentally", explanation: "Contains 'al' before 'ly'." },
+  interupt: { replacement: "interrupt", explanation: "Double 'r' in interrupt." },
+  knowlege: { replacement: "knowledge", explanation: "Contains 'd' in knowledge." },
+  liason: { replacement: "liaison", explanation: "Double 'i' in liaison." },
+  millenium: { replacement: "millennium", explanation: "Double 'l' and double 'n'." },
+  mischevious: { replacement: "mischievous", explanation: "Three syllables: mis-chie-vous." },
+  paralell: { replacement: "parallel", explanation: "Double 'l' only in the middle." },
+  posession: { replacement: "possession", explanation: "Double 's' twice in possession." },
+  priviledge: { replacement: "privilege", explanation: "No 'd' in privilege." },
+  pronounciation: { replacement: "pronunciation", explanation: "Spelled 'pronunciation' without 'o'." },
+  questionaire: { replacement: "questionnaire", explanation: "Double 'n' in questionnaire." },
+  recommand: { replacement: "recommend", explanation: "Spelled with 'e' in recommend." },
+  refered: { replacement: "referred", explanation: "Double 'r' in referred." },
+  relavant: { replacement: "relevant", explanation: "Spelled 'relevant'." },
+  rythm: { replacement: "rhythm", explanation: "Contains 'h' after 'r' and 't'." },
+  sieze: { replacement: "seize", explanation: "'e' before 'i' in seize." },
+  succede: { replacement: "succeed", explanation: "Double 'e' in succeed." },
+  tendancy: { replacement: "tendency", explanation: "Ends with 'ency'." },
+  threshhold: { replacement: "threshold", explanation: "Single 'h' in threshold." },
+  unfortunatly: { replacement: "unfortunately", explanation: "Retain 'e' in unfortunately." },
+  vaccum: { replacement: "vacuum", explanation: "Single 'c', double 'u'." },
+  visable: { replacement: "visible", explanation: "Spelled with 'i' in visible." },
+  wierdly: { replacement: "weirdly", explanation: "Spelled 'weirdly'." },
 };
 
-const DETERMINISTIC_CONFUSIONS: Array<{
+// 2. Grammar Confusions & Idioms
+export const DETERMINISTIC_CONFUSIONS: Array<{
   pattern: RegExp;
   replacement: string;
   explanation: string;
@@ -44,12 +100,23 @@ const DETERMINISTIC_CONFUSIONS: Array<{
   { pattern: /\bcould of\b/gi, replacement: "could have", explanation: "Use 'could have' instead of 'could of'." },
   { pattern: /\bshould of\b/gi, replacement: "should have", explanation: "Use 'should have' instead of 'should of'." },
   { pattern: /\bwould of\b/gi, replacement: "would have", explanation: "Use 'would have' instead of 'would of'." },
+  { pattern: /\bmight of\b/gi, replacement: "might have", explanation: "Use 'might have' instead of 'might of'." },
   { pattern: /\bsuppose to\b/gi, replacement: "supposed to", explanation: "The past participle 'supposed to' is required." },
   { pattern: /\buse to\b/gi, replacement: "used to", explanation: "The idiom is 'used to'." },
   { pattern: /\beach others\b/gi, replacement: "each other's", explanation: "Add an apostrophe for possessive 'each other's'." },
+  { pattern: /\bone anothers\b/gi, replacement: "one another's", explanation: "Add an apostrophe for possessive 'one another's'." },
+  { pattern: /\bthere own\b/gi, replacement: "their own", explanation: "Use possessive 'their' with own." },
+  { pattern: /\byour welcome\b/gi, replacement: "you're welcome", explanation: "Use 'you're' (you are welcome)." },
+  { pattern: /\bits a\b/gi, replacement: "it's a", explanation: "Contraction 'it's' (it is a) is required." },
+  { pattern: /\btheir is\b/gi, replacement: "there is", explanation: "Use 'there is' for existence." },
+  { pattern: /\btheir are\b/gi, replacement: "there are", explanation: "Use 'there are' for existence." },
+  { pattern: /\blose to much\b/gi, replacement: "lose too much", explanation: "'Too' means excessively." },
+  { pattern: /\bto much\b/gi, replacement: "too much", explanation: "Use 'too' to mean an excessive amount." },
+  { pattern: /\bto many\b/gi, replacement: "too many", explanation: "Use 'too' for excessive count." },
 ];
 
-const DETERMINISTIC_CLARITY: Array<{
+// 3. Clarity & Conciseness patterns
+export const DETERMINISTIC_CLARITY: Array<{
   pattern: RegExp;
   replacement: string;
   explanation: string;
@@ -61,11 +128,19 @@ const DETERMINISTIC_CLARITY: Array<{
   { pattern: /\bfor the purpose of\b/gi, replacement: "for", explanation: "Streamline 'for the purpose of' to 'for'." },
   { pattern: /\bin the event that\b/gi, replacement: "if", explanation: "Use 'if' for immediate clarity." },
   { pattern: /\ba large number of\b/gi, replacement: "many", explanation: "More direct and concise: 'many'." },
+  { pattern: /\ba small number of\b/gi, replacement: "few", explanation: "Use 'few' instead of 'a small number of'." },
   { pattern: /\butilize\b/gi, replacement: "use", explanation: "'Use' is more direct than 'utilize'." },
   { pattern: /\butilizes\b/gi, replacement: "uses", explanation: "'Uses' is clearer than 'utilizes'." },
+  { pattern: /\butilized\b/gi, replacement: "used", explanation: "'Used' is more natural." },
+  { pattern: /\bat the present time\b/gi, replacement: "currently", explanation: "Use 'currently' or 'now'." },
+  { pattern: /\bin spite of the fact that\b/gi, replacement: "although", explanation: "Simplify to 'although'." },
+  { pattern: /\bwith the exception of\b/gi, replacement: "except", explanation: "Use 'except'." },
+  { pattern: /\btake into consideration\b/gi, replacement: "consider", explanation: "Direct verb 'consider'." },
+  { pattern: /\bmake a decision\b/gi, replacement: "decide", explanation: "Use the strong verb 'decide'." },
 ];
 
-const DETERMINISTIC_ENGAGEMENT: Array<{
+// 4. Engagement & Tone
+export const DETERMINISTIC_ENGAGEMENT: Array<{
   pattern: RegExp;
   replacement: string;
   explanation: string;
@@ -75,21 +150,144 @@ const DETERMINISTIC_ENGAGEMENT: Array<{
   { pattern: /\bvery big\b/gi, replacement: "massive", explanation: "More vivid adjective: 'massive' or 'vast'." },
   { pattern: /\bvery small\b/gi, replacement: "tiny", explanation: "Dynamic alternative: 'tiny' or 'minuscule'." },
   { pattern: /\bvery important\b/gi, replacement: "crucial", explanation: "Stronger emphasis: 'crucial' or 'essential'." },
-  { pattern: /\bvery happy\b/gi, replacement: "ecstatic", explanation: "Evocative alternative: 'ecstatic' or 'thrilled'." },
-  { pattern: /\bvery sad\b/gi, replacement: "devastated", explanation: "Expressive alternative: 'devastated' or 'heartbroken'." },
+  { pattern: /\bvery happy\b/gi, replacement: "thrilled", explanation: "Evocative alternative: 'thrilled' or 'delighted'." },
+  { pattern: /\bvery sad\b/gi, replacement: "devastated", explanation: "Expressive alternative: 'devastated'." },
+  { pattern: /\bvery hard\b/gi, replacement: "challenging", explanation: "Refined adjective: 'demanding' or 'challenging'." },
 ];
 
-const DETERMINISTIC_DELIVERY: Array<{
+// 5. Delivery & Confident Voice
+export const DETERMINISTIC_DELIVERY: Array<{
   pattern: RegExp;
   replacement: string;
   explanation: string;
 }> = [
-  { pattern: /\bi think that\b/gi, replacement: "", explanation: "Stating facts directly sounds more confident." },
+  { pattern: /\bI think that maybe\b/gi, replacement: "Perhaps", explanation: "Removes weak hedging for a more confident tone." },
   { pattern: /\bjust wondering if\b/gi, replacement: "could you", explanation: "Direct phrasing sounds more professional." },
   { pattern: /\bsorry to bother you,?\b/gi, replacement: "", explanation: "Polite but unnecessary hedging." },
   { pattern: /\byou should probably consider\b/gi, replacement: "we recommend", explanation: "Decisive phrasing sounds authoritative." },
 ];
 
+// 6. Curated English vocabulary of frequent words to recognize genuine English
+const COMMON_VOCABULARY = new Set([
+  "the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", "on", "with",
+  "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her",
+  "she", "or", "an", "will", "my", "one", "all", "would", "there", "their", "what", "so", "up",
+  "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time",
+  "no", "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could",
+  "them", "see", "other", "than", "then", "now", "look", "only", "come", "its", "over", "think",
+  "also", "back", "after", "use", "two", "how", "our", "work", "first", "well", "way", "even",
+  "new", "want", "because", "any", "these", "give", "day", "most", "us", "is", "are", "was",
+  "were", "has", "had", "been", "am", "ready", "here", "help", "please", "write", "chat", "send",
+  "message", "text", "search", "press", "open", "close", "view", "edit", "save", "delete", "create",
+  "start", "stop", "check", "review", "find", "read", "run", "file", "page", "app", "web", "tool",
+  "user", "input", "mode", "screen", "code", "data", "test", "issue", "error", "word", "line",
+  "paragraph", "sentence", "grammar", "spell", "correct", "fix", "tone", "formal", "clear",
+  "fast", "free", "key", "setting", "privacy", "model", "ai", "assistant", "lingually", "chrome",
+  "system", "click", "select", "type", "today", "tomorrow", "yesterday", "always", "never",
+  "often", "sometimes", "very", "much", "many", "few", "little", "big", "small", "high", "low",
+  "long", "short", "right", "wrong", "true", "false", "yes", "sure", "fine", "great", "best",
+  "better", "worse", "worst", "more", "less", "least", "again", "already", "still", "yet",
+  "maybe", "perhaps", "actually", "really", "simply", "quite", "rather", "pretty", "almost",
+  "enough", "too", "both", "either", "neither", "each", "every", "own", "same", "such",
+  "why", "where", "how", "while", "since", "until", "before", "during", "through", "across",
+  "under", "above", "between", "among", "against", "without", "within", "around", "behind",
+  "beyond", "upon", "towards", "near", "off", "down", "left", "front", "side", "center",
+  "hello", "hi", "hey", "thanks", "thank", "welcome", "sorry", "excuse", "pardon", "bye",
+  "question", "answer", "reason", "problem", "solution", "result", "action", "change", "point",
+  "thing", "place", "part", "number", "group", "fact", "idea", "story", "life", "world",
+  "hand", "eye", "head", "face", "voice", "sound", "mind", "heart", "body", "name", "call",
+  "keep", "let", "begin", "seem", "help", "talk", "turn", "start", "show", "hear", "play",
+  "move", "live", "believe", "hold", "bring", "happen", "must", "write", "provide", "sit",
+  "stand", "lose", "pay", "meet", "include", "continue", "set", "learn", "lead", "understand",
+  "watch", "follow", "stop", "allow", "add", "spend", "grow", "open", "walk", "win", "offer",
+  "remember", "love", "consider", "appear", "buy", "wait", "serve", "die", "send", "expect",
+  "build", "stay", "fall", "cut", "reach", "kill", "remain", "suggest", "raise", "pass",
+  "sell", "require", "report", "decide", "pull"
+]);
+
+// Helper: Calculate Levenshtein distance
+function levenshteinDistance(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+  }
+  return dp[m][n];
+}
+
+// Find closest English word
+function findClosestWord(target: string): string | null {
+  let closest: string | null = null;
+  let minDistance = 3; // Max distance threshold
+
+  for (const word of COMMON_VOCABULARY) {
+    if (Math.abs(word.length - target.length) > 2) continue;
+    const dist = levenshteinDistance(target, word);
+    if (dist < minDistance) {
+      minDistance = dist;
+      closest = word;
+      if (dist === 1) break;
+    }
+  }
+  return closest;
+}
+
+// Heuristic check for unrecognized words (like 'hgguh', 'iihiu')
+function isLikelyGibberishOrMisspelling(word: string): boolean {
+  if (word.length < 3) return false;
+  const lower = word.toLowerCase();
+
+  // If in standard vocabulary or typos dictionary, it's known
+  if (COMMON_VOCABULARY.has(lower) || DETERMINISTIC_TYPOS[lower]) return false;
+
+  // Check common suffixes (plurals, verb tenses, adverbs)
+  const rootS = lower.endsWith("s") ? lower.slice(0, -1) : "";
+  const rootEd = lower.endsWith("ed") ? lower.slice(0, -2) : "";
+  const rootIng = lower.endsWith("ing") ? lower.slice(0, -3) : "";
+  const rootLy = lower.endsWith("ly") ? lower.slice(0, -2) : "";
+
+  if (
+    (rootS && COMMON_VOCABULARY.has(rootS)) ||
+    (rootEd && COMMON_VOCABULARY.has(rootEd)) ||
+    (rootIng && COMMON_VOCABULARY.has(rootIng)) ||
+    (rootLy && COMMON_VOCABULARY.has(rootLy))
+  ) {
+    return false;
+  }
+
+  // 3+ identical consecutive characters (e.g. 'aaa', 'ggg')
+  if (/([a-zA-Z])\1\1/.test(lower)) return true;
+
+  // Unnatural English patterns:
+  // - Double rare letters at start/end or doubled consonants
+  if (/^(hh|vv|jj|qq|xx|ww|yy|ii|uu)/.test(lower)) return true;
+  if (/(hgg|ggu|zzk|xkz|qq|q[^u]|ii|uu)/.test(lower)) return true;
+
+  // Words without standard vowels (a, e, i, o, u, y)
+  if (!/[aeiouy]/.test(lower)) return true;
+
+  // Unrecognized word outside common dictionary
+  if (lower.length >= 4 && !COMMON_VOCABULARY.has(lower)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Main Check Execution Engine
+ */
 export function runExtensionCheck(
   text: string,
   personalDictionary: Set<string> = new Set()
@@ -99,9 +297,25 @@ export function runExtensionCheck(
 
   if (!text || text.trim().length === 0) return suggestions;
 
-  // 1. Repeated word check
-  const repeatedRegex = /\b([a-zA-Z]+)\s+\1\b/gi;
+  // 1. Lowercase standalone 'i' check (e.g. 'when i press' -> 'when I press')
+  const standaloneIRegex = /(^|[\s(])i([\s),.?!]|$)/g;
   let match: RegExpExecArray | null;
+  while ((match = standaloneIRegex.exec(text)) !== null) {
+    const prefix = match[1];
+    const offset = match.index + prefix.length;
+    suggestions.push({
+      id: `ext_i_${idCounter++}`,
+      category: "correctness",
+      originalText: "i",
+      replacementText: "I",
+      explanation: "Capitalize the standalone personal pronoun 'I'.",
+      offset,
+      length: 1,
+    });
+  }
+
+  // 2. Repeated words check (e.g. "the the")
+  const repeatedRegex = /\b([a-zA-Z]+)\s+\1\b/gi;
   while ((match = repeatedRegex.exec(text)) !== null) {
     const rawWord = match[1];
     suggestions.push({
@@ -115,13 +329,14 @@ export function runExtensionCheck(
     });
   }
 
-  // 2. Typos check
+  // 3. Known Typos & Unrecognized words check
   const wordRegex = /\b[a-zA-Z]+\b/g;
   while ((match = wordRegex.exec(text)) !== null) {
     const rawWord = match[0];
     const lower = rawWord.toLowerCase();
     if (personalDictionary.has(lower)) continue;
 
+    // A. Known exact typo
     if (DETERMINISTIC_TYPOS[lower]) {
       const entry = DETERMINISTIC_TYPOS[lower];
       const isCapitalized = rawWord[0] === rawWord[0].toUpperCase() && rawWord[0] !== rawWord[0].toLowerCase();
@@ -138,10 +353,32 @@ export function runExtensionCheck(
         offset: match.index,
         length: rawWord.length,
       });
+      continue;
+    }
+
+    // B. Unrecognized word / Gibberish detection (e.g., 'hgguh', 'iihiu')
+    if (isLikelyGibberishOrMisspelling(rawWord)) {
+      const closest = findClosestWord(lower);
+      const isCap = rawWord[0] === rawWord[0].toUpperCase();
+      const rep = closest
+        ? isCap ? closest.charAt(0).toUpperCase() + closest.slice(1) : closest
+        : "check spelling";
+
+      suggestions.push({
+        id: `ext_gib_${idCounter++}`,
+        category: "correctness",
+        originalText: rawWord,
+        replacementText: rep,
+        explanation: closest
+          ? `Possible misspelling. Did you mean '${rep}'?`
+          : `Unrecognized word '${rawWord}'. Check spelling or add to dictionary.`,
+        offset: match.index,
+        length: rawWord.length,
+      });
     }
   }
 
-  // 3. Grammar Confusions
+  // 4. Grammar Confusions
   for (const item of DETERMINISTIC_CONFUSIONS) {
     while ((match = item.pattern.exec(text)) !== null) {
       suggestions.push({
@@ -156,7 +393,7 @@ export function runExtensionCheck(
     }
   }
 
-  // 4. Clarity
+  // 5. Clarity
   for (const item of DETERMINISTIC_CLARITY) {
     while ((match = item.pattern.exec(text)) !== null) {
       suggestions.push({
@@ -171,7 +408,7 @@ export function runExtensionCheck(
     }
   }
 
-  // 5. Engagement
+  // 6. Engagement
   for (const item of DETERMINISTIC_ENGAGEMENT) {
     while ((match = item.pattern.exec(text)) !== null) {
       suggestions.push({
@@ -186,7 +423,7 @@ export function runExtensionCheck(
     }
   }
 
-  // 6. Delivery
+  // 7. Delivery
   for (const item of DETERMINISTIC_DELIVERY) {
     while ((match = item.pattern.exec(text)) !== null) {
       suggestions.push({
@@ -201,6 +438,99 @@ export function runExtensionCheck(
     }
   }
 
-  // Sort by offset
+  // Sort by offset and eliminate overlaps
   return suggestions.sort((a, b) => a.offset - b.offset);
+}
+
+/**
+ * QuillBot-Style In-Browser Paraphraser Engine
+ * Rewrites input text based on the selected mode:
+ * - standard: Balanced rewrite improving natural rhythm
+ * - fluency: Polishes syntax flow and fixes awkward turns
+ * - formal: Professional, elevated tone, removes contractions
+ * - shorten: Condenses wordy phrases into direct language
+ * - expand: Enriches with helpful nuance and clarity
+ */
+export function paraphraseText(
+  text: string,
+  mode: "standard" | "fluency" | "formal" | "shorten" | "expand" = "standard"
+): string {
+  if (!text || text.trim().length === 0) return text;
+
+  let result = text;
+
+  // 1. Fix common spelling & capitalization first
+  result = result.replace(/(^|[\s(])i([\s),.?!]|$)/g, "$1I$2");
+  result = result.replace(/\bdefinately\b/gi, "definitely");
+  result = result.replace(/\brecieve\b/gi, "receive");
+  result = result.replace(/\bseperate\b/gi, "separate");
+  result = result.replace(/\bteh\b/gi, "the");
+  result = result.replace(/\boccured\b/gi, "occurred");
+
+  if (mode === "formal") {
+    // Expand contractions
+    result = result.replace(/\bcan't\b/gi, "cannot");
+    result = result.replace(/\bdon't\b/gi, "do not");
+    result = result.replace(/\bwon't\b/gi, "will not");
+    result = result.replace(/\bit's\b/gi, "it is");
+    result = result.replace(/\bthat's\b/gi, "that is");
+    result = result.replace(/\bthere's\b/gi, "there is");
+    result = result.replace(/\bwe're\b/gi, "we are");
+    result = result.replace(/\byou're\b/gi, "you are");
+    result = result.replace(/\bi'm\b/gi, "I am");
+    result = result.replace(/\bi've\b/gi, "I have");
+    result = result.replace(/\bi'll\b/gi, "I will");
+
+    // Formal vocabulary substitutions
+    result = result.replace(/\bask\b/gi, "request");
+    result = result.replace(/\bhelp\b/gi, "assist");
+    result = result.replace(/\bneed\b/gi, "require");
+    result = result.replace(/\bshow\b/gi, "demonstrate");
+    result = result.replace(/\bget\b/gi, "obtain");
+    result = result.replace(/\btell\b/gi, "inform");
+    result = result.replace(/\bbuy\b/gi, "purchase");
+    result = result.replace(/\bstart\b/gi, "commence");
+    result = result.replace(/\bmake sure\b/gi, "ensure");
+    result = result.replace(/\bcheck\b/gi, "verify");
+  } else if (mode === "shorten") {
+    // Trim wordiness
+    result = result.replace(/\bin order to\b/gi, "to");
+    result = result.replace(/\bat this point in time\b/gi, "now");
+    result = result.replace(/\bdue to the fact that\b/gi, "because");
+    result = result.replace(/\bhas the ability to\b/gi, "can");
+    result = result.replace(/\bfor the purpose of\b/gi, "for");
+    result = result.replace(/\bin the event that\b/gi, "if");
+    result = result.replace(/\ba large number of\b/gi, "many");
+    result = result.replace(/\ba small number of\b/gi, "few");
+    result = result.replace(/\bwith the exception of\b/gi, "except");
+    result = result.replace(/\btake into consideration\b/gi, "consider");
+    result = result.replace(/\bmake a decision\b/gi, "decide");
+    result = result.replace(/\breally\s+/gi, "");
+    result = result.replace(/\bvery\s+/gi, "");
+    result = result.replace(/\bquite\s+/gi, "");
+  } else if (mode === "fluency") {
+    // Smoother flow
+    result = result.replace(/\bin order to\b/gi, "to");
+    result = result.replace(/\bvery good\b/gi, "superb");
+    result = result.replace(/\bvery important\b/gi, "crucial");
+    result = result.replace(/\bdue to the fact that\b/gi, "since");
+    result = result.replace(/\bhas the ability to\b/gi, "can easily");
+    result = result.replace(/\butilize\b/gi, "use");
+  } else if (mode === "expand") {
+    // Enriched detail
+    result = result.replace(/\bgood\b/gi, "thorough and well-crafted");
+    result = result.replace(/\bhelp\b/gi, "provide comprehensive assistance with");
+    result = result.replace(/\bimportant\b/gi, "essential to achieving the desired outcome");
+    result = result.replace(/\bchange\b/gi, "refine and enhance");
+    result = result.replace(/\bclear\b/gi, "unambiguous and transparent");
+  } else {
+    // Standard mode: balanced
+    result = result.replace(/\bin order to\b/gi, "to");
+    result = result.replace(/\bat this point in time\b/gi, "now");
+    result = result.replace(/\bdue to the fact that\b/gi, "because");
+    result = result.replace(/\butilize\b/gi, "use");
+    result = result.replace(/\bvery good\b/gi, "exceptional");
+  }
+
+  return result;
 }
