@@ -6,12 +6,13 @@
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "npm run build",
-    "frontendDist": "../out"
+    "beforeBuildCommand": "npm run build:desktop",
+    "frontendDist": "../dist/desktop"
   },
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Lingually — AI Writing Workbench",
         "width": 1280,
         "height": 840,
@@ -35,7 +36,9 @@
     "targets": "all",
     "icon": [
       "icons/32x32.png",
-      "icons/128x128.png"
+      "icons/128x128.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
     ],
     "macOS": {
       "minimumSystemVersion": "10.15",

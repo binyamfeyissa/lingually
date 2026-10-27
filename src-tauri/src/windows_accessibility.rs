@@ -17,6 +17,7 @@ pub fn is_windows_automation_available() -> bool {
 pub fn get_selected_text_windows() -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
+        use windows::core::Interface;
         use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED};
         use windows::Win32::UI::Accessibility::{CUIAutomation, IUIAutomation, IUIAutomationTextPattern, UIA_TextPatternId};
 

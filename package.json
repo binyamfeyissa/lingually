@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:desktop": "node scripts/build-desktop.mjs",
     "build:extension": "node apps/chrome-extension/build.mjs",
     "start": "next start",
     "lint": "next lint",

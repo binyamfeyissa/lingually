@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   web-and-extension:
     name: Web & Chrome Extension
@@ -68,8 +71,10 @@ jobs:
 
       - name: Install Rust Stable
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Add macOS Universal Targets
+        if: matrix.platform == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
@@ -79,8 +84,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js Static Export for Tauri
-        run: npm run build
+      - name: Build Desktop Frontend Distribution
+        run: npm run build:desktop
 
       - name: Build Tauri Desktop Binary
         uses: tauri-apps/tauri-action@v0
@@ -93,3 +98,12 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Upload Desktop Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lingually-desktop-${{ matrix.platform }}
+          path: |
+            src-tauri/target/release/bundle/
+            src-tauri/target/universal-apple-darwin/release/bundle/
