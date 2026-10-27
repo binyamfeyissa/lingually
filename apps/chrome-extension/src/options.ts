@@ -12,11 +12,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnAddDict = document.getElementById("btn-add-dict") as HTMLButtonElement;
   const dictList = document.getElementById("dict-list") as HTMLDivElement;
 
+  const workbenchUrlInput = document.getElementById("workbench-url-input") as HTMLInputElement;
+  const btnSaveWorkbench = document.getElementById("btn-save-workbench") as HTMLButtonElement;
+  const workbenchStatus = document.getElementById("workbench-status") as HTMLDivElement;
+
   let apiKeys: Record<string, string> = {};
   let dictionaryWords: string[] = [];
 
   // Load existing configuration
-  chrome.storage.sync.get(["lingually_provider", "lingually_api_keys", "lingually_dictionary"], (res: Record<string, any>) => {
+  chrome.storage.sync.get(["lingually_provider", "lingually_api_keys", "lingually_dictionary", "lingually_workbench_url"], (res: Record<string, any>) => {
     if (res.lingually_provider) {
       providerSelect.value = String(res.lingually_provider);
     }
@@ -27,6 +31,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (Array.isArray(res.lingually_dictionary)) {
       dictionaryWords = res.lingually_dictionary as string[];
       renderDictionary();
+    }
+    if (workbenchUrlInput) {
+      workbenchUrlInput.value = (res.lingually_workbench_url as string) || "https://lingually-os.vercel.app/editor";
     }
   });
 
@@ -91,11 +98,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  btnAddDict.addEventListener("click", addWord);
+    btnAddDict.addEventListener("click", addWord);
   dictInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       addWord();
     }
   });
+
+  if (btnSaveWorkbench && workbenchUrlInput) {
+    btnSaveWorkbench.addEventListener("click", () => {
+      const url = workbenchUrlInput.value.trim() || "https://lingually-os.vercel.app/editor";
+      chrome.storage.sync.set({ lingually_workbench_url: url }, () => {
+        if (workbenchStatus) {
+          workbenchStatus.style.display = "block";
+          setTimeout(() => {
+            workbenchStatus.style.display = "none";
+          }, 2000);
+        }
+      });
+    });
+  }
 });

@@ -197,6 +197,20 @@
 
       <div class="badge-list" id="dict-list"></div>
     </div>
+
+    <!-- Web Workbench Destination -->
+    <div class="card">
+      <div class="card-title">Web Workbench Destination</div>
+      <div class="card-desc">Configure where the "Open Web Workbench" button directs. Defaults to the cloud deployment, or switch to your local development instance.</div>
+
+      <div class="form-group">
+        <label for="workbench-url-input">Workbench URL</label>
+        <input type="text" id="workbench-url-input" placeholder="https://lingually-os.vercel.app/editor">
+      </div>
+
+      <button id="btn-save-workbench" class="btn btn-secondary">Save Destination URL</button>
+      <div id="workbench-status" style="display: none; margin-top: 10px; color: #059669; font-size: 12px; font-weight: 600;">Workbench URL saved!</div>
+    </div>
   </div>
 
   <script src="options.js"></script>

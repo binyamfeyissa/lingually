@@ -29,8 +29,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Open Web Editor
   btnEditor.addEventListener("click", () => {
-    chrome.tabs.create({ url: "http://localhost:3000/editor" });
-    window.close();
+    chrome.storage.sync.get(["lingually_workbench_url"], (res: Record<string, any>) => {
+      const targetUrl = (res.lingually_workbench_url as string) || "https://lingually-os.vercel.app/editor";
+      chrome.tabs.create({ url: targetUrl });
+      window.close();
+    });
   });
 
   // Open Options / Settings
