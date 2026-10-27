@@ -56,35 +56,41 @@ export function Modal({
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-100"
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? "modal-title" : undefined}
         className={cn(
-          "relative w-full rounded-xl border border-surface-border bg-surface p-6 shadow-xl animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col",
+          "relative w-full rounded-none border border-line-strong bg-bg p-6 shadow-2xl animate-in zoom-in-95 duration-100 max-h-[90vh] flex flex-col",
           maxWidths[maxWidth],
           className
         )}
       >
-        <div className="flex items-start justify-between pb-3 border-b border-surface-border">
+        {/* Corner ticks */}
+        <span className="tick top-[-5px] left-[-5px]" />
+        <span className="tick top-[-5px] right-[-5px]" />
+        <span className="tick bottom-[-5px] left-[-5px]" />
+        <span className="tick bottom-[-5px] right-[-5px]" />
+
+        <div className="flex items-start justify-between pb-3 border-b border-line">
           <div>
             {title && (
-              <h2 id="modal-title" className="text-lg font-semibold text-foreground">
+              <h2 id="modal-title" className="font-display text-base font-semibold text-ink tracking-tight">
                 {title}
               </h2>
             )}
             {description && (
-              <p className="mt-0.5 text-xs text-foreground/60">{description}</p>
+              <p className="mt-1 font-mono text-[11px] text-muted">{description}</p>
             )}
           </div>
           <button
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded-md p-1 text-foreground/50 hover:bg-surface-muted hover:text-foreground transition-colors"
+            className="p-1 text-muted hover:text-ink hover:bg-line/20 rounded-none transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 

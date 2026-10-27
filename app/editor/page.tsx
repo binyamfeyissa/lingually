@@ -135,15 +135,15 @@ export default function EditorPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground gap-2">
-        <Loader2 className="h-5 w-5 animate-spin text-brand-500" />
-        <span className="text-xs font-semibold">Loading Lingually Workbench...</span>
+      <div className="flex h-screen w-screen items-center justify-center bg-bg text-ink gap-2 font-mono text-xs">
+        <Loader2 className="h-4 w-4 animate-spin text-accent" />
+        <span className="uppercase tracking-[0.15em]">INITIALIZING LINGUALLY WORKBENCH...</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-bg text-ink">
       {/* Top Application Navbar */}
       <Navbar
         document={activeDocument || undefined}
@@ -180,15 +180,15 @@ export default function EditorPage() {
             suggestionPayload={suggestionPayload}
           />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-foreground/50">
-            <p className="text-sm font-semibold">No document selected</p>
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-muted font-mono">
+            <p className="text-sm font-semibold uppercase tracking-wider text-ink">NO DOCUMENT SELECTED</p>
             <p className="text-xs mt-1">Create a new document from the sidebar to begin writing.</p>
           </div>
         )}
 
         {/* Right Assistant & Review Panel */}
         {isAssistantOpen && activeDocument && (
-          <div className="w-80 sm:w-96 shrink-0 h-full overflow-hidden shadow-sm">
+          <div className="w-80 sm:w-96 shrink-0 h-full overflow-hidden">
             <ReviewSidebar
               currentText={activeDocument.plainText}
               selectedText={selectedText}

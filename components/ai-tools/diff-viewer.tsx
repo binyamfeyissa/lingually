@@ -7,8 +7,10 @@ import { Button } from "../shared/button";
 import { cn } from "@/lib/utils/cn";
 
 export interface DiffViewerProps {
-  originalText: string;
-  suggestedText: string;
+  original?: string;
+  originalText?: string;
+  modified?: string;
+  suggestedText?: string;
   onAccept: () => void;
   onReject: () => void;
   onCopy?: () => void;
@@ -17,38 +19,43 @@ export interface DiffViewerProps {
 }
 
 export function DiffViewer({
+  original,
   originalText,
+  modified,
   suggestedText,
   onAccept,
   onReject,
   onCopy,
-  title = "Suggested Changes",
+  title = "SUGGESTED REWRITE",
   selectionOnly = false,
 }: DiffViewerProps) {
   const [viewMode, setViewMode] = useState<"inline" | "side-by-side">("inline");
   const [copied, setCopied] = useState(false);
 
-  const diff = computeWordDiff(originalText, suggestedText);
+  const orig = originalText ?? original ?? "";
+  const sug = suggestedText ?? modified ?? "";
+
+  const diff = computeWordDiff(orig, sug);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(suggestedText);
+    navigator.clipboard.writeText(sug);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     if (onCopy) onCopy();
   };
 
   return (
-    <div className="rounded-lg border border-surface-border bg-surface overflow-hidden shadow-sm">
+    <div className="rounded-none border border-line bg-bg-raised overflow-hidden">
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 bg-surface-muted border-b border-surface-border">
+      <div className="flex items-center justify-between px-3 py-2 bg-bg border-b border-line font-mono text-[11px] uppercase tracking-wider">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-foreground">{title}</span>
+          <span className="font-semibold text-ink">{title}</span>
           {selectionOnly && (
-            <span className="text-[10px] bg-brand-100 text-brand-800 dark:bg-brand-900/60 dark:text-brand-300 font-medium px-1.5 py-0.5 rounded">
-              Selection only
+            <span className="text-[9px] bg-accent/10 text-accent border border-accent/20 px-1 py-0.2">
+              SELECTION
             </span>
           )}
-          <span className="text-[11px] text-foreground/50">
+          <span className="text-[10px] text-muted">
             (+{diff.additionsCount} / -{diff.deletionsCount})
           </span>
         </div>
@@ -57,16 +64,16 @@ export function DiffViewer({
           <button
             type="button"
             onClick={() => setViewMode(viewMode === "inline" ? "side-by-side" : "inline")}
-            className="p-1 text-foreground/60 hover:text-foreground rounded hover:bg-surface transition-colors"
+            className="p-1 text-muted hover:text-ink transition-colors"
             title={viewMode === "inline" ? "Switch to Side-by-Side view" : "Switch to Inline Diff view"}
           >
-            {viewMode === "inline" ? <Columns className="h-3.5 w-3.5" /> : <Rows className="h-3.5 w-3.5" />}
+            {viewMode === "inline" ? <Columns className="h-3 w-3" /> : <Rows className="h-3 w-3" />}
           </button>
         </div>
       </div>
 
       {/* Content View */}
-      <div className="p-3 text-sm max-h-[360px] overflow-y-auto leading-relaxed font-sans">
+      <div className="p-3 text-xs max-h-[360px] overflow-y-auto leading-relaxed font-sans">
         {viewMode === "inline" ? (
           <div className="whitespace-pre-wrap select-text">
             {diff.parts.map((part, index) => {
@@ -74,7 +81,7 @@ export function DiffViewer({
                 return (
                   <span
                     key={index}
-                    className="bg-emerald-100 text-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-200 font-medium underline decoration-emerald-500 underline-offset-2 px-0.5 rounded-sm"
+                    className="bg-accent/15 text-accent font-semibold px-0.5 rounded-none"
                   >
                     {part.value}
                   </span>
@@ -84,7 +91,7 @@ export function DiffViewer({
                 return (
                   <span
                     key={index}
-                    className="bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 line-through opacity-70 px-0.5 rounded-sm"
+                    className="bg-danger/15 text-danger line-through opacity-80 px-0.5 rounded-none"
                   >
                     {part.value}
                   </span>
@@ -94,50 +101,55 @@ export function DiffViewer({
             })}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-2.5 rounded border border-rose-200 dark:border-rose-900/40 bg-rose-50/30 dark:bg-rose-950/10">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-1">
-                Original
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-2 border border-line bg-bg">
+              <div className="font-mono text-[9px] uppercase tracking-wider text-danger mb-1">
+                ORIGINAL
               </div>
-              <div className="text-xs text-foreground/80 whitespace-pre-wrap">{originalText}</div>
+              <div className="text-[11px] text-muted whitespace-pre-wrap">{orig}</div>
             </div>
-            <div className="p-2.5 rounded border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-1">
-                Suggested Replacement
+
+            <div className="p-2 border border-line bg-bg">
+              <div className="font-mono text-[9px] uppercase tracking-wider text-accent mb-1">
+                MODIFIED
               </div>
-              <div className="text-xs text-foreground/90 whitespace-pre-wrap font-medium">
-                {suggestedText}
-              </div>
+              <div className="text-[11px] text-ink font-medium whitespace-pre-wrap">{sug}</div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Actions Footer */}
-      <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-        <button
+      {/* Action Footer */}
+      <div className="flex items-center justify-between px-3 py-2 bg-bg border-t border-line">
+        <Button
+          variant="outline"
+          size="sm"
           onClick={handleCopy}
-          className="h-7 px-2.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 transition"
+          className="h-6 px-2 text-[10px]"
         >
-          <Copy className="h-3.5 w-3.5 text-slate-400" />
-          <span>{copied ? "Copied" : "Copy"}</span>
-        </button>
+          {copied ? <Check className="h-3 w-3 mr-1 text-emerald-500" /> : <Copy className="h-3 w-3 mr-1" />}
+          <span>{copied ? "COPIED" : "COPY"}</span>
+        </Button>
 
         <div className="flex items-center gap-1.5">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onReject}
-            className="h-7 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1"
+            className="h-6 px-2.5 text-[10px]"
           >
-            <X className="h-3.5 w-3.5 text-slate-400" />
-            <span>Discard</span>
-          </button>
-          <button
+            DISMISS
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
             onClick={onAccept}
-            className="h-7 px-3 rounded-md bg-[#0268cc] hover:bg-[#0256a9] text-white text-xs font-semibold flex items-center gap-1 shadow-xs transition active:scale-[0.99]"
+            className="h-6 px-3 text-[10px]"
           >
-            <Check className="h-3.5 w-3.5" />
-            <span>Apply</span>
-          </button>
+            <Check className="h-3 w-3 mr-1" />
+            <span>ACCEPT</span>
+          </Button>
         </div>
       </div>
     </div>

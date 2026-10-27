@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   Check,
-  CheckCircle2,
   ChevronDown,
   Download,
   ExternalLink,
@@ -14,16 +13,16 @@ import {
   Globe,
   Key,
   Laptop,
-  Layers,
   Lock,
   RefreshCw,
-  Search,
   ShieldCheck,
   Sliders,
   Sparkles,
   Terminal,
-  X,
+  Star,
+  Copy,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/app-shell/theme-toggle";
 import { cn } from "@/lib/utils/cn";
 
 interface DemoSuggestion {
@@ -77,6 +76,7 @@ export default function HomePage() {
   ]);
 
   const [activeSuggestionId, setActiveSuggestionId] = useState<string>("s1");
+  const [isCopiedCommand, setIsCopiedCommand] = useState(false);
 
   const applySuggestion = (id: string) => {
     const s = suggestions.find((item) => item.id === id);
@@ -131,134 +131,223 @@ export default function HomePage() {
     },
   ];
 
+  const handleCopyQuickstart = () => {
+    navigator.clipboard.writeText("git clone https://github.com/binyamfeyissa/lingually.git && cd lingually && npm install && npm run dev");
+    setIsCopiedCommand(true);
+    setTimeout(() => setIsCopiedCommand(false), 2000);
+  };
+
   return (
-    <div className="min-h-screen bg-[#fbfbfd] text-slate-900 selection:bg-[#0268cc] selection:text-white font-sans antialiased">
-      {/* Navigation Bar */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <Link href="/" className="flex items-center space-x-2">
+    <div className="min-h-screen bg-bg text-ink font-sans antialiased selection:bg-invert-bg selection:text-invert-fg select-none">
+      {/* ========================================================================= */}
+      {/* HUD Navigation Bar */}
+      {/* ========================================================================= */}
+      <header className="sticky top-0 z-50 bg-bg/95 backdrop-blur-xs border-b border-line h-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
+          <div className="flex items-center">
+            <Link
+              href="/"
+              className="flex items-center gap-2 hover:opacity-85 transition py-1 pr-4 border-r border-line"
+              title="Lingually Homepage"
+            >
               <img
-                src="/Images/Lingually Logo.png"
+                src="/Images/Lingually icon.png"
                 alt="Lingually"
-                className="h-7 w-auto object-contain"
+                className="h-5 w-5 object-contain"
               />
+              <span className="font-display font-bold text-xs uppercase tracking-tight text-ink">
+                Lingually
+              </span>
             </Link>
-            <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-600">
-              <a href="#features" className="hover:text-slate-900 transition-colors">
-                Features
+
+            <nav className="hidden md:flex items-center pl-4 font-mono text-[11px] uppercase tracking-[0.14em] text-muted space-x-6">
+              <a href="#features" className="hover:text-ink transition-colors">
+                FEATURES
               </a>
-              <a href="#preview" className="hover:text-slate-900 transition-colors">
-                Product Preview
+              <a href="#preview" className="hover:text-ink transition-colors">
+                PREVIEW
               </a>
-              <a href="#platforms" className="hover:text-slate-900 transition-colors">
-                Platforms
+              <a href="#architecture" className="hover:text-ink transition-colors">
+                BYOK
               </a>
-              <Link href="/privacy" className="hover:text-slate-900 transition-colors">
-                Privacy
+              <a href="#platforms" className="hover:text-ink transition-colors">
+                PLATFORMS
+              </a>
+              <Link href="/privacy" className="hover:text-ink transition-colors">
+                PRIVACY
               </Link>
-              <a
-                href="https://github.com/binyamfeyissa/lingually"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-slate-900 transition-colors"
-              >
-                Open Source
-              </a>
             </nav>
           </div>
 
-          <div className="flex items-center space-x-3">
-            <Link
+          <div className="flex items-center gap-2 font-mono">
+            {/* Prominent Star Lingually on GitHub Button */}
+            <a
               href="https://github.com/binyamfeyissa/lingually"
               target="_blank"
               rel="noreferrer"
-              className="hidden sm:inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition"
+              className="inline-flex items-center gap-1.5 h-8 px-3 text-[10px] uppercase tracking-[0.12em] font-semibold border border-line-strong bg-bg text-ink hover:bg-invert-bg hover:text-invert-fg transition-colors"
+              title="Star Lingually on GitHub"
             >
               <Github className="w-3.5 h-3.5" />
-              <span>GitHub</span>
-            </Link>
+              <span className="hidden sm:inline">STAR ON GITHUB</span>
+              <span className="sm:hidden">STAR</span>
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400 ml-0.5" />
+            </a>
+
+            <ThemeToggle />
 
             <Link
               href="/editor"
-              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-white bg-[#0268cc] hover:bg-[#0256a9] px-4 py-2 rounded-lg shadow-sm transition hover:scale-[1.01]"
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[10px] uppercase tracking-[0.14em] font-semibold bg-invert-bg text-invert-fg hover:opacity-85 transition-opacity"
             >
-              <span>Launch Editor</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>LAUNCH EDITOR</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
         </div>
       </header>
 
+      {/* ========================================================================= */}
       {/* Hero Section */}
-      <section className="pt-20 pb-16 px-4 sm:px-6 text-center max-w-4xl mx-auto">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 leading-[1.15]">
-          Write better. Wherever you work.
-        </h1>
-        <p className="mt-5 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          Grammar, clarity, rewriting, and text analysis in one open-source writing assistant.
-          Choose your own AI provider and keep control of your writing.
-        </p>
+      {/* ========================================================================= */}
+      <section className="pt-16 pb-14 px-4 sm:px-6 max-w-5xl mx-auto">
+        <div className="relative p-6 sm:p-10 border border-line bg-bg-raised">
+          {/* Architectural Corner Crosshair Ticks */}
+          <span className="tick top-[-5px] left-[-5px]" />
+          <span className="tick top-[-5px] right-[-5px]" />
+          <span className="tick bottom-[-5px] left-[-5px]" />
+          <span className="tick bottom-[-5px] right-[-5px]" />
 
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            href="/editor"
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 text-sm font-semibold text-white bg-[#0268cc] hover:bg-[#0256a9] px-6 py-3 rounded-lg shadow-sm transition"
-          >
-            <span>Open the Editor</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <a
-            href="https://github.com/binyamfeyissa/lingually"
-            target="_blank"
-            rel="noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-6 py-3 rounded-lg shadow-sm transition"
-          >
-            <Github className="w-4 h-4 text-slate-600" />
-            <span>Explore the Open-Source Project</span>
-          </a>
+          <div className="flex items-center justify-between mb-6 border-b border-line pb-3">
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+              {"00 // OPEN-SOURCE AI WRITING WORKBENCH"}
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-accent border border-accent/30 px-2 py-0.5">
+              {"VERSION 2.0 // BYOK"}
+            </span>
+          </div>
+
+          <h1 className="font-display text-4xl sm:text-6xl font-bold tracking-tight text-ink leading-[1.08]">
+            Write clearly.{" "}
+            <span className="font-serif italic font-normal text-muted block sm:inline">
+              Rewrite confidently.
+            </span>{" "}
+            Everywhere.
+          </h1>
+
+          <p className="mt-5 text-sm sm:text-base text-muted max-w-2xl leading-relaxed font-sans">
+            A private, distraction-free writing studio and cross-platform assistant powered by your own AI keys.
+            Zero lock-in, local-first IndexedDB document storage, and multi-model intelligence across web and desktop.
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 font-mono">
+            <Link
+              href="/editor"
+              className="inline-flex items-center justify-center gap-2 h-11 px-6 text-xs uppercase tracking-[0.14em] font-semibold bg-invert-bg text-invert-fg hover:opacity-85 transition-opacity"
+            >
+              <span>OPEN WORKBENCH</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+
+            {/* Prominent Second Star Button in Hero */}
+            <a
+              href="https://github.com/binyamfeyissa/lingually"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 h-11 px-6 text-xs uppercase tracking-[0.14em] font-semibold border border-line-strong bg-bg text-ink hover:bg-invert-bg hover:text-invert-fg transition-colors"
+            >
+              <Github className="w-4 h-4" />
+              <span>STAR LINGUALLY ON GITHUB</span>
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            </a>
+          </div>
+
+          {/* Quickstart Terminal Box */}
+          <div className="mt-8 border border-line bg-bg font-mono text-xs">
+            <div className="flex items-center justify-between px-3 py-1.5 border-b border-line bg-bg-sunken/40 text-[10px] uppercase tracking-wider text-muted">
+              <span className="flex items-center gap-1.5">
+                <Terminal className="h-3 w-3" />
+                <span>{"BASH // QUICKSTART INSTALL & RUN"}</span>
+              </span>
+              <button
+                onClick={handleCopyQuickstart}
+                className="hover:text-ink transition flex items-center gap-1"
+                title="Copy shell command"
+              >
+                {isCopiedCommand ? (
+                  <>
+                    <Check className="h-3 w-3 text-emerald-500" />
+                    <span className="text-emerald-500">COPIED</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    <span>COPY</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="p-3 text-[11px] text-ink overflow-x-auto whitespace-nowrap">
+              <span className="text-muted mr-2">$</span>
+              git clone https://github.com/binyamfeyissa/lingually.git &amp;&amp; cd lingually &amp;&amp; npm install &amp;&amp; npm run dev
+            </div>
+          </div>
         </div>
       </section>
 
+      {/* ========================================================================= */}
       {/* Product Preview Section (The Centerpiece) */}
-      <section id="preview" className="pb-24 px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
-          {/* Editor Window Titlebar */}
-          <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-slate-300" />
-              <div className="w-3 h-3 rounded-full bg-slate-300" />
-              <div className="w-3 h-3 rounded-full bg-slate-300" />
-              <span className="text-xs text-slate-500 font-mono ml-2">Product Preview — Interactive Review</span>
+      {/* ========================================================================= */}
+      <section id="preview" className="py-10 px-4 sm:px-6 max-w-6xl mx-auto">
+        {/* HUD Section Bar */}
+        <div className="flex items-center justify-between border-y border-line px-4 sm:px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted mb-6">
+          <span>{"01 // INTERACTIVE WORKBENCH PREVIEW"}</span>
+          <span className="text-accent">TRY INLINE EDITING</span>
+        </div>
+
+        <div className="relative border border-line bg-bg-raised">
+          <span className="tick top-[-5px] left-[-5px]" />
+          <span className="tick top-[-5px] right-[-5px]" />
+          <span className="tick bottom-[-5px] left-[-5px]" />
+          <span className="tick bottom-[-5px] right-[-5px]" />
+
+          {/* Window Titlebar */}
+          <div className="border-b border-line px-4 py-2 flex items-center justify-between font-mono text-[11px] bg-bg">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 bg-ink" />
+              <span className="uppercase tracking-wider text-ink font-semibold">
+                {"SAMPLE // PROPOSAL_DRAFT.MD"}
+              </span>
             </div>
             <button
               onClick={resetDemo}
-              className="inline-flex items-center space-x-1.5 text-xs text-slate-500 hover:text-slate-800 transition"
+              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted hover:text-ink transition"
               title="Reset sample text"
             >
               <RefreshCw className="w-3 h-3" />
-              <span>Reset</span>
+              <span>RESET SAMPLE</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[420px]">
             {/* Writing Surface */}
-            <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200">
+            <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-line bg-bg">
               <div>
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                  Draft Document
-                </h3>
-                <div className="text-xl leading-[1.8] text-slate-800 font-serif">
+                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-4">
+                  DOCUMENT CANVAS
+                </span>
+
+                <div className="text-lg sm:text-xl leading-[1.85] text-ink font-sans select-text">
                   {suggestions.find((s) => s.id === "s1")?.applied ? (
-                    <span>Lingually is <span className="text-emerald-700 bg-emerald-50 px-1 rounded font-medium">definitely</span> </span>
+                    <span>Lingually is <span className="text-accent bg-accent/15 px-1 font-semibold">definitely</span> </span>
                   ) : (
                     <span>
                       Lingually is{" "}
                       <button
                         onClick={() => setActiveSuggestionId("s1")}
                         className={cn(
-                          "underline decoration-rose-500 decoration-wavy decoration-2 cursor-pointer transition px-0.5 rounded",
-                          activeSuggestionId === "s1" ? "bg-rose-50 text-rose-900 font-medium" : "text-slate-900"
+                          "underline decoration-danger decoration-2 cursor-pointer transition px-1",
+                          activeSuggestionId === "s1" ? "bg-danger/15 text-danger font-semibold" : "text-ink"
                         )}
                       >
                         definately
@@ -269,14 +358,14 @@ export default function HomePage() {
                   <span>the best tool </span>
 
                   {suggestions.find((s) => s.id === "s2")?.applied ? (
-                    <span><span className="text-emerald-700 bg-emerald-50 px-1 rounded font-medium">to</span> </span>
+                    <span><span className="text-accent bg-accent/15 px-1 font-semibold">to</span> </span>
                   ) : (
                     <span>
                       <button
                         onClick={() => setActiveSuggestionId("s2")}
                         className={cn(
-                          "underline decoration-sky-500 decoration-wavy decoration-2 cursor-pointer transition px-0.5 rounded",
-                          activeSuggestionId === "s2" ? "bg-sky-50 text-sky-900 font-medium" : "text-slate-900"
+                          "underline decoration-accent decoration-2 cursor-pointer transition px-1",
+                          activeSuggestionId === "s2" ? "bg-accent/15 text-accent font-semibold" : "text-ink"
                         )}
                       >
                         in order to
@@ -287,14 +376,14 @@ export default function HomePage() {
                   <span>write with clarity. </span>
 
                   {suggestions.find((s) => s.id === "s4")?.applied ? (
-                    <span><span className="text-emerald-700 bg-emerald-50 px-1 rounded font-medium">We recommend</span> </span>
+                    <span><span className="text-accent bg-accent/15 px-1 font-semibold">We recommend</span> </span>
                   ) : (
                     <span>
                       <button
                         onClick={() => setActiveSuggestionId("s4")}
                         className={cn(
-                          "underline decoration-purple-500 decoration-wavy decoration-2 cursor-pointer transition px-0.5 rounded",
-                          activeSuggestionId === "s4" ? "bg-purple-50 text-purple-900 font-medium" : "text-slate-900"
+                          "underline decoration-purple-500 decoration-2 cursor-pointer transition px-1",
+                          activeSuggestionId === "s4" ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold" : "text-ink"
                         )}
                       >
                         You should probably consider
@@ -305,14 +394,14 @@ export default function HomePage() {
                   <span>using it for </span>
 
                   {suggestions.find((s) => s.id === "s3")?.applied ? (
-                    <span><span className="text-emerald-700 bg-emerald-50 px-1 rounded font-medium">exceptional</span> </span>
+                    <span><span className="text-accent bg-accent/15 px-1 font-semibold">exceptional</span> </span>
                   ) : (
                     <span>
                       <button
                         onClick={() => setActiveSuggestionId("s3")}
                         className={cn(
-                          "underline decoration-emerald-500 decoration-wavy decoration-2 cursor-pointer transition px-0.5 rounded",
-                          activeSuggestionId === "s3" ? "bg-emerald-50 text-emerald-900 font-medium" : "text-slate-900"
+                          "underline decoration-emerald-500 decoration-2 cursor-pointer transition px-1",
+                          activeSuggestionId === "s3" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold" : "text-ink"
                         )}
                       >
                         very good
@@ -325,119 +414,100 @@ export default function HomePage() {
               </div>
 
               {/* Status footer */}
-              <div className="pt-6 mt-8 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <div className="flex items-center space-x-3">
-                  <span className="inline-flex items-center space-x-1">
-                    <span className="w-2 h-2 rounded-full bg-rose-500" />
-                    <span>Correctness</span>
-                  </span>
-                  <span className="inline-flex items-center space-x-1">
-                    <span className="w-2 h-2 rounded-full bg-sky-500" />
-                    <span>Clarity</span>
-                  </span>
-                  <span className="inline-flex items-center space-x-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span>Engagement</span>
-                  </span>
-                  <span className="inline-flex items-center space-x-1">
-                    <span className="w-2 h-2 rounded-full bg-purple-500" />
-                    <span>Delivery</span>
-                  </span>
+              <div className="pt-4 mt-6 border-t border-line flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-muted">
+                <div className="flex items-center gap-3">
+                  <span>CORRECTNESS</span>
+                  <span>/</span>
+                  <span>CLARITY</span>
+                  <span>/</span>
+                  <span>ENGAGEMENT</span>
+                  <span>/</span>
+                  <span>DELIVERY</span>
                 </div>
-                <div className="font-medium text-slate-700">
-                  {suggestions.length - appliedCount} pending issues
+                <div className="text-ink font-semibold">
+                  {suggestions.length - appliedCount} PENDING
                 </div>
               </div>
             </div>
 
             {/* Review Sidebar Panel */}
-            <div className="lg:col-span-5 bg-slate-50/50 p-6 flex flex-col justify-between">
+            <div className="lg:col-span-5 bg-bg-raised p-5 flex flex-col justify-between font-mono text-xs">
               <div>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+                <div className="flex items-center justify-between pb-3 border-b border-line mb-4">
                   <div>
-                    <h4 className="text-xs uppercase tracking-wider font-semibold text-slate-500">
-                      Overall Score
-                    </h4>
-                    <div className="text-2xl font-bold text-slate-900 mt-0.5">
-                      {score} <span className="text-xs text-slate-400 font-normal">/ 100</span>
+                    <span className="text-[10px] uppercase tracking-wider text-muted">OVERALL SCORE</span>
+                    <div className="font-display text-2xl font-bold text-ink mt-0.5">
+                      {score} <span className="text-xs text-muted font-mono">/ 100</span>
                     </div>
                   </div>
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    {score >= 90 ? "Strong" : "Good"}
+                  <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 border border-line-strong text-ink font-semibold">
+                    {score >= 90 ? "OPTIMAL" : "NEEDS POLISH"}
                   </span>
                 </div>
 
                 {/* Active Suggestion Card */}
                 {activeSuggestion && (
-                  <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span
-                        className={cn(
-                          "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded",
-                          activeSuggestion.category === "correctness" && "bg-rose-50 text-rose-700",
-                          activeSuggestion.category === "clarity" && "bg-sky-50 text-sky-700",
-                          activeSuggestion.category === "engagement" && "bg-emerald-50 text-emerald-700",
-                          activeSuggestion.category === "delivery" && "bg-purple-50 text-purple-700"
-                        )}
-                      >
+                  <div className="border border-line-strong bg-bg p-3.5 mb-3 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 border border-line text-ink">
                         {activeSuggestion.category}
                       </span>
                       {activeSuggestion.applied && (
-                        <span className="text-xs text-emerald-600 font-medium inline-flex items-center space-x-1">
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Applied</span>
+                        <span className="text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          <span>APPLIED</span>
                         </span>
                       )}
                     </div>
 
-                    <p className="text-xs text-slate-600 mb-3">{activeSuggestion.reason}</p>
+                    <p className="font-sans text-[11px] text-muted">{activeSuggestion.reason}</p>
 
-                    <div className="flex items-center space-x-2 text-xs font-mono bg-slate-50 p-2.5 rounded border border-slate-200 mb-3">
-                      <span className="line-through text-rose-600">{activeSuggestion.original}</span>
-                      <span className="text-slate-400">→</span>
-                      <span className="text-emerald-700 font-semibold">{activeSuggestion.replacement}</span>
+                    <div className="flex items-center gap-2 text-xs font-mono bg-bg-raised p-2 border border-line">
+                      <span className="line-through text-danger">{activeSuggestion.original}</span>
+                      <span className="text-muted">→</span>
+                      <span className="text-accent font-semibold">{activeSuggestion.replacement}</span>
                     </div>
 
                     {!activeSuggestion.applied ? (
                       <button
                         onClick={() => applySuggestion(activeSuggestion.id)}
-                        className="w-full inline-flex items-center justify-center space-x-1.5 text-xs font-semibold text-white bg-[#0268cc] hover:bg-[#0256a9] py-2 rounded-md transition"
+                        className="w-full inline-flex items-center justify-center gap-1.5 text-[11px] font-mono uppercase tracking-[0.12em] font-semibold bg-invert-bg text-invert-fg hover:opacity-85 py-2 transition"
                       >
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Accept Suggestion</span>
+                        <Check className="w-3 h-3" />
+                        <span>ACCEPT CHANGE</span>
                       </button>
                     ) : (
-                      <div className="text-center text-xs text-slate-400 py-1">
-                        Already applied to text
+                      <div className="text-center text-[10px] font-mono text-muted py-1 uppercase tracking-wider">
+                        MODIFICATION APPLIED TO DOCUMENT
                       </div>
                     )}
                   </div>
                 )}
 
                 {/* Suggestions List */}
-                <div className="space-y-1.5">
-                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    Suggestions ({suggestions.length})
-                  </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase tracking-wider text-muted block mb-1">
+                    SUGGESTION QUEUE ({suggestions.length})
+                  </span>
                   {suggestions.map((s) => (
                     <button
                       key={s.id}
                       onClick={() => setActiveSuggestionId(s.id)}
                       className={cn(
-                        "w-full flex items-center justify-between p-2.5 rounded-lg border text-left text-xs transition",
+                        "w-full flex items-center justify-between p-2 border text-left text-xs transition rounded-none",
                         activeSuggestionId === s.id
-                          ? "bg-white border-[#0268cc] shadow-sm"
-                          : "bg-white/60 border-slate-200 hover:bg-white",
-                        s.applied && "opacity-50"
+                          ? "bg-bg border-line-strong text-ink font-semibold"
+                          : "bg-transparent border-line text-muted hover:text-ink",
+                        s.applied && "opacity-40"
                       )}
                     >
-                      <span className="font-medium text-slate-800">
+                      <span className="truncate pr-2">
                         {s.original} → {s.replacement}
                       </span>
                       {s.applied ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <Check className="w-3 h-3 text-emerald-500 shrink-0" />
                       ) : (
-                        <span className="text-[#0268cc] text-[11px] font-semibold">Review</span>
+                        <span className="text-accent text-[10px] uppercase shrink-0">VIEW</span>
                       )}
                     </button>
                   ))}
@@ -448,398 +518,364 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Feature Presentation (Varied Editorial Layout) */}
-      <section id="features" className="py-20 border-t border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="max-w-2xl mb-16">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#0268cc]">
-              Core Capabilities
-            </h2>
-            <h3 className="text-3xl font-bold tracking-tight text-slate-900 mt-2">
-              Designed around the act of writing
-            </h3>
-            <p className="mt-3 text-slate-600 leading-relaxed">
-              Every feature in Lingually focuses on helping you produce clear, accurate prose
-              without getting between you and your document.
+      {/* ========================================================================= */}
+      {/* Section 01: Crafting Capabilities (Hairline Grid) */}
+      {/* ========================================================================= */}
+      <section id="features" className="py-14 px-4 sm:px-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between border-y border-line px-4 sm:px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted mb-8">
+          <span>02 / CRAFTING CAPABILITIES</span>
+          <span className="text-accent">MULTI-LAYER WORKBENCH</span>
+        </div>
+
+        <div className="hairline-grid grid-cols-1 md:grid-cols-3">
+          <div className="p-6 bg-bg space-y-2">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted">{"02.1 // HEURISTICS"}</span>
+            <h3 className="font-display text-lg font-bold text-ink">Deterministic Syntax Engine</h3>
+            <p className="font-sans text-xs text-muted leading-relaxed">
+              Layer A executes zero-latency rule checks directly in WebAssembly and browser threads.
+              Catches typos, confused homophones, and dangling modifiers without sending words across the network.
             </p>
           </div>
 
-          <div className="space-y-16">
-            {/* Feature 1: Catch mistakes */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-              <div className="md:col-span-5">
-                <span className="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2 py-0.5 rounded">
-                  Correctness & Clarity
-                </span>
-                <h4 className="text-2xl font-bold text-slate-900 mt-2">
-                  Catch mistakes while you write
-                </h4>
-                <p className="mt-3 text-slate-600 text-sm leading-relaxed">
-                  Layer A uses local deterministic rules to flag grammatical errors, typos, and
-                  confused words instantly with zero network delay. Suggestions are underlined
-                  subtly without visually cluttering your draft.
-                </p>
-              </div>
-              <div className="md:col-span-7 bg-slate-50 border border-slate-200 rounded-xl p-6">
-                <div className="font-mono text-xs text-slate-700 space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-rose-500 font-bold">✕</span>
-                    <span className="line-through text-slate-400">They could of called us yesterday.</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-emerald-600 font-bold">✓</span>
-                    <span className="font-medium text-slate-900">They could have called us yesterday.</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="p-6 bg-bg space-y-2">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted">{"02.2 // REWRITE"}</span>
+            <h3 className="font-display text-lg font-bold text-ink">Contextual Paraphraser</h3>
+            <p className="font-sans text-xs text-muted leading-relaxed">
+              Choose from 7 writing styles: Standard, Fluent, Formal, Simple, Creative, Concise, or Expanded.
+              Generates clean visual diffs so you review every replaced token before accepting.
+            </p>
+          </div>
 
-            {/* Feature 2: Rewrite without losing voice */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-              <div className="md:col-span-5 md:order-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#0268cc] bg-blue-50 px-2 py-0.5 rounded">
-                  Rewriting & Tone
-                </span>
-                <h4 className="text-2xl font-bold text-slate-900 mt-2">
-                  Rewrite without losing your voice
-                </h4>
-                <p className="mt-3 text-slate-600 text-sm leading-relaxed">
-                  Transform sentences into formal, casual, concise, or expanded variants.
-                  Every rewrite shows an exact visual diff, so you verify every word before
-                  applying changes to your document.
-                </p>
-              </div>
-              <div className="md:col-span-7 md:order-1 bg-slate-50 border border-slate-200 rounded-xl p-6">
-                <div className="space-y-3 text-xs">
-                  <div className="text-slate-500 font-medium uppercase tracking-wider">Before & After Diff</div>
-                  <div className="bg-white border border-slate-200 p-3 rounded-lg leading-relaxed text-slate-700">
-                    <span className="line-through text-rose-500 bg-rose-50 px-1 rounded">Due to the fact that we experienced delays</span>{" "}
-                    <span className="text-emerald-700 bg-emerald-50 px-1 rounded font-medium">Because of unexpected delays</span>, we delivered the proposal this morning.
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="p-6 bg-bg space-y-2">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted">{"02.3 // STORAGE"}</span>
+            <h3 className="font-display text-lg font-bold text-ink">Local-First Document Vault</h3>
+            <p className="font-sans text-xs text-muted leading-relaxed">
+              Your drafts and automatic version snapshots live exclusively on your device inside IndexedDB.
+              No cloud accounts, no centralized document leaks, and full offline export capabilities.
+            </p>
+          </div>
 
-            {/* Feature 3: Plagiarism & AI-writing indicators */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-              <div className="md:col-span-5">
-                <span className="text-xs font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
-                  Analysis
-                </span>
-                <h4 className="text-2xl font-bold text-slate-900 mt-2">
-                  Review tone, clarity, and text matches
-                </h4>
-                <p className="mt-3 text-slate-600 text-sm leading-relaxed">
-                  Compute readability scores (Flesch-Kincaid, Gunning Fog), analyze sentence
-                  burstiness, extract distinctive attribution queries, and inspect potential
-                  duplications against your saved document library.
-                </p>
-              </div>
-              <div className="md:col-span-7 bg-slate-50 border border-slate-200 rounded-xl p-6">
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="bg-white border border-slate-200 p-3 rounded-lg">
-                    <div className="text-lg font-bold text-slate-900">68</div>
-                    <div className="text-[10px] text-slate-500 uppercase mt-0.5">Reading Ease</div>
-                  </div>
-                  <div className="bg-white border border-slate-200 p-3 rounded-lg">
-                    <div className="text-lg font-bold text-slate-900">8.2</div>
-                    <div className="text-[10px] text-slate-500 uppercase mt-0.5">Grade Level</div>
-                  </div>
-                  <div className="bg-white border border-slate-200 p-3 rounded-lg">
-                    <div className="text-lg font-bold text-emerald-600">0%</div>
-                    <div className="text-[10px] text-slate-500 uppercase mt-0.5">Corpus Match</div>
-                  </div>
-                </div>
-              </div>
+          <div className="p-6 bg-bg space-y-2">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted">{"02.4 // ECOSYSTEM"}</span>
+            <h3 className="font-display text-lg font-bold text-ink">Cross-Platform Assistance</h3>
+            <p className="font-sans text-xs text-muted leading-relaxed">
+              Consistent writing intelligence wherever you work: full Web Workbench, Chrome Extension for text inputs,
+              and native Tauri 2 desktop applications for macOS and Windows.
+            </p>
+          </div>
+
+          <div className="p-6 bg-bg space-y-2">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted">{"02.5 // METRICS"}</span>
+            <h3 className="font-display text-lg font-bold text-ink">Readability & Plagiarism</h3>
+            <p className="font-sans text-xs text-muted leading-relaxed">
+              Instant evaluation of Flesch Reading Ease, Flesch-Kincaid Grade Level, sentence burstiness,
+              and distinctive query scans to preserve authentic voice and academic integrity.
+            </p>
+          </div>
+
+          <div className="p-6 bg-bg space-y-2">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted">{"02.6 // BYOK"}</span>
+            <h3 className="font-display text-lg font-bold text-ink">Provider Sovereignty</h3>
+            <p className="font-sans text-xs text-muted leading-relaxed">
+              Freedom to plug in OpenAI, Anthropic Claude, Google Gemini, Groq, or 100% offline local Ollama models.
+              Zero application markup, zero token subscriptions.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* Section 02: The Editorial Transformation (Diff View) */}
+      {/* ========================================================================= */}
+      <section className="py-14 px-4 sm:px-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between border-y border-line px-4 sm:px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted mb-8">
+          <span>03 / THE EDITORIAL TRANSFORMATION</span>
+          <span className="text-accent">INLINE DIFF ARCHITECTURE</span>
+        </div>
+
+        <div className="hairline-grid grid-cols-1 md:grid-cols-2">
+          <div className="p-6 bg-bg space-y-3">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-danger">{"BEFORE // UNREFINED DRAFT"}</div>
+            <p className="font-sans text-sm text-muted leading-relaxed">
+              &quot;Due to the fact that we experienced unexpected server latency issues, we were unable to complete the upload until this morning.&quot;
+            </p>
+            <div className="font-mono text-[10px] text-muted border-t border-line pt-2">
+              WORDS: 20 • READING EASE: 44 (HARD) • PASSIVE CONSTRUCTIONS: 1
+            </div>
+          </div>
+
+          <div className="p-6 bg-bg space-y-3">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-accent">{"AFTER // LINGUALLY REFINED"}</div>
+            <p className="font-sans text-sm text-ink leading-relaxed">
+              &quot;Because server latency caused unexpected delays, we completed the upload this morning.&quot;
+            </p>
+            <div className="font-mono text-[10px] text-accent border-t border-line pt-2 font-semibold">
+              WORDS: 12 (-40%) • READING EASE: 68 (CLEAR) • TONE: PROFESSIONAL
             </div>
           </div>
         </div>
       </section>
 
-      {/* Open-Source & Privacy Principles */}
-      <section className="py-20 border-t border-slate-200 bg-[#fbfbfd]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="max-w-2xl mb-12">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#0268cc]">
-              Architecture & Trust
-            </h2>
-            <h3 className="text-3xl font-bold tracking-tight text-slate-900 mt-2">
-              Transparent, local-first by design
-            </h3>
-            <p className="mt-3 text-slate-600 text-sm leading-relaxed">
-              We do not operate a proprietary backend that reads, indexes, or monetizes your writing.
-              You maintain full ownership of your data and API credentials.
+      {/* ========================================================================= */}
+      {/* Section 03: BYOK & Security Architecture */}
+      {/* ========================================================================= */}
+      <section id="architecture" className="py-14 px-4 sm:px-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between border-y border-line px-4 sm:px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted mb-8">
+          <span>04 / BYOK & LOCAL-FIRST SECURITY</span>
+          <span className="text-accent">ZERO DATA RETENTION</span>
+        </div>
+
+        <div className="hairline-grid grid-cols-1 md:grid-cols-3">
+          <div className="p-6 bg-bg space-y-2">
+            <Key className="w-5 h-5 text-accent" />
+            <h4 className="font-display text-base font-bold text-ink">Direct Provider Billing</h4>
+            <p className="font-sans text-xs text-muted leading-relaxed">
+              Connect your own API key directly. You pay pennies per 1,000 tokens consumed rather than
+              a recurring \$15–\$30/month markup to an AI software reseller.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <Key className="w-5 h-5 text-[#0268cc] mb-3" />
-              <h4 className="text-base font-bold text-slate-900">Bring Your Own Key</h4>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Connect OpenAI, Anthropic, Gemini, Groq, Mistral, or a local Ollama instance.
-                Your keys remain on your machine and are sent only to the provider you select.
+          <div className="p-6 bg-bg space-y-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-500" />
+            <h4 className="font-display text-base font-bold text-ink">Stateless Route Handlers</h4>
+            <p className="font-sans text-xs text-muted leading-relaxed">
+              Requests pass through a zero-retention Next.js Route Handler to bypass browser CORS.
+              No prompts, outputs, or keys are ever logged to persistent disk on the server.
+            </p>
+          </div>
+
+          <div className="p-6 bg-bg space-y-2">
+            <Sliders className="w-5 h-5 text-purple-500" />
+            <h4 className="font-display text-base font-bold text-ink">Offline Local Ollama</h4>
+            <p className="font-sans text-xs text-muted leading-relaxed">
+              Prefer 100% privacy? Run open-weights models like Llama 3.2 or Mistral locally on your machine.
+              Zero internet access required.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* Section 04: Cross-Platform System */}
+      {/* ========================================================================= */}
+      <section id="platforms" className="py-14 px-4 sm:px-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between border-y border-line px-4 sm:px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted mb-8">
+          <span>05 / CROSS-PLATFORM SYSTEM</span>
+          <span className="text-accent">MULTI-DEVICE MATRIX</span>
+        </div>
+
+        <div className="hairline-grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Web */}
+          <div className="p-5 bg-bg flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between font-mono text-[10px] text-muted mb-2">
+                <Globe className="w-4 h-4 text-accent" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/30 px-1 py-0.2">
+                  LIVE
+                </span>
+              </div>
+              <h4 className="font-display text-sm font-bold text-ink">Web Workbench</h4>
+              <p className="font-sans text-xs text-muted mt-1 leading-relaxed">
+                Full distraction-free document editor with 3-tab review sidebar, revisions, and export.
               </p>
             </div>
+            <Link
+              href="/editor"
+              className="inline-flex items-center justify-center gap-1.5 h-8 font-mono text-[10px] uppercase tracking-wider font-semibold bg-invert-bg text-invert-fg hover:opacity-85 transition"
+            >
+              <span>LAUNCH WEB</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 mb-3" />
-              <h4 className="text-base font-bold text-slate-900">Local-First Storage</h4>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                All documents and version snapshots reside in your browser&apos;s IndexedDB.
-                There is no central database, no user account requirement, and no cloud draft storage.
+          {/* Chrome */}
+          <div className="p-5 bg-bg flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between font-mono text-[10px] text-muted mb-2">
+                <Terminal className="w-4 h-4 text-accent" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/30 px-1 py-0.2">
+                  PACKAGE
+                </span>
+              </div>
+              <h4 className="font-display text-sm font-bold text-ink">Chrome Extension</h4>
+              <p className="font-sans text-xs text-muted mt-1 leading-relaxed">
+                Inline grammar checks and floating suggestion cards across web inputs, emails, and forms.
               </p>
             </div>
+            <a
+              href="/downloads/lingually-chrome-extension.zip"
+              download
+              className="inline-flex items-center justify-center gap-1.5 h-8 font-mono text-[10px] uppercase tracking-wider font-semibold border border-line text-ink hover:bg-bg-raised transition"
+            >
+              <Download className="w-3 h-3" />
+              <span>DOWNLOAD ZIP</span>
+            </a>
+          </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <Sliders className="w-5 h-5 text-purple-600 mb-3" />
-              <h4 className="text-base font-bold text-slate-900">User-Controlled Requests</h4>
-              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                Spelling and mechanical grammar checks run locally. External AI calls only occur
-                when you explicitly initiate a rewrite, summary, or custom prompt.
+          {/* macOS */}
+          <div className="p-5 bg-bg flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between font-mono text-[10px] text-muted mb-2">
+                <Laptop className="w-4 h-4 text-accent" />
+                <span className="text-muted border border-line px-1 py-0.2">TAURI 2</span>
+              </div>
+              <h4 className="font-display text-sm font-bold text-ink">macOS Desktop</h4>
+              <p className="font-sans text-xs text-muted mt-1 leading-relaxed">
+                Universal binary supporting Apple Silicon (M-series) and Intel architectures with native shortcuts.
               </p>
             </div>
+            <Link
+              href="/docs/MACOS_BUILD.md"
+              className="inline-flex items-center justify-center gap-1.5 h-8 font-mono text-[10px] uppercase tracking-wider font-semibold border border-line text-ink hover:bg-bg-raised transition"
+            >
+              <ExternalLink className="w-3 h-3" />
+              <span>BUILD DOCS</span>
+            </Link>
+          </div>
+
+          {/* Windows */}
+          <div className="p-5 bg-bg flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between font-mono text-[10px] text-muted mb-2">
+                <Laptop className="w-4 h-4 text-accent" />
+                <span className="text-muted border border-line px-1 py-0.2">TAURI 2</span>
+              </div>
+              <h4 className="font-display text-sm font-bold text-ink">Windows Desktop</h4>
+              <p className="font-sans text-xs text-muted mt-1 leading-relaxed">
+                64-bit application with Windows UI Automation hooks, system tray, and local persistence.
+              </p>
+            </div>
+            <Link
+              href="/docs/WINDOWS_BUILD.md"
+              className="inline-flex items-center justify-center gap-1.5 h-8 font-mono text-[10px] uppercase tracking-wider font-semibold border border-line text-ink hover:bg-bg-raised transition"
+            >
+              <ExternalLink className="w-3 h-3" />
+              <span>BUILD DOCS</span>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Platforms Section */}
-      <section id="platforms" className="py-20 border-t border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="max-w-2xl mb-12">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#0268cc]">
-              Multi-Platform Availability
-            </h2>
-            <h3 className="text-3xl font-bold tracking-tight text-slate-900 mt-2">
-              Use Lingually wherever you write
-            </h3>
-            <p className="mt-3 text-slate-600 text-sm leading-relaxed">
-              Clear statuses for every supported platform. No placeholder buttons or missing files.
-            </p>
-          </div>
+      {/* ========================================================================= */}
+      {/* Section 05: Open Source Callout & GitHub Star */}
+      {/* ========================================================================= */}
+      <section className="py-14 px-4 sm:px-6 max-w-6xl mx-auto">
+        <div className="relative p-8 sm:p-12 border border-line bg-bg-raised text-center space-y-4">
+          <span className="tick top-[-5px] left-[-5px]" />
+          <span className="tick top-[-5px] right-[-5px]" />
+          <span className="tick bottom-[-5px] left-[-5px]" />
+          <span className="tick bottom-[-5px] right-[-5px]" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Web */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Globe className="w-5 h-5 text-[#0268cc]" />
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Available
-                  </span>
-                </div>
-                <h4 className="text-sm font-bold text-slate-900">Web Workbench</h4>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Full rich-text document editor with 3-tab review sidebar, version history, and file export.
-                </p>
-              </div>
-              <Link
-                href="/editor"
-                className="mt-6 inline-flex items-center justify-center space-x-1.5 text-xs font-semibold text-white bg-[#0268cc] hover:bg-[#0256a9] py-2 rounded-lg transition"
-              >
-                <span>Launch in Browser</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
+            {"06 // COMMUNITY & FREEDOM"}
+          </span>
 
-            {/* Chrome */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-5 h-5 rounded-full bg-[#0268cc] flex items-center justify-center text-white text-[10px] font-bold">
-                    C
-                  </div>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Download
-                  </span>
-                </div>
-                <h4 className="text-sm font-bold text-slate-900">Chrome Extension</h4>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Inline writing assistance and floating suggestion cards for textareas and web editors.
-                </p>
-              </div>
-              <a
-                href="/downloads/lingually-chrome-extension.zip"
-                download
-                className="mt-6 inline-flex items-center justify-center space-x-1.5 text-xs font-semibold text-slate-800 bg-white hover:bg-slate-100 border border-slate-200 py-2 rounded-lg transition"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Extension (.zip)</span>
-              </a>
-            </div>
+          <h2 className="font-display text-2xl sm:text-4xl font-bold tracking-tight text-ink max-w-xl mx-auto leading-tight">
+            Built for writers, researchers, and engineers who value their privacy.
+          </h2>
 
-            {/* macOS */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Laptop className="w-5 h-5 text-purple-600" />
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-200 text-slate-700">
-                    Source Guide
-                  </span>
-                </div>
-                <h4 className="text-sm font-bold text-slate-900">macOS Desktop</h4>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Tauri 2 application supporting Apple Silicon (M-series) and Intel architectures.
-                </p>
-              </div>
-              <Link
-                href="/docs/MACOS_BUILD.md"
-                className="mt-6 inline-flex items-center justify-center space-x-1.5 text-xs font-semibold text-slate-800 bg-white hover:bg-slate-100 border border-slate-200 py-2 rounded-lg transition"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Setup Guide</span>
-              </Link>
-            </div>
+          <p className="font-sans text-xs sm:text-sm text-muted max-w-lg mx-auto leading-relaxed">
+            Lingually is 100% open source under the MIT License. Support the project by starring the repository on GitHub.
+          </p>
 
-            {/* Windows */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Terminal className="w-5 h-5 text-emerald-600" />
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-200 text-slate-700">
-                    Source Guide
-                  </span>
-                </div>
-                <h4 className="text-sm font-bold text-slate-900">Windows Desktop</h4>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Tauri 2 64-bit application with UI Automation hooks and system tray menu.
-                </p>
-              </div>
-              <Link
-                href="/docs/WINDOWS_BUILD.md"
-                className="mt-6 inline-flex items-center justify-center space-x-1.5 text-xs font-semibold text-slate-800 bg-white hover:bg-slate-100 border border-slate-200 py-2 rounded-lg transition"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Setup Guide</span>
-              </Link>
-            </div>
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 font-mono">
+            {/* Prominent Callout Star Button */}
+            <a
+              href="https://github.com/binyamfeyissa/lingually"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 h-11 px-8 text-xs uppercase tracking-[0.14em] font-semibold bg-invert-bg text-invert-fg hover:opacity-85 transition-opacity"
+            >
+              <Github className="w-4 h-4" />
+              <span>STAR LINGUALLY ON GITHUB</span>
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            </a>
+
+            <Link
+              href="/editor"
+              className="inline-flex items-center gap-2 h-11 px-6 text-xs uppercase tracking-[0.14em] font-semibold border border-line-strong bg-bg text-ink hover:bg-invert-bg hover:text-invert-fg transition-colors"
+            >
+              <span>TRY WEB EDITOR</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Simplified, Factual Comparison */}
-      <section className="py-20 border-t border-slate-200 bg-[#fbfbfd]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="text-center max-w-xl mx-auto mb-10">
-            <h3 className="text-2xl font-bold text-slate-900">
-              Clear differences, simple pricing
-            </h3>
-            <p className="mt-2 text-sm text-slate-600">
-              How Lingually compares to closed proprietary writing assistants.
-            </p>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
-                  <th className="p-4">Attribute</th>
-                  <th className="p-4 text-[#0268cc]">Lingually</th>
-                  <th className="p-4 text-slate-500">Proprietary Assistants</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                <tr>
-                  <td className="p-4 font-semibold text-slate-900">Software License</td>
-                  <td className="p-4 text-emerald-700 font-semibold">100% Open Source (MIT)</td>
-                  <td className="p-4 text-slate-500">Closed Source / Proprietary</td>
-                </tr>
-                <tr>
-                  <td className="p-4 font-semibold text-slate-900">Software Cost</td>
-                  <td className="p-4 text-emerald-700 font-semibold">$0 software fee</td>
-                  <td className="p-4 text-slate-500">Subscription required ($12 – $30/mo)</td>
-                </tr>
-                <tr>
-                  <td className="p-4 font-semibold text-slate-900">AI Model Usage</td>
-                  <td className="p-4 text-emerald-700 font-semibold">Direct provider billing or free local models</td>
-                  <td className="p-4 text-slate-500">Bundled markup included in monthly fee</td>
-                </tr>
-                <tr>
-                  <td className="p-4 font-semibold text-slate-900">Document Storage</td>
-                  <td className="p-4 text-emerald-700 font-semibold">Local-first on user device</td>
-                  <td className="p-4 text-slate-500">Cloud database storage</td>
-                </tr>
-                <tr>
-                  <td className="p-4 font-semibold text-slate-900">Model Flexibility</td>
-                  <td className="p-4 text-emerald-700 font-semibold">OpenAI, Anthropic, Gemini, Groq, Ollama</td>
-                  <td className="p-4 text-slate-500">Locked to vendor-selected models</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
+      {/* ========================================================================= */}
       {/* FAQ Section */}
-      <section className="py-20 border-t border-slate-200 bg-white">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h3 className="text-2xl font-bold text-slate-900">Frequently Asked Questions</h3>
-          </div>
+      {/* ========================================================================= */}
+      <section className="py-14 px-4 sm:px-6 max-w-4xl mx-auto">
+        <div className="flex items-center justify-between border-y border-line px-4 sm:px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted mb-8">
+          <span>{"07 // FREQUENTLY ASKED QUESTIONS"}</span>
+          <span className="text-accent">DETAILS & LICENSING</span>
+        </div>
 
-          <div className="space-y-3">
-            {faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden transition"
+        <div className="space-y-2 font-mono text-xs">
+          {faqs.map((faq, idx) => (
+            <div
+              key={idx}
+              className="border border-line bg-bg transition-colors"
+            >
+              <button
+                onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                className="w-full p-4 text-left flex items-center justify-between text-xs sm:text-sm text-ink font-semibold uppercase tracking-wider"
               >
-                <button
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full p-4 text-left flex items-center justify-between font-semibold text-xs sm:text-sm text-slate-900 hover:text-[#0268cc] transition"
-                >
-                  <span>{faq.q}</span>
-                  <ChevronDown
-                    className={cn(
-                      "w-4 h-4 text-slate-400 transition-transform",
-                      openFaq === idx && "rotate-180 text-[#0268cc]"
-                    )}
-                  />
-                </button>
-                {openFaq === idx && (
-                  <div className="px-4 pb-4 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-200/60 pt-3">
-                    {faq.a}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                <span>{faq.q}</span>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 text-muted transition-transform",
+                    openFaq === idx && "rotate-180 text-ink"
+                  )}
+                />
+              </button>
+              {openFaq === idx && (
+                <div className="px-4 pb-4 font-sans text-xs text-muted leading-relaxed border-t border-line pt-3">
+                  {faq.a}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
+      {/* ========================================================================= */}
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-slate-50 py-10 text-xs text-slate-500">
+      {/* ========================================================================= */}
+      <footer className="border-t border-line bg-bg-raised py-8 font-mono text-[11px] text-muted">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-2">
             <img
-              src="/Images/Lingually Logo.png"
+              src="/Images/Lingually icon.png"
               alt="Lingually"
-              className="h-5 w-auto object-contain"
+              className="h-4 w-4 object-contain"
             />
-            <span className="font-semibold text-slate-700">Lingually</span>
-            <span>— Open-Source AI Writing Workbench</span>
+            <span className="font-display font-bold text-xs uppercase text-ink">Lingually</span>
+            <span>{"// OPEN-SOURCE AI WRITING WORKBENCH"}</span>
           </div>
 
-          <div className="flex items-center space-x-5 text-slate-600 font-medium">
-            <Link href="/editor" className="hover:text-slate-900 transition">
-              Editor
+          <div className="flex items-center gap-4 uppercase tracking-wider">
+            <Link href="/editor" className="hover:text-ink transition">
+              EDITOR
             </Link>
-            <Link href="/settings" className="hover:text-slate-900 transition">
-              Settings
+            <Link href="/settings" className="hover:text-ink transition">
+              SETTINGS
             </Link>
-            <Link href="/privacy" className="hover:text-slate-900 transition">
-              Privacy
+            <Link href="/privacy" className="hover:text-ink transition">
+              PRIVACY
             </Link>
             <a
               href="https://github.com/binyamfeyissa/lingually"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-slate-900 transition"
+              className="hover:text-ink transition flex items-center gap-1 text-ink font-semibold"
             >
-              GitHub
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              <span>STAR ON GITHUB</span>
             </a>
           </div>
 
-          <div>MIT License • User-controlled writing tool.</div>
+          <div>MIT LICENSE • BYOK ARCHITECTURE</div>
         </div>
       </footer>
     </div>

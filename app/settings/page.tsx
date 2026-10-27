@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -7,18 +8,14 @@ import { providerRegistry } from "@/lib/ai/provider-registry";
 import { CredentialStorage } from "@/lib/security/api-key-storage";
 import { DocumentRepository } from "@/lib/documents/repository";
 import { Button } from "@/components/shared/button";
-import { Input, Textarea, Select } from "@/components/shared/input";
 import { Modal } from "@/components/shared/modal";
-import { Tabs } from "@/components/shared/tabs";
-import { Badge } from "@/components/shared/badge";
+import { ThemeToggle } from "@/components/app-shell/theme-toggle";
 import { cn } from "@/lib/utils/cn";
 import {
   Settings,
-  Sparkles,
   Key,
   Shield,
   Sliders,
-  Database,
   Trash2,
   CheckCircle2,
   AlertTriangle,
@@ -31,7 +28,7 @@ import {
 import Link from "next/link";
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<"providers" | "general" | "writing" | "privacy">("providers");
+  const [activeTab, setActiveTab] = useState<"providers" | "privacy" | "general">("providers");
 
   // Providers configuration state
   const [providerKeys, setProviderKeys] = useState<Record<ProviderId, string>>({
@@ -87,11 +84,10 @@ export default function SettingsPage() {
   const [docCount, setDocCount] = useState<number>(0);
 
   // Clear Confirmation Modals
-  const [confirmClearAction, setConfirmClearAction] = useState<"docs" | "revs" | "keys" | "all" | null>(null);
+  const [confirmClearAction, setConfirmClearAction] = useState<"docs" | "keys" | "all" | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load stored values
     const providers: ProviderId[] = ["openai", "gemini", "anthropic", "groq", "ollama", "openai-compatible"];
     const keys: Record<ProviderId, string> = { ...providerKeys };
     const urls: Record<ProviderId, string> = { ...providerBaseUrls };
@@ -120,33 +116,32 @@ export default function SettingsPage() {
   const handleSaveKey = (pId: ProviderId, keyVal: string) => {
     setProviderKeys((prev) => ({ ...prev, [pId]: keyVal }));
     CredentialStorage.setApiKey(pId, keyVal);
-    showNotice(`Saved credentials for ${PROVIDER_CATALOG[pId].name}.`);
+    showNotice(`SAVED CREDENTIALS FOR ${PROVIDER_CATALOG[pId].name.toUpperCase()}`);
   };
 
   const handleSaveBaseUrl = (pId: ProviderId, urlVal: string) => {
     setProviderBaseUrls((prev) => ({ ...prev, [pId]: urlVal }));
     CredentialStorage.setBaseUrl(pId, urlVal);
-    showNotice(`Updated base URL for ${PROVIDER_CATALOG[pId].name}.`);
+    showNotice(`UPDATED BASE URL FOR ${PROVIDER_CATALOG[pId].name.toUpperCase()}`);
   };
 
   const handleSaveModel = (pId: ProviderId, modelVal: string) => {
     setProviderModels((prev) => ({ ...prev, [pId]: modelVal }));
     CredentialStorage.setDefaultModel(pId, modelVal);
-    showNotice(`Default model set to ${modelVal}.`);
+    showNotice(`DEFAULT MODEL SET TO ${modelVal.toUpperCase()}`);
   };
 
   const handleRemoveKey = (pId: ProviderId) => {
     CredentialStorage.removeApiKey(pId);
     setProviderKeys((prev) => ({ ...prev, [pId]: "" }));
     setTestStatus((prev) => ({ ...prev, [pId]: {} }));
-    showNotice(`Credentials removed for ${PROVIDER_CATALOG[pId].name}.`);
+    showNotice(`CREDENTIALS REMOVED FOR ${PROVIDER_CATALOG[pId].name.toUpperCase()}`);
   };
 
   const handleTestConnection = async (pId: ProviderId) => {
     setTestStatus((prev) => ({ ...prev, [pId]: { loading: true } }));
     const config = providerRegistry.resolveConfig(pId);
 
-    // Override with in-progress values
     config.apiKey = providerKeys[pId];
     config.baseUrl = providerBaseUrls[pId];
     config.defaultModel = providerModels[pId];
@@ -172,13 +167,13 @@ export default function SettingsPage() {
   const handleStorageModeChange = (mode: StoragePreference) => {
     setStorageMode(mode);
     CredentialStorage.setStorageMode(mode);
-    showNotice(`Storage mode set to ${mode.toUpperCase()}.`);
+    showNotice(`STORAGE MODE SET TO ${mode.toUpperCase()}`);
   };
 
   const handleDefaultProviderChange = (pId: ProviderId) => {
     setDefaultProvider(pId);
     localStorage.setItem("lingually_default_provider", pId);
-    showNotice(`Default provider set to ${PROVIDER_CATALOG[pId].name}.`);
+    showNotice(`DEFAULT PROVIDER SET TO ${PROVIDER_CATALOG[pId].name.toUpperCase()}`);
   };
 
   const showNotice = (msg: string) => {
@@ -211,53 +206,56 @@ export default function SettingsPage() {
       });
     }
     setConfirmClearAction(null);
-    showNotice("Selected local data successfully cleared.");
+    showNotice("LOCAL DATA CLEARED");
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
+    <div className="min-h-screen bg-bg text-ink flex flex-col font-sans select-none">
       {/* Top Header */}
-      <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 sm:px-6 py-3.5 flex items-center justify-between sticky top-0 z-20">
+      <header className="h-12 border-b border-line bg-bg/95 backdrop-blur-xs px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <Link
             href="/editor"
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition px-2.5 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted hover:text-ink transition border border-line px-2.5 py-1 hover:bg-bg-raised"
           >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Editor</span>
+            <ArrowLeft className="h-3 w-3" />
+            <span>BACK TO EDITOR</span>
           </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
-            <Settings className="h-4 w-4 text-[#0268cc]" />
-            <span>Settings</span>
+          <span className="text-line">•</span>
+          <div className="flex items-center gap-2 font-display font-bold text-xs uppercase tracking-wider text-ink">
+            <Settings className="h-3.5 w-3.5 text-accent" />
+            <span>SETTINGS & ARCHITECTURE</span>
           </div>
         </div>
 
-        {notification && (
-          <div className="text-xs bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-3 py-1 rounded-full animate-in fade-in flex items-center gap-1.5 font-medium">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-            <span>{notification}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {notification && (
+            <div className="font-mono text-[10px] uppercase tracking-wider bg-accent/10 text-accent border border-accent/30 px-2.5 py-0.5 flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3" />
+              <span>{notification}</span>
+            </div>
+          )}
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* Main Body */}
       <main className="max-w-4xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6 flex-1">
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 gap-1 pb-px">
+        {/* Navigation Tabs in Hairline Grid */}
+        <div className="grid grid-cols-3 bg-line gap-px border border-line">
           {[
-            { id: "providers", label: "AI Providers (BYOK)", icon: <Key className="h-4 w-4" /> },
-            { id: "privacy", label: "Privacy & Storage", icon: <Shield className="h-4 w-4" /> },
-            { id: "general", label: "Preferences", icon: <Sliders className="h-4 w-4" /> },
+            { id: "providers", label: "01 / BYOK PROVIDERS", icon: <Key className="h-3.5 w-3.5" /> },
+            { id: "privacy", label: "02 / LOCAL STORAGE", icon: <Shield className="h-3.5 w-3.5" /> },
+            { id: "general", label: "03 / PREFERENCES", icon: <Sliders className="h-3.5 w-3.5" /> },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as "providers" | "privacy" | "general")}
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all",
+                "flex items-center justify-center gap-2 py-3 px-2 font-mono text-xs uppercase tracking-[0.12em] transition-colors rounded-none",
                 activeTab === tab.id
-                  ? "border-[#0268cc] text-[#0268cc] dark:text-sky-400"
-                  : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-slate-300"
+                  ? "bg-invert-bg text-invert-fg font-semibold"
+                  : "bg-bg text-muted hover:text-ink hover:bg-bg-raised"
               )}
             >
               {tab.icon}
@@ -271,19 +269,24 @@ export default function SettingsPage() {
         {/* ========================================================================= */}
         {activeTab === "providers" && (
           <div className="space-y-4">
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 space-y-1">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                <Key className="h-3.5 w-3.5 text-[#0268cc]" />
-                <span>Bring Your Own Key (BYOK) Architecture</span>
+            <div className="relative p-5 border border-line bg-bg-raised space-y-1.5">
+              <span className="tick top-[-5px] left-[-5px]" />
+              <span className="tick top-[-5px] right-[-5px]" />
+              <span className="tick bottom-[-5px] left-[-5px]" />
+              <span className="tick bottom-[-5px] right-[-5px]" />
+
+              <h2 className="font-mono text-xs font-bold uppercase tracking-[0.15em] text-ink flex items-center gap-2">
+                <Key className="h-3.5 w-3.5 text-accent" />
+                <span>BRING YOUR OWN KEY (BYOK) ARCHITECTURE</span>
               </h2>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="font-sans text-xs text-muted leading-relaxed">
                 Lingually never sells subscriptions or resells AI API access. Add your credentials below
                 to connect directly to your preferred AI model provider. Your keys are stored locally in your browser
                 and forwarded strictly per request.
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {(Object.keys(PROVIDER_CATALOG) as ProviderId[]).map((pId) => {
                 const info = PROVIDER_CATALOG[pId];
                 const keyVal = providerKeys[pId];
@@ -295,35 +298,29 @@ export default function SettingsPage() {
                 return (
                   <div
                     key={pId}
-                    className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4 shadow-2xs"
+                    className="p-4 sm:p-5 border border-line bg-bg-raised space-y-3 relative"
                   >
                     <div className="flex items-start justify-between flex-wrap gap-2">
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-sm text-slate-900 dark:text-white">{info.name}</h3>
+                          <h3 className="font-display font-bold text-sm text-ink">{info.name}</h3>
                           {defaultProvider === pId && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#eef6fc] text-[#0268cc] border border-[#bae6fd]/60 dark:bg-sky-950 dark:text-sky-300">
-                              Default Provider
+                            <span className="font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 bg-invert-bg text-invert-fg font-semibold">
+                              DEFAULT
                             </span>
                           )}
                           <span
                             className={cn(
-                              "flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full",
+                              "font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 border",
                               isConfigured
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                                ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                                : "border-line text-muted bg-bg"
                             )}
                           >
-                            <span
-                              className={cn(
-                                "h-1.5 w-1.5 rounded-full",
-                                isConfigured ? "bg-emerald-500" : "bg-slate-400"
-                              )}
-                            />
-                            <span>{isConfigured ? "Configured" : "Not configured"}</span>
+                            {isConfigured ? "CONFIGURED // READY" : "KEY REQUIRED"}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{info.description}</p>
+                        <p className="font-sans text-xs text-muted">{info.description}</p>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -331,42 +328,42 @@ export default function SettingsPage() {
                           href={info.docsUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] text-[#0268cc] hover:underline flex items-center gap-1 font-medium"
+                          className="font-mono text-[10px] uppercase tracking-wider text-accent hover:underline flex items-center gap-1"
                         >
-                          <span>Get API Key</span>
-                          <ExternalLink className="h-3 w-3" />
+                          <span>GET API KEY</span>
+                          <ExternalLink className="h-2.5 w-2.5" />
                         </a>
                       </div>
                     </div>
 
                     {/* API Key Input */}
                     {requiresKey && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">API Key</label>
+                      <div className="space-y-1">
+                        <label className="font-mono text-[10px] uppercase tracking-wider text-muted">API KEY</label>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
                             <input
                               type={isKeyVisible ? "text" : "password"}
                               value={keyVal}
                               onChange={(e) => handleSaveKey(pId, e.target.value)}
-                              placeholder={`Enter ${info.name} API key...`}
-                              className="w-full h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/60 px-3 pr-10 text-xs font-mono text-slate-900 dark:text-white focus:border-[#0268cc] focus:bg-white focus:outline-none transition"
+                              placeholder={`ENTER ${info.name.toUpperCase()} API KEY...`}
+                              className="w-full h-8 border border-line bg-bg px-2.5 pr-8 text-xs font-mono text-ink placeholder:text-muted/50 focus:border-line-strong focus:outline-none transition rounded-none"
                             />
                             <button
                               type="button"
                               onClick={() => setVisibleKey((prev) => ({ ...prev, [pId]: !prev[pId] }))}
-                              className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                              className="absolute right-2 top-2 text-muted hover:text-ink"
                             >
-                              {isKeyVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              {isKeyVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                             </button>
                           </div>
                           {keyVal && (
                             <button
                               type="button"
                               onClick={() => handleRemoveKey(pId)}
-                              className="px-3 h-9 rounded-lg border border-rose-200 dark:border-rose-900/60 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                              className="px-2.5 h-8 border border-danger/40 text-danger hover:bg-danger hover:text-white font-mono text-[10px] uppercase tracking-wider transition rounded-none"
                             >
-                              Remove
+                              REMOVE
                             </button>
                           )}
                         </div>
@@ -375,28 +372,28 @@ export default function SettingsPage() {
 
                     {/* Custom Base URL (for Ollama or OpenAI-compatible) */}
                     {info.supportsCustomBaseUrl && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Endpoint Base URL</label>
+                      <div className="space-y-1">
+                        <label className="font-mono text-[10px] uppercase tracking-wider text-muted">ENDPOINT BASE URL</label>
                         <input
                           type="text"
                           value={providerBaseUrls[pId]}
                           onChange={(e) => handleSaveBaseUrl(pId, e.target.value)}
                           placeholder="e.g. http://localhost:11434"
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/60 px-3 text-xs font-mono text-slate-900 dark:text-white focus:border-[#0268cc] focus:bg-white focus:outline-none transition"
+                          className="w-full h-8 border border-line bg-bg px-2.5 text-xs font-mono text-ink placeholder:text-muted/50 focus:border-line-strong focus:outline-none transition rounded-none"
                         />
                       </div>
                     )}
 
                     {/* Model Selector & Actions */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-xs">
                       <div>
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                          Default Model
+                        <label className="text-[10px] uppercase tracking-wider text-muted block mb-1">
+                          DEFAULT MODEL
                         </label>
                         <select
                           value={providerModels[pId]}
                           onChange={(e) => handleSaveModel(pId, e.target.value)}
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/60 px-3 text-xs text-slate-900 dark:text-white focus:border-[#0268cc] focus:outline-none transition"
+                          className="w-full h-8 border border-line bg-bg px-2 text-xs text-ink focus:border-line-strong focus:outline-none transition rounded-none"
                         >
                           {info.popularModels.map((m) => (
                             <option key={m.id} value={m.id}>
@@ -406,24 +403,24 @@ export default function SettingsPage() {
                         </select>
                       </div>
 
-                      <div className="flex items-end gap-2">
+                      <div className="flex items-end gap-1.5">
                         <button
                           type="button"
                           disabled={status?.loading}
                           onClick={() => handleTestConnection(pId)}
-                          className="h-9 flex-1 px-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                          className="h-8 flex-1 px-3 border border-line hover:border-line-strong hover:bg-bg-raised text-[10px] uppercase tracking-wider font-semibold text-ink flex items-center justify-center gap-1.5 transition disabled:opacity-50 rounded-none"
                         >
-                          <RotateCw className={cn("h-3.5 w-3.5 text-slate-400", status?.loading && "animate-spin")} />
-                          <span>{status?.loading ? "Testing..." : "Test Connection"}</span>
+                          <RotateCw className={cn("h-3 w-3 text-muted", status?.loading && "animate-spin")} />
+                          <span>{status?.loading ? "TESTING..." : "TEST CONNECTION"}</span>
                         </button>
 
                         {defaultProvider !== pId && (
                           <button
                             type="button"
                             onClick={() => handleDefaultProviderChange(pId)}
-                            className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition"
+                            className="h-8 px-3 border border-line hover:border-line-strong hover:bg-bg-raised text-[10px] uppercase tracking-wider text-muted hover:text-ink transition rounded-none"
                           >
-                            Set Default
+                            SET DEFAULT
                           </button>
                         )}
                       </div>
@@ -433,16 +430,16 @@ export default function SettingsPage() {
                     {status && status.message && (
                       <div
                         className={cn(
-                          "p-3 rounded-lg text-xs flex items-start gap-2 border",
+                          "p-2.5 text-xs flex items-start gap-2 border font-mono text-[10px]",
                           status.success
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200"
-                            : "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-200"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                            : "bg-danger/10 text-danger border-danger/30"
                         )}
                       >
                         {status.success ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
                         ) : (
-                          <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                          <AlertTriangle className="h-3.5 w-3.5 text-danger shrink-0 mt-0.5" />
                         )}
                         <p className="leading-relaxed">{status.message}</p>
                       </div>
@@ -458,120 +455,87 @@ export default function SettingsPage() {
         {/* 2. Privacy & Storage Tab */}
         {/* ========================================================================= */}
         {activeTab === "privacy" && (
-          <div className="space-y-6">
-            <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4 shadow-2xs">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                <Shield className="h-4 w-4 text-[#0268cc]" />
-                <span>Local-First Storage & Security Architecture</span>
+          <div className="space-y-4">
+            <div className="p-5 border border-line bg-bg-raised space-y-3">
+              <h2 className="font-mono text-xs font-bold uppercase tracking-[0.15em] text-ink flex items-center gap-2">
+                <Shield className="h-3.5 w-3.5 text-accent" />
+                <span>LOCAL-FIRST STORAGE & SECURITY ARCHITECTURE</span>
               </h2>
-              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2.5 leading-relaxed">
+              <div className="text-xs text-muted space-y-2 leading-relaxed font-sans">
                 <p>
-                  <strong className="text-slate-900 dark:text-white">Documents:</strong> All document texts and version history are stored locally in your browser
-                  using <strong className="text-slate-800 dark:text-slate-200">IndexedDB (Dexie)</strong>. No document text is ever stored on any remote database or Lingually server.
+                  <strong className="text-ink">Documents:</strong> All document texts and version history are stored locally in your browser
+                  using <strong className="text-ink">IndexedDB (Dexie)</strong>. No document text is ever stored on any remote database or Lingually server.
                 </p>
                 <p>
-                  <strong className="text-slate-900 dark:text-white">API Credentials:</strong> Your credentials never enter application logs, query parameters,
+                  <strong className="text-ink">API Credentials:</strong> Your credentials never enter application logs, query parameters,
                   or document exports. When you trigger an AI edit, your request is proxied through a stateless
                   same-origin Next.js Route Handler directly to your chosen provider.
                 </p>
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/60 rounded-lg text-amber-900 dark:text-amber-200 text-xs">
-                  <strong>Security Disclosure:</strong> Browser storage (localStorage/sessionStorage) is not an encrypted
-                  hardware enclave. Anyone with administrative physical access to your device or browser profile may inspect
-                  stored values. Do not store sensitive corporate master keys on a shared computer.
-                </div>
               </div>
             </div>
 
             {/* Credential Storage Preference */}
-            <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3 shadow-2xs">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                Credential Persistence Mode
+            <div className="p-5 border border-line bg-bg-raised space-y-3">
+              <h3 className="font-mono text-xs font-bold uppercase tracking-[0.15em] text-ink">
+                CREDENTIAL PERSISTENCE MODE
               </h3>
               <div className="space-y-2">
-                <label className="flex items-start gap-3 p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer text-xs transition">
-                  <input
-                    type="radio"
-                    name="storageMode"
-                    value="local"
-                    checked={storageMode === "local"}
-                    onChange={() => handleStorageModeChange("local")}
-                    className="mt-0.5 accent-[#0268cc]"
-                  />
-                  <div>
-                    <strong className="text-slate-900 dark:text-white">Persistent Local Storage (Default)</strong>
-                    <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
-                      Credentials persist across browser restarts until you explicitly remove them.
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-start gap-3 p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer text-xs transition">
-                  <input
-                    type="radio"
-                    name="storageMode"
-                    value="session"
-                    checked={storageMode === "session"}
-                    onChange={() => handleStorageModeChange("session")}
-                    className="mt-0.5 accent-[#0268cc]"
-                  />
-                  <div>
-                    <strong className="text-slate-900 dark:text-white">Session-Only Storage</strong>
-                    <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
-                      Credentials persist only while this browser tab remains open. Cleared automatically on tab close.
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-start gap-3 p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer text-xs transition">
-                  <input
-                    type="radio"
-                    name="storageMode"
-                    value="none"
-                    checked={storageMode === "none"}
-                    onChange={() => handleStorageModeChange("none")}
-                    className="mt-0.5 accent-[#0268cc]"
-                  />
-                  <div>
-                    <strong className="text-slate-900 dark:text-white">In-Memory Only (RAM Only)</strong>
-                    <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
-                      Never written to browser storage. Cleared immediately upon refreshing or closing the page.
-                    </p>
-                  </div>
-                </label>
+                {[
+                  { id: "local", title: "Persistent Local Storage (Default)", desc: "Credentials persist across browser restarts until you explicitly remove them." },
+                  { id: "session", title: "Session-Only Storage", desc: "Credentials persist only while this browser tab remains open. Cleared automatically on tab close." },
+                  { id: "none", title: "In-Memory Only (RAM Only)", desc: "Never written to browser storage. Cleared immediately upon refreshing or closing the page." },
+                ].map((item) => (
+                  <label key={item.id} className="flex items-start gap-3 p-3 border border-line bg-bg hover:bg-bg-raised cursor-pointer text-xs transition">
+                    <input
+                      type="radio"
+                      name="storageMode"
+                      value={item.id}
+                      checked={storageMode === item.id}
+                      onChange={() => handleStorageModeChange(item.id as StoragePreference)}
+                      className="mt-0.5 accent-ink"
+                    />
+                    <div>
+                      <strong className="text-ink font-mono uppercase tracking-wider">{item.title}</strong>
+                      <p className="text-muted font-sans text-[11px] mt-0.5">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </label>
+                ))}
               </div>
             </div>
 
             {/* Data Cleanup Management */}
-            <div className="p-5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 space-y-3 shadow-2xs">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
-                <Trash2 className="h-4 w-4" />
-                <span>Local Data Cleanup</span>
+            <div className="p-5 border border-line bg-bg-raised space-y-3">
+              <h3 className="font-mono text-xs font-bold uppercase tracking-[0.15em] text-danger flex items-center gap-1.5">
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>LOCAL DATA CLEANUP</span>
               </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                You currently have <strong className="text-slate-900 dark:text-white font-semibold">{docCount}</strong> documents saved in your local IndexedDB storage.
+              <p className="text-xs text-muted font-sans">
+                You currently have <strong className="text-ink font-semibold">{docCount}</strong> documents saved in your local IndexedDB storage.
               </p>
 
-              <div className="flex flex-wrap gap-2 pt-2">
+              <div className="flex flex-wrap gap-2 pt-1 font-mono text-[10px]">
                 <button
                   type="button"
                   onClick={() => setConfirmClearAction("docs")}
-                  className="px-3 h-8 rounded-lg border border-rose-200 dark:border-rose-800 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                  className="px-3 h-8 border border-danger/40 text-danger hover:bg-danger hover:text-white uppercase tracking-wider transition rounded-none"
                 >
-                  Clear All Documents
+                  CLEAR ALL DOCUMENTS
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmClearAction("keys")}
-                  className="px-3 h-8 rounded-lg border border-rose-200 dark:border-rose-800 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                  className="px-3 h-8 border border-danger/40 text-danger hover:bg-danger hover:text-white uppercase tracking-wider transition rounded-none"
                 >
-                  Clear All Stored API Keys
+                  CLEAR STORED KEYS
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmClearAction("all")}
-                  className="px-3 h-8 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition"
+                  className="px-3 h-8 bg-danger text-white uppercase tracking-wider transition rounded-none"
                 >
-                  Clear All Application Data
+                  PURGE ALL APPLICATION DATA
                 </button>
               </div>
             </div>
@@ -582,36 +546,24 @@ export default function SettingsPage() {
         {/* 3. General Tab */}
         {/* ========================================================================= */}
         {activeTab === "general" && (
-          <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-5 text-xs shadow-2xs">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-              General Application Defaults
+          <div className="p-5 border border-line bg-bg-raised space-y-4 font-mono text-xs">
+            <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-ink">
+              GENERAL APPLICATION DEFAULTS
             </h2>
 
-            <div className="space-y-4 max-w-md">
+            <div className="space-y-3 max-w-md">
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Default AI Provider</label>
+                <label className="text-[10px] uppercase tracking-wider text-muted block mb-1">DEFAULT AI PROVIDER</label>
                 <select
                   value={defaultProvider}
                   onChange={(e) => handleDefaultProviderChange(e.target.value as ProviderId)}
-                  className="w-full h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/60 px-3 text-xs text-slate-900 dark:text-white focus:border-[#0268cc] focus:outline-none transition"
+                  className="w-full h-8 border border-line bg-bg px-2 text-xs text-ink focus:border-line-strong focus:outline-none transition rounded-none"
                 >
                   {Object.entries(PROVIDER_CATALOG).map(([id, info]) => (
                     <option key={id} value={id}>
                       {info.name}
                     </option>
                   ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Editor Prose Font Family</label>
-                <select
-                  defaultValue="serif"
-                  className="w-full h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/60 px-3 text-xs text-slate-900 dark:text-white focus:border-[#0268cc] focus:outline-none transition"
-                >
-                  <option value="serif">Charter / Georgia (Literary Serif)</option>
-                  <option value="sans">System UI (Modern Sans-Serif)</option>
-                  <option value="mono">Monospace (Code & Technical)</option>
                 </select>
               </div>
             </div>
@@ -623,16 +575,16 @@ export default function SettingsPage() {
       <Modal
         isOpen={Boolean(confirmClearAction)}
         onClose={() => setConfirmClearAction(null)}
-        title="Confirm Data Erasure"
-        description="This action cannot be undone. Are you sure you wish to proceed?"
+        title="CONFIRM DATA ERASURE"
+        description="This action cannot be undone. All selected records will be permanently purged from local storage."
         maxWidth="sm"
       >
         <div className="flex items-center justify-end gap-2 pt-4">
           <Button variant="outline" size="sm" onClick={() => setConfirmClearAction(null)}>
-            Cancel
+            CANCEL
           </Button>
           <Button variant="danger" size="sm" onClick={handleConfirmClear}>
-            Confirm Erase
+            CONFIRM ERASE
           </Button>
         </div>
       </Modal>

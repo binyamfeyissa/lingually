@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Sun, Moon, Monitor } from "lucide-react";
-import { Button } from "../shared/button";
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
 
   useEffect(() => {
@@ -21,14 +20,18 @@ export function ThemeToggle() {
     const root = document.documentElement;
     if (t === "dark") {
       root.classList.add("dark");
+      root.setAttribute("data-theme", "dark");
     } else if (t === "light") {
       root.classList.remove("dark");
+      root.removeAttribute("data-theme");
     } else {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       if (prefersDark) {
         root.classList.add("dark");
+        root.setAttribute("data-theme", "dark");
       } else {
         root.classList.remove("dark");
+        root.removeAttribute("data-theme");
       }
     }
   };
@@ -41,16 +44,15 @@ export function ThemeToggle() {
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
+    <button
       onClick={cycleTheme}
-      title={`Theme: ${theme.toUpperCase()} (Click to toggle)`}
+      className={`h-8 w-8 inline-flex items-center justify-center rounded-none border border-line text-muted hover:text-ink hover:bg-bg-raised transition-colors ${className || ""}`}
+      title={`Theme: ${theme.toUpperCase()} (Click to cycle)`}
       aria-label="Toggle visual theme"
     >
-      {theme === "light" && <Sun className="h-4 w-4 text-amber-500" />}
-      {theme === "dark" && <Moon className="h-4 w-4 text-brand-400" />}
-      {theme === "system" && <Monitor className="h-4 w-4 text-foreground/70" />}
-    </Button>
+      {theme === "light" && <Sun className="h-3.5 w-3.5 text-amber-500" />}
+      {theme === "dark" && <Moon className="h-3.5 w-3.5 text-accent" />}
+      {theme === "system" && <Monitor className="h-3.5 w-3.5 text-muted" />}
+    </button>
   );
 }

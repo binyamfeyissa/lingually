@@ -1,83 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #fbfbfd;
-  --foreground: #111827;
-  --surface: #ffffff;
-  --surface-muted: #f8fafc;
-  --surface-subtle: #f1f5f9;
-  --surface-border: #e2e8f0;
-  --accent: #0268cc;
-  --accent-hover: #0256a9;
-  --accent-subtle: #eef6fc;
-  --accent-foreground: #ffffff;
-  --radius: 0.625rem;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  /* ArtCraft Light Theme Tokens */
+  --bg: #f2f1ee;
+  --bg-raised: #faf9f7;
+  --bg-sunken: #e9e8e4;
+  --ink: #101014;
+  --ink-strong: #000000;
+  --muted: rgba(16, 16, 20, 0.62);
+  --faint: rgba(16, 16, 20, 0.42);
+  --line: rgba(16, 16, 20, 0.16);
+  --line-strong: rgba(16, 16, 20, 0.40);
+  --accent: #2d81ff;
+  --accent-ink: #1659c4;
+  --invert-bg: #101014;
+  --invert-fg: #f2f1ee;
+  --danger: #b3261e;
+
+  /* Backward compatibility alias tokens */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --surface: var(--bg-raised);
+  --surface-muted: var(--bg-sunken);
+  --surface-subtle: var(--bg-sunken);
+  --surface-border: var(--line);
+  --radius: 0px;
+
+  /* Font Families */
+  --font-display: 'Archivo', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Semantic Suggestion Categories */
-  --cat-correctness: #e11d48;
-  --cat-correctness-bg: #fff1f2;
-  --cat-correctness-border: #fecdd3;
-  --cat-clarity: #0284c7;
-  --cat-clarity-bg: #f0f9ff;
-  --cat-clarity-border: #bae6fd;
-  --cat-engagement: #059669;
-  --cat-engagement-bg: #ecfdf5;
-  --cat-engagement-border: #a7f3d0;
-  --cat-delivery: #7c3aed;
-  --cat-delivery-bg: #f5f3ff;
-  --cat-delivery-border: #ddd6fe;
+  --cat-correctness: #b3261e;
+  --cat-correctness-bg: rgba(179, 38, 30, 0.08);
+  --cat-correctness-border: rgba(179, 38, 30, 0.28);
+  --cat-clarity: #2d81ff;
+  --cat-clarity-bg: rgba(45, 129, 255, 0.08);
+  --cat-clarity-border: rgba(45, 129, 255, 0.28);
+  --cat-engagement: #0f8b44;
+  --cat-engagement-bg: rgba(15, 139, 68, 0.08);
+  --cat-engagement-border: rgba(15, 139, 68, 0.28);
+  --cat-delivery: #6b40d8;
+  --cat-delivery-bg: rgba(107, 64, 216, 0.08);
+  --cat-delivery-border: rgba(107, 64, 216, 0.28);
 }
 
-.dark {
-  --background: #0b0f17;
-  --foreground: #f8fafc;
-  --surface: #111827;
-  --surface-muted: #1e293b;
-  --surface-subtle: #334155;
-  --surface-border: #1e293b;
-  --accent: #38bdf8;
-  --accent-hover: #0284c7;
-  --accent-subtle: rgba(56, 189, 248, 0.12);
-  --accent-foreground: #0b0f17;
+.dark, [data-theme="dark"] {
+  /* ArtCraft Dark Theme Tokens */
+  --bg: #121316;
+  --bg-raised: #101014;
+  --bg-sunken: #060607;
+  --ink: #f2f1ee;
+  --ink-strong: #ffffff;
+  --muted: rgba(242, 241, 238, 0.60);
+  --faint: rgba(242, 241, 238, 0.38);
+  --line: rgba(242, 241, 238, 0.15);
+  --line-strong: rgba(242, 241, 238, 0.40);
+  --accent: #2d81ff;
+  --accent-ink: #74aaff;
+  --invert-bg: #ffffff;
+  --invert-fg: #0b0b0c;
+  --danger: #ff6259;
 
-  /* Dark mode category tokens */
-  --cat-correctness: #fb7185;
-  --cat-correctness-bg: rgba(225, 29, 72, 0.15);
-  --cat-correctness-border: rgba(225, 29, 72, 0.3);
-  --cat-clarity: #38bdf8;
-  --cat-clarity-bg: rgba(2, 132, 199, 0.15);
-  --cat-clarity-border: rgba(2, 132, 199, 0.3);
-  --cat-engagement: #34d399;
-  --cat-engagement-bg: rgba(5, 150, 105, 0.15);
-  --cat-engagement-border: rgba(5, 150, 105, 0.3);
-  --cat-delivery: #a78bfa;
-  --cat-delivery-bg: rgba(124, 58, 237, 0.15);
-  --cat-delivery-border: rgba(124, 58, 237, 0.3);
+  /* Backward compatibility alias tokens */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --surface: var(--bg-raised);
+  --surface-muted: var(--bg-sunken);
+  --surface-subtle: var(--bg-sunken);
+  --surface-border: var(--line);
+
+  /* Semantic Suggestion Categories in Dark */
+  --cat-correctness: #ff6259;
+  --cat-correctness-bg: rgba(255, 98, 89, 0.12);
+  --cat-correctness-border: rgba(255, 98, 89, 0.35);
+  --cat-clarity: #74aaff;
+  --cat-clarity-bg: rgba(116, 170, 255, 0.12);
+  --cat-clarity-border: rgba(116, 170, 255, 0.35);
+  --cat-engagement: #4cd984;
+  --cat-engagement-bg: rgba(76, 217, 132, 0.12);
+  --cat-engagement-border: rgba(76, 217, 132, 0.35);
+  --cat-delivery: #b48eff;
+  --cat-delivery-bg: rgba(180, 142, 255, 0.12);
+  --cat-delivery-border: rgba(180, 142, 255, 0.35);
 }
 
 * {
-  border-color: var(--surface-border);
+  border-color: var(--line);
 }
 
 body {
-  color: var(--foreground);
-  background-color: var(--background);
+  color: var(--ink);
+  background-color: var(--bg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
+/* ArtCraft Architectural HUD Label */
+.hud-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ArtCraft 11x11px Corner Crosshair Ticks */
+.tick {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  pointer-events: none;
+  z-index: 5;
+}
+.tick::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line-strong);
+}
+.tick::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+/* Hairline Grid Helper */
+.hairline-grid {
+  background-color: var(--line);
+  gap: 1px;
+  display: grid;
+}
+
 /* Tiptap Editor ProseMirror Styling */
 .ProseMirror {
-  min-height: 480px;
+  min-height: 520px;
   outline: none;
   font-size: 1.125rem;
-  line-height: 1.8;
-  color: var(--foreground);
+  line-height: 1.85;
+  color: var(--ink);
 }
 
 .ProseMirror p {
@@ -85,29 +160,32 @@ body {
 }
 
 .ProseMirror h1 {
-  font-size: 2rem;
+  font-family: var(--font-display);
+  font-size: 2.25rem;
   font-weight: 700;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
   margin-top: 1.5em;
   margin-bottom: 0.5em;
-  color: var(--foreground);
+  color: var(--ink);
 }
 
 .ProseMirror h2 {
-  font-size: 1.5rem;
+  font-family: var(--font-display);
+  font-size: 1.625rem;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   margin-top: 1.25em;
   margin-bottom: 0.5em;
-  color: var(--foreground);
+  color: var(--ink);
 }
 
 .ProseMirror h3 {
+  font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 600;
   margin-top: 1em;
   margin-bottom: 0.4em;
-  color: var(--foreground);
+  color: var(--ink);
 }
 
 .ProseMirror ul {
@@ -127,30 +205,29 @@ body {
 }
 
 .ProseMirror blockquote {
-  border-left: 3px solid var(--accent);
+  border-left: 2px solid var(--accent);
   padding-left: 1rem;
   margin: 1.25em 0;
   font-style: italic;
-  color: #4b5563;
-}
-
-.dark .ProseMirror blockquote {
-  color: #9ca3af;
+  font-family: var(--font-serif);
+  font-size: 1.2em;
+  color: var(--muted);
 }
 
 .ProseMirror code {
-  background-color: var(--surface-subtle);
+  background-color: var(--bg-sunken);
   padding: 0.2em 0.4em;
-  border-radius: 0.25rem;
+  border-radius: 0;
   font-family: var(--font-mono);
   font-size: 0.875em;
+  border: 1px solid var(--line);
 }
 
 .ProseMirror pre {
-  background-color: var(--surface-muted);
-  border: 1px solid var(--surface-border);
+  background-color: var(--bg-sunken);
+  border: 1px solid var(--line);
   padding: 1rem;
-  border-radius: var(--radius);
+  border-radius: 0;
   overflow-x: auto;
   font-family: var(--font-mono);
   margin-bottom: 1.25em;
@@ -158,8 +235,8 @@ body {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -167,10 +244,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--surface-border);
-  border-radius: 9999px;
+  background: var(--line-strong);
+  border-radius: 0px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(150, 150, 150, 0.5);
+  background: var(--ink);
 }

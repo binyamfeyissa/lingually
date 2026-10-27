@@ -7,11 +7,13 @@ import { Badge } from "../shared/badge";
 import { Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 
 export interface GrammarToolProps {
-  originalText: string;
+  originalText?: string;
   result?: GrammarResult;
   isStreaming?: boolean;
-  onAccept: (replacementText: string) => void;
-  onReject: () => void;
+  onAccept?: (replacementText: string) => void;
+  onApplyReplacement?: (replacementText: string) => void;
+  onReject?: () => void;
+  onDismiss?: () => void;
   selectionOnly?: boolean;
 }
 
@@ -20,17 +22,23 @@ export function GrammarTool({
   result,
   isStreaming = false,
   onAccept,
+  onApplyReplacement,
   onReject,
+  onDismiss,
   selectionOnly = false,
 }: GrammarToolProps) {
+  const handleApply = onApplyReplacement || onAccept || (() => {});
+  const handleCancel = onDismiss || onReject || (() => {});
+  const orig = originalText || "";
+
   if (isStreaming) {
     return (
-      <div className="p-4 rounded-lg border border-surface-border bg-surface-muted/50 space-y-3 animate-pulse">
-        <div className="flex items-center gap-2 text-xs font-medium text-brand-600">
-          <Sparkles className="h-4 w-4 animate-spin" />
-          Analyzing grammar, spelling, and sentence syntax...
+      <div className="p-3 border border-line bg-bg-raised space-y-2 animate-pulse">
+        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-accent">
+          <Sparkles className="h-3.5 w-3.5 animate-spin" />
+          <span>ANALYZING SYNTAX & GRAMMAR...</span>
         </div>
-        <div className="h-20 bg-surface-subtle rounded-md" />
+        <div className="h-16 bg-bg-sunken" />
       </div>
     );
   }
@@ -40,21 +48,21 @@ export function GrammarTool({
   const hasIssues = result.changes && result.changes.length > 0;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5 font-mono">
       {/* Summary Banner */}
-      <div className="p-3 rounded-lg border border-surface-border bg-surface flex items-start gap-2.5 text-xs">
+      <div className="p-2.5 border border-line bg-bg flex items-start gap-2 text-xs">
         {hasIssues ? (
-          <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+          <AlertCircle className="h-3.5 w-3.5 text-danger shrink-0 mt-0.5" />
         ) : (
-          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
         )}
         <div>
-          <div className="font-semibold text-foreground">
+          <div className="font-semibold text-ink text-[11px] uppercase tracking-wider">
             {hasIssues
-              ? `${result.changes.length} suggestion${result.changes.length === 1 ? "" : "s"} identified`
-              : "No grammatical issues detected"}
+              ? `${result.changes.length} SUGGESTION${result.changes.length === 1 ? "" : "S"} IDENTIFIED`
+              : "NO GRAMMATICAL ISSUES DETECTED"}
           </div>
-          <p className="text-foreground/70 mt-0.5">
+          <p className="font-sans text-muted text-[11px] mt-0.5">
             {result.summary || (hasIssues ? "Review the individual changes below." : "Your text looks clean and grammatically sound.")}
           </p>
         </div>
@@ -62,25 +70,25 @@ export function GrammarTool({
 
       {/* Structured Suggestions List */}
       {hasIssues && (
-        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
           {result.changes.map((change: GrammarChange, idx: number) => (
             <div
               key={idx}
-              className="p-2.5 rounded-md border border-surface-border bg-surface hover:border-brand-300 transition-colors text-xs space-y-1"
+              className="p-2 border border-line bg-bg-raised text-xs space-y-1"
             >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-rose-600 dark:text-rose-400 line-through">
+              <div className="flex items-center justify-between font-mono text-[10px]">
+                <span className="text-danger line-through">
                   {change.original}
                 </span>
-                <span className="text-foreground/40 text-[10px]">→</span>
-                <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="text-muted">→</span>
+                <span className="font-semibold text-accent">
                   {change.replacement}
                 </span>
-                <Badge variant="outline" className="text-[10px] ml-auto uppercase">
+                <Badge variant="outline" className="text-[9px] ml-auto uppercase">
                   {change.category}
                 </Badge>
               </div>
-              <p className="text-foreground/60 text-[11px]">{change.explanation}</p>
+              <p className="font-sans text-muted text-[10px]">{change.explanation}</p>
             </div>
           ))}
         </div>
@@ -88,11 +96,11 @@ export function GrammarTool({
 
       {/* Full Diff Viewer with Accept/Reject actions */}
       <DiffViewer
-        originalText={originalText}
+        originalText={orig}
         suggestedText={result.correctedText}
-        onAccept={() => onAccept(result.correctedText)}
-        onReject={onReject}
-        title="Corrected Text Comparison"
+        onAccept={() => handleApply(result.correctedText)}
+        onReject={handleCancel}
+        title="CORRECTED TEXT"
         selectionOnly={selectionOnly}
       />
     </div>

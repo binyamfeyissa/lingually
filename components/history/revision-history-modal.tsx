@@ -7,7 +7,7 @@ import { computeWordDiff } from "@/lib/utils/diff";
 import { Modal } from "../shared/modal";
 import { Button } from "../shared/button";
 import { Badge } from "../shared/badge";
-import { History, RotateCcw, Clock, ArrowRight, Check } from "lucide-react";
+import { History, RotateCcw, Clock, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 export interface RevisionHistoryModalProps {
@@ -73,13 +73,13 @@ export function RevisionHistoryModal({
   const getTriggerBadge = (trigger: DocumentRevision["trigger"]) => {
     switch (trigger) {
       case "before-ai-apply":
-        return <Badge variant="brand">Before AI Edit</Badge>;
+        return <Badge variant="brand">BEFORE AI</Badge>;
       case "restore":
-        return <Badge variant="warning">Restoration</Badge>;
+        return <Badge variant="warning">RESTORE</Badge>;
       case "auto":
-        return <Badge variant="outline">Auto-save</Badge>;
+        return <Badge variant="outline">AUTOSAVE</Badge>;
       default:
-        return <Badge variant="default">Manual</Badge>;
+        return <Badge variant="default">MANUAL</Badge>;
     }
   };
 
@@ -87,109 +87,111 @@ export function RevisionHistoryModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Revision History & Recovery"
-      description="Compare and restore previous versions of this document."
+      title="REVISION HISTORY & SNAPSHOTS"
+      description="Inspect previous states, compare modifications, and restore any previous version."
       maxWidth="4xl"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[480px]">
-        {/* Revisions Timeline List */}
-        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-y-auto p-2 space-y-1.5 bg-slate-50/50 dark:bg-slate-900/50">
-          <div className="text-[11px] font-semibold text-slate-500 px-2 py-1 uppercase tracking-wider">
-            Revisions ({revisions.length})
-          </div>
+      <div className="flex h-[480px] -mx-6 -mb-6 border-t border-line font-mono text-xs">
+        {/* Left: Revisions List */}
+        <div className="w-72 border-r border-line overflow-y-auto bg-bg-raised p-2 space-y-1">
+          {isLoading && (
+            <div className="p-4 text-center text-muted">LOADING REVISIONS...</div>
+          )}
+
+          {!isLoading && revisions.length === 0 && (
+            <div className="p-4 text-center text-muted text-[11px]">
+              NO REVISIONS RECORDED YET. SNAPSHOTS OCCUR BEFORE MAJOR AI REWRITES.
+            </div>
+          )}
 
           {revisions.map((rev) => {
             const isSelected = rev.id === selectedRevisionId;
             return (
-              <button
+              <div
                 key={rev.id}
                 onClick={() => setSelectedRevisionId(rev.id)}
                 className={cn(
-                  "w-full text-left p-3 rounded-lg border text-xs transition-all space-y-1 block",
+                  "p-2.5 rounded-none cursor-pointer border transition-colors",
                   isSelected
-                    ? "border-[#0268cc] bg-white dark:bg-slate-800 shadow-xs ring-1 ring-[#0268cc]"
-                    : "border-transparent hover:bg-white dark:hover:bg-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700"
+                    ? "bg-invert-bg text-invert-fg border-transparent font-medium"
+                    : "bg-bg border-line text-muted hover:text-ink hover:border-line-strong"
                 )}
               >
-                <div className="flex items-center justify-between gap-1">
-                  <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[130px]">
-                    {rev.title || "Untitled"}
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>{new Date(rev.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                   </span>
                   {getTriggerBadge(rev.trigger)}
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {new Date(rev.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                  <span>{rev.wordCount} words</span>
+
+                <div className={cn("text-[11px] font-sans truncate mt-1", isSelected ? "text-invert-fg" : "text-ink")}>
+                  {rev.changeSummary || "Automated Snapshot"}
                 </div>
-                {rev.changeSummary && (
-                  <p className="text-[10px] text-slate-500 italic truncate">{rev.changeSummary}</p>
-                )}
-              </button>
+              </div>
             );
           })}
-
-          {revisions.length === 0 && !isLoading && (
-            <div className="text-center p-6 text-slate-400 text-xs">No saved revisions yet.</div>
-          )}
         </div>
 
-        {/* Selected Revision Diff & Preview */}
-        <div className="md:col-span-2 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col h-full bg-white dark:bg-slate-900 shadow-2xs">
+        {/* Right: Revision Diff & Restore */}
+        <div className="flex-1 flex flex-col bg-bg overflow-hidden">
           {selectedRevision ? (
             <>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-3">
+              <div className="p-3 border-b border-line flex items-center justify-between bg-bg-raised">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                    Snapshot from {new Date(selectedRevision.createdAt).toLocaleString()}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Comparing past revision against current document.
-                  </p>
+                  <div className="font-semibold text-ink uppercase tracking-wider text-[11px]">
+                    SNAPSHOT FROM {new Date(selectedRevision.createdAt).toLocaleString()}
+                  </div>
+                  <p className="font-sans text-muted text-[11px]">{selectedRevision.changeSummary}</p>
                 </div>
 
-                <button
-                  disabled={isRestoring}
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={handleRestore}
-                  className="h-8 px-3 rounded-lg bg-[#0268cc] hover:bg-[#0256a9] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
+                  isLoading={isRestoring}
+                  className="h-7 text-[10px]"
                 >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  <span>Restore</span>
-                </button>
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  RESTORE THIS REVISION
+                </Button>
               </div>
 
-              {/* Diff Viewer */}
-              <div className="flex-1 overflow-y-auto text-xs leading-relaxed font-sans whitespace-pre-wrap select-text pr-2">
-                {diff?.parts.map((part, index) => {
-                  if (part.added) {
-                    return (
-                      <span
-                        key={index}
-                        className="bg-emerald-50 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 font-medium px-1 py-0.5 rounded"
-                      >
-                        {part.value}
-                      </span>
-                    );
-                  }
-                  if (part.removed) {
-                    return (
-                      <span
-                        key={index}
-                        className="bg-rose-50 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300 line-through px-1 py-0.5 rounded opacity-80"
-                      >
-                        {part.value}
-                      </span>
-                    );
-                  }
-                  return <span key={index}>{part.value}</span>;
-                })}
+              <div className="flex-1 p-4 overflow-y-auto font-sans text-xs leading-relaxed">
+                {diff ? (
+                  <div className="whitespace-pre-wrap">
+                    {diff.parts.map((part, index) => {
+                      if (part.added) {
+                        return (
+                          <span
+                            key={index}
+                            className="bg-accent/15 text-accent font-semibold px-0.5"
+                          >
+                            {part.value}
+                          </span>
+                        );
+                      }
+                      if (part.removed) {
+                        return (
+                          <span
+                            key={index}
+                            className="bg-danger/15 text-danger line-through px-0.5"
+                          >
+                            {part.value}
+                          </span>
+                        );
+                      }
+                      return <span key={index}>{part.value}</span>;
+                    })}
+                  </div>
+                ) : (
+                  <div className="whitespace-pre-wrap text-ink">{selectedRevision.plainText}</div>
+                )}
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center flex-1 text-xs text-slate-400">
-              Select a revision from the left to preview changes.
+            <div className="flex-1 flex items-center justify-center text-muted">
+              SELECT A REVISION TO INSPECT.
             </div>
           )}
         </div>

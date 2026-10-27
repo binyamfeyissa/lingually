@@ -19,7 +19,7 @@ import { GrammarTool } from "./grammar-tool";
 import { AlternativesView } from "./alternatives-view";
 import { AIDetectorTool } from "./ai-detector-tool";
 import { Button } from "../shared/button";
-import { Select, Textarea } from "../shared/input";
+import { Textarea } from "../shared/input";
 import {
   Sparkles,
   CheckCheck,
@@ -34,8 +34,6 @@ import {
   ShieldAlert,
   Settings,
   AlertCircle,
-  Copy,
-  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
@@ -50,16 +48,16 @@ export interface AssistantPanelProps {
 }
 
 const TOOLS: Array<{ id: WritingToolId; label: string; icon: React.ReactNode; desc: string }> = [
-  { id: "improve", label: "Improve", icon: <Wand2 className="h-4 w-4" />, desc: "Enhance flow, clarity, and precision" },
-  { id: "grammar", label: "Grammar", icon: <CheckCheck className="h-4 w-4" />, desc: "Spelling, syntax, and punctuation" },
-  { id: "paraphrase", label: "Paraphrase", icon: <RefreshCw className="h-4 w-4" />, desc: "Rewrite while keeping core meaning" },
-  { id: "tone", label: "Tone", icon: <Palette className="h-4 w-4" />, desc: "Adjust voice and register" },
-  { id: "summarize", label: "Summarize", icon: <FileText className="h-4 w-4" />, desc: "Distill key takeaways and points" },
-  { id: "shorten-expand", label: "Shorten/Expand", icon: <Scissors className="h-4 w-4" />, desc: "Control concise or detailed length" },
-  { id: "spelling", label: "Spelling Only", icon: <SpellCheck className="h-4 w-4" />, desc: "Orthography and typo correction only" },
-  { id: "translate", label: "Translate", icon: <Languages className="h-4 w-4" />, desc: "Idiomatic translation" },
-  { id: "custom", label: "Custom", icon: <Sliders className="h-4 w-4" />, desc: "Your own custom writing prompt" },
-  { id: "ai-detector", label: "AI Indicators", icon: <ShieldAlert className="h-4 w-4" />, desc: "Heuristic pattern evaluation" },
+  { id: "improve", label: "IMPROVE", icon: <Wand2 className="h-3.5 w-3.5" />, desc: "Enhance flow, clarity, and precision" },
+  { id: "grammar", label: "GRAMMAR", icon: <CheckCheck className="h-3.5 w-3.5" />, desc: "Spelling, syntax, and punctuation" },
+  { id: "paraphrase", label: "REPHRASE", icon: <RefreshCw className="h-3.5 w-3.5" />, desc: "Rewrite while keeping core meaning" },
+  { id: "tone", label: "TONE", icon: <Palette className="h-3.5 w-3.5" />, desc: "Adjust voice and register" },
+  { id: "summarize", label: "SUMMARIZE", icon: <FileText className="h-3.5 w-3.5" />, desc: "Distill key takeaways and points" },
+  { id: "shorten-expand", label: "LENGTH", icon: <Scissors className="h-3.5 w-3.5" />, desc: "Control concise or detailed length" },
+  { id: "spelling", label: "SPELLING", icon: <SpellCheck className="h-3.5 w-3.5" />, desc: "Orthography and typo correction only" },
+  { id: "translate", label: "TRANSLATE", icon: <Languages className="h-3.5 w-3.5" />, desc: "Idiomatic translation" },
+  { id: "custom", label: "CUSTOM", icon: <Sliders className="h-3.5 w-3.5" />, desc: "Your own custom writing prompt" },
+  { id: "ai-detector", label: "INDICATORS", icon: <ShieldAlert className="h-3.5 w-3.5" />, desc: "Heuristic pattern evaluation" },
 ];
 
 const PARAPHRASE_MODES: Array<{ id: ParaphraseMode; label: string }> = [
@@ -233,28 +231,28 @@ export function AssistantPanel({
   const isReady = !requiresKey || hasKey;
 
   return (
-    <aside aria-label="AI Writing Assistant" className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 w-full">
+    <aside aria-label="AI Writing Assistant" className="flex flex-col h-full bg-bg border-l border-line w-full select-none">
       {/* Top Provider Bar */}
-      <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-white">
-            <Sparkles className="h-4 w-4 text-[#0268cc]" />
-            <span>AI Assistant</span>
+      <div className="p-2.5 border-b border-line bg-bg-raised space-y-2">
+        <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 text-ink font-semibold">
+            <Sparkles className="h-3.5 w-3.5 text-accent" />
+            <span>MODEL CONTROLS</span>
           </div>
           <Link
             href="/settings"
-            className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-[#0268cc] transition-colors"
+            className="flex items-center gap-1 text-muted hover:text-ink transition-colors"
           >
             <Settings className="h-3 w-3" />
-            <span>Settings</span>
+            <span>SETTINGS</span>
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1.5">
           <select
             value={selectedProvider}
             onChange={(e) => handleProviderChange(e.target.value as ProviderId)}
-            className="h-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs text-slate-800 dark:text-slate-200 focus:border-[#0268cc] focus:outline-none"
+            className="h-7 rounded-none border border-line bg-bg px-2 font-mono text-[11px] text-ink focus:border-line-strong focus:outline-none"
           >
             {Object.entries(PROVIDER_CATALOG).map(([id, info]) => (
               <option key={id} value={id}>
@@ -266,7 +264,7 @@ export function AssistantPanel({
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
-            className="h-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs text-slate-800 dark:text-slate-200 focus:border-[#0268cc] focus:outline-none truncate"
+            className="h-7 rounded-none border border-line bg-bg px-2 font-mono text-[11px] text-ink focus:border-line-strong focus:outline-none truncate"
           >
             {PROVIDER_CATALOG[selectedProvider]?.popularModels.map((m) => (
               <option key={m.id} value={m.id}>
@@ -277,7 +275,7 @@ export function AssistantPanel({
         </div>
 
         {!isReady && (
-          <div className="p-2 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 border border-amber-200 dark:border-amber-900/60 text-[11px] flex items-center justify-between">
+          <div className="p-2 rounded-none bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-mono text-[10px] flex items-center justify-between">
             <span>API key needed for {PROVIDER_CATALOG[selectedProvider]?.name}</span>
             <Link href="/settings" className="font-semibold underline ml-2">
               Add Key
@@ -287,18 +285,18 @@ export function AssistantPanel({
       </div>
 
       {/* Scope Pill */}
-      <div className="px-3.5 py-1.5 bg-slate-100/60 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+      <div className="px-3 py-1.5 bg-bg-sunken/40 border-b border-line flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-muted">
         <span>
-          Target:{" "}
-          <strong className="text-slate-800 dark:text-slate-200">
-            {isSelectionActive ? "Selected Text" : "Full Document"}
+          {"TARGET // "}
+          <strong className="text-ink">
+            {isSelectionActive ? "SELECTION" : "FULL DOCUMENT"}
           </strong>
         </span>
-        <span className="font-mono text-[10px]">{wordCount} words</span>
+        <span>{wordCount} WORDS</span>
       </div>
 
       {/* Main Tool Selector Tab Strip */}
-      <div className="p-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto flex gap-1 scrollbar-none bg-slate-50/30 dark:bg-slate-900/30">
+      <div className="p-1.5 border-b border-line overflow-x-auto flex gap-1 scrollbar-none bg-bg-sunken/20">
         {TOOLS.map((tool) => {
           const isActive = currentTool === tool.id;
           return (
@@ -306,10 +304,10 @@ export function AssistantPanel({
               key={tool.id}
               onClick={() => handleToolSelect(tool.id)}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                "flex items-center gap-1 px-2 py-1 rounded-none font-mono text-[10px] uppercase tracking-wider whitespace-nowrap transition-colors border",
                 isActive
-                  ? "bg-[#0268cc] text-white font-semibold shadow-2xs"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-invert-bg text-invert-fg border-transparent font-semibold"
+                  : "bg-bg text-muted border-line hover:text-ink hover:border-line-strong"
               )}
             >
               {tool.icon}
@@ -320,59 +318,54 @@ export function AssistantPanel({
       </div>
 
       {/* Tool-specific Settings & Controls */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 font-mono text-xs">
         {currentTool === "paraphrase" && (
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground/70">Paraphrase Style</label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {PARAPHRASE_MODES.map((mode) => (
-                  <button
-                    key={mode.id}
-                    onClick={() => setParaphraseMode(mode.id)}
-                    className={cn(
-                      "py-1 px-2 rounded text-xs text-left border transition-colors",
-                      paraphraseMode === mode.id
-                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 font-semibold"
-                        : "border-surface-border hover:bg-surface-muted text-foreground/80"
-                    )}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
+          <div className="space-y-2">
+            <label className="block text-[10px] uppercase tracking-wider text-muted">PARAPHRASE STYLE</label>
+            <div className="grid grid-cols-2 gap-1">
+              {PARAPHRASE_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  onClick={() => setParaphraseMode(mode.id)}
+                  className={cn(
+                    "py-1 px-2 text-[10px] uppercase tracking-wider text-left border rounded-none transition-colors",
+                    paraphraseMode === mode.id
+                      ? "border-line-strong bg-invert-bg text-invert-fg font-semibold"
+                      : "border-line bg-bg text-muted hover:text-ink"
+                  )}
+                >
+                  {mode.label}
+                </button>
+              ))}
             </div>
 
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-foreground/70">Alternatives</span>
-                <span className="font-mono">{alternativeCount}</span>
-              </div>
+            <div className="pt-2 flex items-center justify-between text-[10px] uppercase tracking-wider text-muted">
+              <span>ALTERNATIVES: {alternativeCount}</span>
               <input
                 type="range"
                 min="1"
                 max="4"
                 value={alternativeCount}
                 onChange={(e) => setAlternativeCount(Number(e.target.value))}
-                className="w-full accent-brand-500"
+                className="w-24 accent-ink"
               />
             </div>
           </div>
         )}
 
         {currentTool === "tone" && (
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground/70">Desired Tone</label>
-            <div className="grid grid-cols-2 gap-1.5">
+          <div className="space-y-2">
+            <label className="block text-[10px] uppercase tracking-wider text-muted">DESIRED TONE</label>
+            <div className="grid grid-cols-2 gap-1">
               {TONES.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setToneType(t.id)}
                   className={cn(
-                    "py-1 px-2 rounded text-xs text-left border transition-colors",
+                    "py-1 px-2 text-[10px] uppercase tracking-wider text-left border rounded-none transition-colors",
                     toneType === t.id
-                      ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 font-semibold"
-                      : "border-surface-border hover:bg-surface-muted text-foreground/80"
+                      ? "border-line-strong bg-invert-bg text-invert-fg font-semibold"
+                      : "border-line bg-bg text-muted hover:text-ink"
                   )}
                 >
                   {t.label}
@@ -383,18 +376,18 @@ export function AssistantPanel({
         )}
 
         {currentTool === "summarize" && (
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground/70">Summary Format</label>
+          <div className="space-y-2">
+            <label className="block text-[10px] uppercase tracking-wider text-muted">SUMMARY FORMAT</label>
             <div className="space-y-1">
               {SUMMARY_FORMATS.map((fmt) => (
                 <button
                   key={fmt.id}
                   onClick={() => setSummaryFormat(fmt.id)}
                   className={cn(
-                    "w-full py-1.5 px-2.5 rounded text-xs text-left border transition-colors",
+                    "w-full py-1.5 px-2 text-[10px] uppercase tracking-wider text-left border rounded-none transition-colors",
                     summaryFormat === fmt.id
-                      ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 font-semibold"
-                      : "border-surface-border hover:bg-surface-muted text-foreground/80"
+                      ? "border-line-strong bg-invert-bg text-invert-fg font-semibold"
+                      : "border-line bg-bg text-muted hover:text-ink"
                   )}
                 >
                   {fmt.label}
@@ -406,33 +399,41 @@ export function AssistantPanel({
 
         {currentTool === "shorten-expand" && (
           <div className="space-y-2">
-            <label className="text-xs font-medium text-foreground/70">Length Action</label>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={shortenExpandMode === "shorten" ? "primary" : "outline"}
-                size="sm"
+            <label className="block text-[10px] uppercase tracking-wider text-muted">LENGTH ADJUSTMENT</label>
+            <div className="grid grid-cols-2 gap-1">
+              <button
                 onClick={() => setShortenExpandMode("shorten")}
+                className={cn(
+                  "py-1.5 px-2 text-[10px] uppercase tracking-wider text-center border rounded-none transition-colors",
+                  shortenExpandMode === "shorten"
+                    ? "border-line-strong bg-invert-bg text-invert-fg font-semibold"
+                    : "border-line bg-bg text-muted hover:text-ink"
+                )}
               >
-                Shorten Sentences
-              </Button>
-              <Button
-                variant={shortenExpandMode === "expand" ? "primary" : "outline"}
-                size="sm"
+                SHORTEN / CONCISE
+              </button>
+              <button
                 onClick={() => setShortenExpandMode("expand")}
+                className={cn(
+                  "py-1.5 px-2 text-[10px] uppercase tracking-wider text-center border rounded-none transition-colors",
+                  shortenExpandMode === "expand"
+                    ? "border-line-strong bg-invert-bg text-invert-fg font-semibold"
+                    : "border-line bg-bg text-muted hover:text-ink"
+                )}
               >
-                Expand Detail
-              </Button>
+                EXPAND / ELABORATE
+              </button>
             </div>
           </div>
         )}
 
         {currentTool === "translate" && (
           <div className="space-y-2">
-            <label className="text-xs font-medium text-foreground/70">Target Language</label>
+            <label className="block text-[10px] uppercase tracking-wider text-muted">TARGET LANGUAGE</label>
             <select
               value={targetLanguage}
               onChange={(e) => setTargetLanguage(e.target.value)}
-              className="w-full h-9 rounded-md border border-surface-border bg-surface px-3 text-xs text-foreground focus:border-brand-500 focus:outline-none"
+              className="w-full h-8 rounded-none border border-line bg-bg px-2 font-mono text-xs text-ink focus:border-line-strong focus:outline-none"
             >
               {LANGUAGES.map((lang) => (
                 <option key={lang} value={lang}>
@@ -445,91 +446,116 @@ export function AssistantPanel({
 
         {currentTool === "custom" && (
           <div className="space-y-2">
+            <label className="block text-[10px] uppercase tracking-wider text-muted">CUSTOM PROMPT</label>
             <Textarea
-              label="Custom Instructions"
-              placeholder="e.g., Rewrite to sound like a Wall Street Journal column, or simplify for a non-technical reader..."
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
-              rows={3}
+              placeholder="e.g. Turn this into bullet points suitable for a slide deck..."
+              className="min-h-[90px]"
             />
           </div>
         )}
 
-        {currentTool === "ai-detector" && <AIDetectorTool text={targetText} />}
+        {currentTool === "improve" && (
+          <div className="space-y-2">
+            <label className="block text-[10px] uppercase tracking-wider text-muted">IMPROVEMENT FOCUS</label>
+            <div className="grid grid-cols-2 gap-1">
+              {[
+                { id: "all", label: "Overall" },
+                { id: "clarity", label: "Clarity" },
+                { id: "flow", label: "Flow & Rhythm" },
+                { id: "vocabulary", label: "Vocabulary" },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setImprovementFocus(f.id as ImprovementFocus)}
+                  className={cn(
+                    "py-1 px-2 text-[10px] uppercase tracking-wider text-left border rounded-none transition-colors",
+                    improvementFocus === f.id
+                      ? "border-line-strong bg-invert-bg text-invert-fg font-semibold"
+                      : "border-line bg-bg text-muted hover:text-ink"
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {currentTool === "ai-detector" && (
+          <AIDetectorTool currentText={targetText} />
+        )}
 
         {/* Action Trigger Button */}
         {currentTool !== "ai-detector" && (
           <div className="pt-2">
             {isLoading ? (
-              <button
+              <Button
+                variant="danger"
+                size="md"
                 onClick={handleCancel}
-                className="w-full h-9 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99]"
+                className="w-full h-9"
               >
-                <span>Stop Generating</span>
-              </button>
+                STOP GENERATION
+              </Button>
             ) : (
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 onClick={handleRunTask}
-                className="w-full h-9 rounded-lg bg-[#0268cc] hover:bg-[#0256a9] text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99]"
+                disabled={!isReady}
+                className="w-full h-9"
               >
-                <Sparkles className="h-4 w-4" />
-                <span>Run {TOOLS.find((t) => t.id === currentTool)?.label}</span>
-              </button>
+                RUN {TOOLS.find((t) => t.id === currentTool)?.label || "TOOL"}
+              </Button>
             )}
           </div>
         )}
 
-        {/* Live Streaming Delta Preview */}
-        {isLoading && streamingDelta && (
-          <div className="p-3 rounded-lg border border-brand-200 dark:border-brand-900 bg-brand-50/40 dark:bg-brand-950/20 text-xs space-y-1.5 animate-in fade-in">
-            <div className="flex items-center gap-1.5 font-semibold text-brand-600 dark:text-brand-400">
-              <Sparkles className="h-3.5 w-3.5 animate-spin" />
-              Streaming response...
-            </div>
-            <p className="whitespace-pre-wrap text-foreground/90 font-mono text-[11px] leading-relaxed">
-              {streamingDelta}
-            </p>
-          </div>
-        )}
-
-        {/* Error Alert */}
+        {/* Error Callout */}
         {error && (
-          <div className="p-3 rounded-md bg-rose-50 border border-rose-200 dark:bg-rose-950/30 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-200 flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
-            <div className="space-y-1">
-              <span className="font-semibold">Request Error</span>
-              <p className="text-[11px] leading-relaxed opacity-90">{error}</p>
+          <div className="p-2.5 rounded-none border border-danger/40 bg-danger/10 text-danger text-xs flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">EXECUTION ERROR</span>
+              <p className="font-sans text-[11px] leading-relaxed">{error}</p>
             </div>
           </div>
         )}
 
-        {/* Result Renderers */}
-        {result && (
-          <div className="pt-2">
-            {result.toolId === "grammar" && result.grammarData ? (
+        {/* Streaming output display */}
+        {isLoading && streamingDelta && (
+          <div className="p-3 border border-line bg-bg-raised space-y-1.5 animate-pulse">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted">STREAMING OUTPUT...</span>
+            <div className="font-sans text-xs text-ink leading-relaxed whitespace-pre-wrap">
+              {streamingDelta}
+            </div>
+          </div>
+        )}
+
+        {/* Results view */}
+        {result && !isLoading && (
+          <div className="space-y-3 pt-2">
+            {result.toolId === "grammar" ? (
               <GrammarTool
-                originalText={targetText}
-                result={result.grammarData}
-                onAccept={handleAccept}
-                onReject={handleReject}
-                selectionOnly={isSelectionActive}
+                originalText={result.originalText}
+                result={result.grammarData || { correctedText: result.generatedText, changes: [] }}
+                onApplyReplacement={handleAccept}
+                onDismiss={handleReject}
               />
             ) : result.alternatives && result.alternatives.length > 1 ? (
               <AlternativesView
-                originalText={targetText}
-                alternatives={result.alternatives}
-                onAccept={handleAccept}
-                onReject={handleReject}
-                selectionOnly={isSelectionActive}
+                result={result}
+                onApplyAlternative={handleAccept}
+                onDismiss={handleReject}
               />
             ) : (
               <DiffViewer
-                originalText={targetText}
-                suggestedText={result.generatedText}
+                original={result.originalText}
+                modified={result.generatedText}
                 onAccept={() => handleAccept(result.generatedText)}
                 onReject={handleReject}
-                title="Generated Output"
-                selectionOnly={isSelectionActive}
               />
             )}
           </div>

@@ -8,7 +8,6 @@ import { exportAsPlainText, exportAsMarkdown, exportAsHTML, exportAsDocx, export
 import { importFile } from "@/lib/utils/import";
 import { ThemeToggle } from "./theme-toggle";
 import { Button } from "../shared/button";
-import { Input } from "../shared/input";
 import { Modal } from "../shared/modal";
 import {
   FileText,
@@ -21,12 +20,8 @@ import {
   Upload,
   Settings,
   Shield,
-  Clock,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
-  MoreVertical,
-  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
@@ -147,33 +142,33 @@ export function Sidebar({
 
   if (isCollapsed) {
     return (
-      <aside aria-label="Documents Sidebar" className="w-14 border-r border-surface-border bg-surface flex flex-col items-center py-3 justify-between">
+      <aside aria-label="Documents Sidebar" className="w-12 border-r border-line bg-bg flex flex-col items-center py-3 justify-between shrink-0 select-none">
         <div className="flex flex-col items-center gap-3">
-          <Link href="/" className="p-1 rounded-lg hover:opacity-85 transition" title="Lingually">
-            <img src="/Images/Lingually icon.png" alt="Lingually" className="h-7 w-7 object-contain" />
+          <Link href="/" className="p-1 hover:opacity-80 transition" title="Lingually">
+            <img src="/Images/Lingually icon.png" alt="Lingually" className="h-5 w-5 object-contain" />
           </Link>
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="p-1.5 text-foreground/60 hover:text-foreground rounded hover:bg-surface-muted"
+            className="p-1.5 text-muted hover:text-ink rounded-none hover:bg-bg-raised transition-colors"
             title="Expand Sidebar"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
             onClick={handleCreateDocument}
-            className="p-2 rounded-md bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-950 dark:text-brand-300"
+            className="p-2 border border-line-strong bg-bg hover:bg-invert-bg hover:text-invert-fg text-ink transition-colors"
             title="New Document"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
 
         <div className="flex flex-col items-center gap-2">
           <ThemeToggle />
-          <Link href="/settings" className="p-2 text-foreground/60 hover:text-foreground" title="Settings">
-            <Settings className="h-4 w-4" />
+          <Link href="/settings" className="p-1.5 text-muted hover:text-ink" title="Settings">
+            <Settings className="h-3.5 w-3.5" />
           </Link>
         </div>
       </aside>
@@ -181,85 +176,77 @@ export function Sidebar({
   }
 
   return (
-    <aside aria-label="Documents Sidebar" className="w-64 sm:w-72 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full select-none shrink-0">
+    <aside aria-label="Documents Sidebar" className="w-64 sm:w-72 border-r border-line bg-bg flex flex-col h-full select-none shrink-0">
       {/* Brand & New Document Header */}
-      <div className="p-3.5 border-b border-slate-200/80 dark:border-slate-800 space-y-3">
+      <div className="p-3 border-b border-line space-y-2.5">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <img
-              src="/Images/Lingually Logo.png"
-              alt="Lingually"
-              className="h-6 w-auto object-contain transition-transform group-hover:scale-[1.02]"
-            />
-          </Link>
-
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title="Collapse Sidebar"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          </div>
+          <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
+            {"00 // WORKSPACE"}
+          </span>
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="p-1 text-muted hover:text-ink rounded-none hover:bg-bg-raised transition"
+            title="Collapse Sidebar"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         <button
           type="button"
           onClick={handleCreateDocument}
-          className="w-full h-8 px-3 rounded-lg bg-[#0268cc] hover:bg-[#0256a9] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition active:scale-[0.99]"
+          className="w-full h-8 px-3 rounded-none bg-invert-bg text-invert-fg hover:opacity-85 font-mono text-[11px] uppercase tracking-[0.12em] font-semibold flex items-center justify-center gap-1.5 transition active:scale-[0.99]"
         >
           <Plus className="h-3.5 w-3.5" />
-          <span>New Document</span>
+          <span>NEW DOCUMENT</span>
         </button>
       </div>
 
       {/* Search & Favorites Filter */}
-      <div className="px-3 pt-3 pb-2.5 space-y-2 border-b border-slate-200/80 dark:border-slate-800">
+      <div className="px-3 pt-2.5 pb-2 space-y-2 border-b border-line">
         <div className="relative">
-          <Search className="h-3.5 w-3.5 absolute left-2.5 top-2 text-slate-400" />
+          <Search className="h-3 w-3 absolute left-2.5 top-2.5 text-muted" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search documents..."
-            className="w-full h-8 pl-8 pr-3 text-xs bg-slate-50 dark:bg-slate-800/60 rounded-md border border-slate-200 dark:border-slate-700/60 focus:outline-none focus:border-[#0268cc] focus:bg-white text-slate-800 dark:text-slate-200 placeholder:text-slate-400 transition"
+            placeholder="FILTER DOCUMENTS..."
+            className="w-full h-7 pl-7 pr-2.5 font-mono text-[11px] bg-bg-raised rounded-none border border-line focus:outline-none focus:border-line-strong text-ink placeholder:text-muted/60 transition"
           />
         </div>
 
-        <div className="flex gap-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
+        <div className="flex gap-px bg-line p-px">
           <button
             type="button"
             onClick={() => setFilterMode("all")}
             className={cn(
-              "flex-1 py-1 text-xs rounded-md font-medium text-center transition-all",
+              "flex-1 py-1 font-mono text-[10px] uppercase tracking-wider text-center transition-colors rounded-none",
               filterMode === "all"
-                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-semibold shadow-xs"
-                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                ? "bg-invert-bg text-invert-fg font-semibold"
+                : "bg-bg text-muted hover:text-ink"
             )}
           >
-            All ({documents.length})
+            ALL ({documents.length})
           </button>
           <button
             type="button"
             onClick={() => setFilterMode("favorites")}
             className={cn(
-              "flex-1 py-1 text-xs rounded-md font-medium text-center transition-all flex items-center justify-center gap-1",
+              "flex-1 py-1 font-mono text-[10px] uppercase tracking-wider text-center transition-colors flex items-center justify-center gap-1 rounded-none",
               filterMode === "favorites"
-                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-semibold shadow-xs"
-                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                ? "bg-invert-bg text-invert-fg font-semibold"
+                : "bg-bg text-muted hover:text-ink"
             )}
           >
-            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-            Favorites
+            <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+            FAVORITES
           </button>
         </div>
       </div>
 
       {/* Document Items List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
         {filteredDocs.map((doc) => {
           const isActive = doc.id === activeDocumentId;
           return (
@@ -267,20 +254,20 @@ export function Sidebar({
               key={doc.id}
               onClick={() => onSelectDocument(doc.id)}
               className={cn(
-                "group relative flex items-start justify-between p-2.5 rounded-lg cursor-pointer transition-all text-xs border border-transparent",
+                "group relative flex items-start justify-between p-2 cursor-pointer transition-colors border",
                 isActive
-                  ? "bg-[#eef6fc] text-[#0268cc] dark:bg-sky-950/40 dark:text-sky-300 font-medium border-[#bae6fd]/50 dark:border-sky-800/60 shadow-2xs"
-                  : "hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300"
+                  ? "bg-bg-raised text-ink border-line-strong font-medium"
+                  : "bg-transparent hover:bg-bg-raised/60 text-muted hover:text-ink border-transparent"
               )}
             >
               <div className="space-y-0.5 overflow-hidden pr-2">
-                <div className="font-semibold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
-                  <FileText className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-[#0268cc]" : "text-slate-400")} />
+                <div className="font-sans text-xs font-semibold text-ink truncate flex items-center gap-1.5">
+                  <FileText className={cn("h-3 w-3 shrink-0", isActive ? "text-accent" : "text-muted")} />
                   <span className="truncate">{doc.title || "Untitled Document"}</span>
                 </div>
-                <div className="text-[10px] text-slate-400 flex items-center gap-2">
+                <div className="font-mono text-[10px] text-muted flex items-center gap-1.5">
                   <span>{doc.wordCount} words</span>
-                  <span>•</span>
+                  <span>/</span>
                   <span>{new Date(doc.updatedAt).toLocaleDateString([], { month: "short", day: "numeric" })}</span>
                 </div>
               </div>
@@ -290,7 +277,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={(e) => handleToggleFavorite(e, doc.id)}
-                  className="p-1 rounded hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-amber-500 transition"
+                  className="p-1 text-muted hover:text-amber-500 transition"
                   title={doc.favorite ? "Unfavorite" : "Favorite"}
                 >
                   <Star className={cn("h-3 w-3", doc.favorite && "fill-amber-400 text-amber-400")} />
@@ -298,7 +285,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={(e) => handleDuplicate(e, doc.id)}
-                  className="p-1 rounded hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                  className="p-1 text-muted hover:text-ink transition"
                   title="Duplicate Document"
                 >
                   <Copy className="h-3 w-3" />
@@ -309,7 +296,7 @@ export function Sidebar({
                     e.stopPropagation();
                     setExportModalDoc(doc);
                   }}
-                  className="p-1 rounded hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                  className="p-1 text-muted hover:text-ink transition"
                   title="Export Document"
                 >
                   <Download className="h-3 w-3" />
@@ -320,7 +307,7 @@ export function Sidebar({
                     e.stopPropagation();
                     setDeleteConfirmId(doc.id);
                   }}
-                  className="p-1 rounded hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-rose-600 transition"
+                  className="p-1 text-muted hover:text-danger transition"
                   title="Delete Document"
                 >
                   <Trash2 className="h-3 w-3" />
@@ -331,24 +318,24 @@ export function Sidebar({
         })}
 
         {filteredDocs.length === 0 && (
-          <div className="text-center p-6 text-slate-400 text-xs">
-            {searchQuery ? "No matching documents found." : "No documents yet. Create one above!"}
+          <div className="text-center p-6 text-muted font-mono text-[11px]">
+            {searchQuery ? "NO MATCHING DOCUMENTS." : "NO DOCUMENTS YET."}
           </div>
         )}
       </div>
 
       {/* Import / Export & Navigation Footer */}
-      <div className="p-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2 text-xs bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="p-2.5 border-t border-line space-y-2 bg-bg-sunken/40">
         {importError && (
-          <div className="p-2 rounded bg-rose-50 text-rose-800 dark:bg-rose-950 dark:text-rose-200 text-[11px]">
+          <div className="p-2 border border-danger/40 bg-danger/10 text-danger font-mono text-[10px]">
             {importError}
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2">
-          <label className="flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg border border-slate-200 hover:border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-slate-700 dark:text-slate-200 font-medium text-xs transition">
-            <Upload className="h-3.5 w-3.5 text-slate-500" />
-            <span>Import</span>
+        <div className="grid grid-cols-2 gap-1.5">
+          <label className="flex items-center justify-center gap-1.5 h-7 px-2 border border-line bg-bg hover:bg-bg-raised cursor-pointer text-ink font-mono text-[10px] uppercase tracking-wider transition">
+            <Upload className="h-3 w-3 text-muted" />
+            <span>IMPORT</span>
             <input
               type="file"
               accept=".txt,.md,.docx,.json"
@@ -361,28 +348,28 @@ export function Sidebar({
             variant="outline"
             size="sm"
             onClick={() => exportAsBackup(documents)}
-            className="h-8 gap-1.5 text-xs text-slate-700 dark:text-slate-200 font-medium border-slate-200 dark:border-slate-700"
+            className="h-7 text-[10px] font-mono uppercase tracking-wider"
             title="Download full JSON backup of all documents"
           >
-            <Download className="h-3.5 w-3.5 text-slate-500" />
-            <span>Backup All</span>
+            <Download className="h-3 w-3 mr-1 text-muted" />
+            <span>BACKUP</span>
           </Button>
         </div>
 
-        <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-slate-500 text-xs">
+        <div className="pt-2 border-t border-line flex items-center justify-between text-muted font-mono text-[10px] uppercase tracking-wider">
           <Link
             href="/settings"
-            className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition font-medium"
+            className="flex items-center gap-1 hover:text-ink transition"
           >
-            <Settings className="h-3.5 w-3.5" />
-            <span>Settings</span>
+            <Settings className="h-3 w-3" />
+            <span>SETTINGS</span>
           </Link>
           <Link
             href="/privacy"
-            className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition font-medium"
+            className="flex items-center gap-1 hover:text-ink transition"
           >
-            <Shield className="h-3.5 w-3.5" />
-            <span>Privacy</span>
+            <Shield className="h-3 w-3" />
+            <span>PRIVACY</span>
           </Link>
         </div>
       </div>
@@ -391,84 +378,65 @@ export function Sidebar({
       <Modal
         isOpen={Boolean(deleteConfirmId)}
         onClose={() => setDeleteConfirmId(null)}
-        title="Delete Document"
+        title="DELETE DOCUMENT"
         description="Are you sure you want to permanently delete this document and its revision history?"
         maxWidth="sm"
       >
         <div className="flex items-center justify-end gap-2 pt-4">
           <Button variant="outline" size="sm" onClick={() => setDeleteConfirmId(null)}>
-            Cancel
+            CANCEL
           </Button>
           <Button variant="danger" size="sm" onClick={handleDelete}>
-            Delete Permanently
+            DELETE
           </Button>
         </div>
       </Modal>
 
-      {/* Export Format Modal */}
+      {/* Single Doc Export Modal */}
       {exportModalDoc && (
         <Modal
           isOpen={Boolean(exportModalDoc)}
           onClose={() => setExportModalDoc(null)}
-          title={`Export "${exportModalDoc.title}"`}
-          description="Choose your preferred file export format."
+          title={`EXPORT: ${exportModalDoc.title}`}
+          description="Download this document in your preferred format."
           maxWidth="sm"
         >
-          <div className="space-y-2 pt-2">
+          <div className="hairline-grid grid-cols-2 pt-2">
             <button
               onClick={() => {
                 exportAsMarkdown(exportModalDoc);
                 setExportModalDoc(null);
               }}
-              className="w-full text-left p-2.5 rounded border border-surface-border hover:bg-surface-muted transition-colors flex items-center justify-between text-xs"
+              className="p-3 bg-bg hover:bg-bg-raised text-left font-mono text-xs uppercase tracking-wider text-ink transition-colors border-0"
             >
-              <div>
-                <strong className="text-foreground">Markdown (.md)</strong>
-                <p className="text-[10px] text-foreground/50">Clean formatted markdown for developers and note-taking.</p>
-              </div>
-              <Download className="h-3.5 w-3.5 text-foreground/40" />
+              MARKDOWN (.md)
             </button>
-
-            <button
-              onClick={() => {
-                exportAsDocx(exportModalDoc);
-                setExportModalDoc(null);
-              }}
-              className="w-full text-left p-2.5 rounded border border-surface-border hover:bg-surface-muted transition-colors flex items-center justify-between text-xs"
-            >
-              <div>
-                <strong className="text-foreground">Microsoft Word (.docx)</strong>
-                <p className="text-[10px] text-foreground/50">Standard word processing document.</p>
-              </div>
-              <Download className="h-3.5 w-3.5 text-foreground/40" />
-            </button>
-
-            <button
-              onClick={() => {
-                exportAsHTML(exportModalDoc);
-                setExportModalDoc(null);
-              }}
-              className="w-full text-left p-2.5 rounded border border-surface-border hover:bg-surface-muted transition-colors flex items-center justify-between text-xs"
-            >
-              <div>
-                <strong className="text-foreground">HTML (.html)</strong>
-                <p className="text-[10px] text-foreground/50">Sanitized standalone webpage.</p>
-              </div>
-              <Download className="h-3.5 w-3.5 text-foreground/40" />
-            </button>
-
             <button
               onClick={() => {
                 exportAsPlainText(exportModalDoc);
                 setExportModalDoc(null);
               }}
-              className="w-full text-left p-2.5 rounded border border-surface-border hover:bg-surface-muted transition-colors flex items-center justify-between text-xs"
+              className="p-3 bg-bg hover:bg-bg-raised text-left font-mono text-xs uppercase tracking-wider text-ink transition-colors border-0"
             >
-              <div>
-                <strong className="text-foreground">Plain Text (.txt)</strong>
-                <p className="text-[10px] text-foreground/50">Unformatted raw text.</p>
-              </div>
-              <Download className="h-3.5 w-3.5 text-foreground/40" />
+              PLAIN TEXT (.txt)
+            </button>
+            <button
+              onClick={() => {
+                exportAsHTML(exportModalDoc);
+                setExportModalDoc(null);
+              }}
+              className="p-3 bg-bg hover:bg-bg-raised text-left font-mono text-xs uppercase tracking-wider text-ink transition-colors border-0"
+            >
+              HTML (.html)
+            </button>
+            <button
+              onClick={() => {
+                exportAsDocx(exportModalDoc);
+                setExportModalDoc(null);
+              }}
+              className="p-3 bg-bg hover:bg-bg-raised text-left font-mono text-xs uppercase tracking-wider text-ink transition-colors border-0"
+            >
+              WORD (.docx)
             </button>
           </div>
         </Modal>
