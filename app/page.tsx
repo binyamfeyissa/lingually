@@ -77,6 +77,7 @@ export default function HomePage() {
 
   const [activeSuggestionId, setActiveSuggestionId] = useState<string>("s1");
   const [isCopiedCommand, setIsCopiedCommand] = useState(false);
+  const [showChromeInstallHelp, setShowChromeInstallHelp] = useState(false);
 
   const applySuggestion = (id: string) => {
     const s = suggestions.find((item) => item.id === id);
@@ -702,14 +703,33 @@ export default function HomePage() {
                 Inline grammar checks and floating suggestion cards across web inputs, emails, and forms.
               </p>
             </div>
-            <a
-              href="/downloads/lingually-chrome-extension.zip"
-              download
-              className="inline-flex items-center justify-center gap-1.5 h-8 font-mono text-[10px] uppercase tracking-wider font-semibold border border-line text-ink hover:bg-bg-raised transition"
-            >
-              <Download className="w-3 h-3" />
-              <span>DOWNLOAD ZIP</span>
-            </a>
+            <div className="space-y-2">
+              <a
+                href="/downloads/lingually-chrome-extension.zip"
+                download
+                className="w-full inline-flex items-center justify-center gap-1.5 h-8 font-mono text-[10px] uppercase tracking-wider font-semibold border border-line text-ink hover:bg-bg-raised transition"
+              >
+                <Download className="w-3 h-3" />
+                <span>DOWNLOAD ZIP</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowChromeInstallHelp((v) => !v)}
+                className="w-full text-center font-mono text-[9px] uppercase tracking-wider text-accent hover:underline flex items-center justify-center gap-1"
+              >
+                <span>{showChromeInstallHelp ? "Hide Install Steps" : "How to install in Chrome →"}</span>
+              </button>
+
+              {showChromeInstallHelp && (
+                <div className="p-2.5 bg-bg-raised border border-line text-[11px] font-mono space-y-1 text-muted leading-tight mt-1">
+                  <p className="text-ink font-semibold text-[10px] uppercase tracking-wider">Chrome Setup (10s):</p>
+                  <p>1. In Chrome, go to <span className="text-ink font-semibold">chrome://extensions</span></p>
+                  <p>2. Enable <span className="text-ink font-semibold">Developer mode</span> (top right toggle)</p>
+                  <p>3. Click <span className="text-ink font-semibold">Load unpacked</span> and select this unzipped folder</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* macOS */}

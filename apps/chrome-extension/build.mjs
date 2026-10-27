@@ -52,7 +52,35 @@ fs.copyFileSync(path.join(EXT_DIR, "src", "popup.html"), path.join(OUT_DIR, "pop
 fs.copyFileSync(path.join(EXT_DIR, "src", "sidepanel.html"), path.join(OUT_DIR, "sidepanel.html"));
 fs.copyFileSync(path.join(EXT_DIR, "src", "options.html"), path.join(OUT_DIR, "options.html"));
 
-console.log("✅ Copied HTML, CSS, and manifest.");
+// Write step-by-step install instructions file
+const installGuide = `====================================================================
+  LINGUALLY CHROME EXTENSION — INSTALLATION GUIDE (10 SECONDS)
+====================================================================
+
+You are viewing the unpacked Chrome extension directory.
+Because Lingually is open-source and distributed without proprietary
+app stores, Google Chrome loads it directly via Developer Mode:
+
+1. Open Google Chrome.
+2. In the Chrome address bar, type:
+   chrome://extensions
+   and press Enter.
+
+3. In the top-right corner, toggle ON "Developer mode".
+
+4. In the top-left corner, click "Load unpacked".
+
+5. Select this exact folder (the one containing "manifest.json")
+   and click "Select" or "Open".
+
+====================================================================
+🎉 That's it! Lingually is now active across your browser tabs.
+Click the puzzle icon in Chrome's toolbar to pin Lingually.
+====================================================================
+`;
+fs.writeFileSync(path.join(OUT_DIR, "HOW_TO_INSTALL.txt"), installGuide, "utf-8");
+
+console.log("✅ Copied HTML, CSS, manifest, and HOW_TO_INSTALL.txt guide.");
 
 // 3. Helper to create valid PNG icon buffers without external dependencies
 function createPng(width, height, r = 99, g = 102, b = 241) {
