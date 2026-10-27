@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:extension": "node apps/chrome-extension/build.mjs",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
@@ -40,6 +41,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
+    "@types/chrome": "^0.3.6",
     "@types/diff": "^7.0.0",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",

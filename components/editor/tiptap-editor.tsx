@@ -23,6 +23,11 @@ export interface TiptapEditorProps {
     selectionOnly: boolean;
     timestamp: number;
   } | null;
+  suggestionPayload?: {
+    originalText: string;
+    replacementText: string;
+    timestamp: number;
+  } | null;
 }
 
 export function TiptapEditor({
@@ -33,6 +38,7 @@ export function TiptapEditor({
   onOpenAnalysis,
   onOpenHistory,
   replacementPayload,
+  suggestionPayload,
 }: TiptapEditorProps) {
   const [title, setTitle] = useState(document.title);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
@@ -111,6 +117,29 @@ export function TiptapEditor({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [replacementPayload, editor]);
+
+  // Handle incoming single suggestion replacements (from Review sidebar)
+  useEffect(() => {
+    if (editor && suggestionPayload && suggestionPayload.timestamp !== lastProcessedReplacementRef.current) {
+      lastProcessedReplacementRef.current = suggestionPayload.timestamp;
+
+      const currentHtml = editor.getHTML();
+      if (currentHtml.includes(suggestionPayload.originalText)) {
+        // Create revision snapshot
+        DocumentRepository.createRevision(
+          document.id,
+          "before-ai-apply",
+          `Accepted suggestion for "${suggestionPayload.originalText}"`
+        ).catch(() => {});
+
+        // Replace first occurrence in content
+        const updatedHtml = currentHtml.replace(suggestionPayload.originalText, suggestionPayload.replacementText);
+        editor.commands.setContent(updatedHtml);
+        saveDocumentNow();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestionPayload, editor]);
 
   const saveDocumentNow = useCallback(async () => {
     if (!editor) return;

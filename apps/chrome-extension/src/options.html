@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lingually Extension Settings</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      background: #030712;
+      color: #f3f4f6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .logo-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .card {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: white;
+    }
+    .card-desc {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+    input[type="text"], input[type="password"], select {
+      width: 100%;
+      background: #030712;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 12px;
+      box-sizing: border-box;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: none;
+    }
+    .btn-primary {
+      background: #6366f1;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #4f46e5;
+    }
+    .btn-secondary {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+    .btn-secondary:hover {
+      background: #334155;
+      color: white;
+    }
+    .badge-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .dict-pill {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dict-del {
+      cursor: pointer;
+      color: #94a3b8;
+      font-weight: bold;
+    }
+    .dict-del:hover {
+      color: #fb7185;
+    }
+    #save-status {
+      display: none;
+      margin-top: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo-badge">L</div>
+      <div>
+        <h1 style="margin: 0; font-size: 18px; font-weight: 700;">Lingually Extension Settings</h1>
+        <p style="margin: 2px 0 0; font-size: 12px; color: #94a3b8;">Manage your Bring Your Own Key (BYOK) providers and local dictionary.</p>
+      </div>
+    </div>
+
+    <!-- AI Providers -->
+    <div class="card">
+      <div class="card-title">AI Provider & API Key (BYOK)</div>
+      <div class="card-desc">Your keys are stored exclusively in your browser storage and never sent to any central server.</div>
+
+      <div class="form-group">
+        <label for="provider-select">Active Provider</label>
+        <select id="provider-select">
+          <option value="openai">OpenAI (GPT-4o, GPT-4o-mini)</option>
+          <option value="anthropic">Anthropic (Claude 3.5 Sonnet, Haiku)</option>
+          <option value="gemini">Google Gemini (Gemini 1.5 Flash, Pro)</option>
+          <option value="groq">Groq (Llama 3.3 70B, Fast Inference)</option>
+          <option value="ollama">Ollama (Local Offline Model)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="api-key-input">API Key</label>
+        <input type="password" id="api-key-input" placeholder="sk-... or gsk_...">
+      </div>
+
+      <button id="btn-save-keys" class="btn btn-primary">Save Provider Settings</button>
+      <div id="save-status">Settings saved successfully!</div>
+    </div>
+
+    <!-- Personal Dictionary -->
+    <div class="card">
+      <div class="card-title">Personal Dictionary</div>
+      <div class="card-desc">Words added here will never be flagged as typos or errors across websites.</div>
+
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="dict-input" placeholder="Add custom word or technical term...">
+        <button id="btn-add-dict" class="btn btn-secondary">Add</button>
+      </div>
+
+      <div class="badge-list" id="dict-list"></div>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

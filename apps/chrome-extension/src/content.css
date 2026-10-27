@@ -1,0 +1,196 @@
+/**
+ * Lingually 2.0 Chrome Extension Content Styles
+ * Completely isolated with lingually-ext-* namespace
+ */
+
+.lingually-ext-badge {
+  position: absolute;
+  z-index: 2147483640;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+
+.lingually-ext-badge:hover {
+  transform: scale(1.05);
+  background: #1e293b;
+  border-color: #6366f1;
+}
+
+.lingually-ext-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #6366f1;
+}
+
+.lingually-ext-badge-has-issues .lingually-ext-badge-dot {
+  background-color: #f43f5e;
+}
+
+.lingually-ext-card {
+  position: absolute;
+  z-index: 2147483645;
+  width: 320px;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  animation: linguallyFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes linguallyFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lingually-ext-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.lingually-ext-category {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.lingually-cat-correctness {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.lingually-cat-clarity {
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.lingually-cat-engagement {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.lingually-cat-delivery {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.lingually-ext-explanation {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.lingually-ext-diff {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #020617;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.lingually-ext-original {
+  text-decoration: line-through;
+  color: #fb7185;
+}
+
+.lingually-ext-arrow {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.lingually-ext-replacement {
+  color: #34d399;
+  font-weight: 700;
+}
+
+.lingually-ext-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.lingually-ext-btn-accept {
+  flex: 1;
+  background: #6366f1;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.lingually-ext-btn-accept:hover {
+  background: #4f46e5;
+}
+
+.lingually-ext-btn-dismiss {
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lingually-ext-btn-dismiss:hover {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+.lingually-ext-btn-dict {
+  background: transparent;
+  color: #64748b;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px;
+  text-decoration: underline;
+  margin-top: 6px;
+  display: block;
+}
+
+.lingually-ext-btn-dict:hover {
+  color: #cbd5e1;
+}

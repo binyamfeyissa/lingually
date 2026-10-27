@@ -1,4 +1,4 @@
-name: CI
+name: CI & Multi-Platform Builds
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  verify:
+  web-and-extension:
+    name: Web & Chrome Extension
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -33,3 +34,62 @@ jobs:
 
       - name: Build Next.js Application
         run: npm run build
+
+      - name: Build & Package Chrome Extension
+        run: npm run build:extension
+
+      - name: Upload Chrome Extension Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lingually-chrome-extension
+          path: public/downloads/lingually-chrome-extension.zip
+
+  desktop-matrix:
+    name: Desktop Build (${{ matrix.platform }})
+    needs: web-and-extension
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target universal-apple-darwin
+          - platform: windows-latest
+            args: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js Static Export for Tauri
+        run: npm run build
+
+      - name: Build Tauri Desktop Binary
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: "Lingually v__VERSION__"
+          releaseBody: "See CHANGELOG.md for release details."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
