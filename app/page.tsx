@@ -743,9 +743,9 @@ export default function HomePage() {
                   UNIVERSAL .DMG
                 </span>
               </div>
-              <h4 className="font-display text-sm font-bold text-ink">macOS Desktop</h4>
+              <h4 className="font-display text-sm font-bold text-ink">macOS Desktop 2.0</h4>
               <p className="font-sans text-xs text-muted mt-1 leading-relaxed">
-                Universal application supporting Apple Silicon (M-series) & Intel Macs with offline local drafts.
+                Full Writing Workbench, AI settings (Gemini, OpenAI, Claude), and system-wide in-app keyboard assist via <span className="text-ink font-semibold font-mono">⌥Space</span>.
               </p>
             </div>
             <div className="space-y-2">
@@ -771,7 +771,8 @@ export default function HomePage() {
                   <p className="text-ink font-semibold text-[10px] uppercase tracking-wider">Mac Setup (15s):</p>
                   <p>1. Open <span className="text-ink font-semibold">Lingually-macOS-Universal.dmg</span></p>
                   <p>2. Drag <span className="text-ink font-semibold">Lingually</span> to Applications</p>
-                  <p>3. Also available: <a href="/downloads/Lingually-macOS-Universal.zip" download className="text-accent underline">Direct .ZIP</a></p>
+                  <p>3. Menu Bar item + <span className="text-ink font-semibold">⌥Space</span> works in Slack, Notes, Word, Chrome</p>
+                  <p>4. Also available: <a href="/downloads/Lingually-macOS-Universal.zip" download className="text-accent underline">Direct .ZIP</a></p>
                 </div>
               )}
 
@@ -793,9 +794,9 @@ export default function HomePage() {
                   WINDOWS 64-BIT
                 </span>
               </div>
-              <h4 className="font-display text-sm font-bold text-ink">Windows Desktop</h4>
+              <h4 className="font-display text-sm font-bold text-ink">Windows Desktop 2.0</h4>
               <p className="font-sans text-xs text-muted mt-1 leading-relaxed">
-                Standalone package with native Microsoft Edge WebView2 runtime and offline drafts persistence.
+                Full Writing Workbench, AI settings (Gemini, OpenAI, Claude), and Quick-Assist floating overlay with Edge WebView2.
               </p>
             </div>
             <div className="space-y-2">
@@ -820,8 +821,8 @@ export default function HomePage() {
                 <div className="p-2.5 bg-bg-raised border border-line text-[11px] font-mono space-y-1 text-muted leading-tight mt-1">
                   <p className="text-ink font-semibold text-[10px] uppercase tracking-wider">Windows Setup (10s):</p>
                   <p>1. Extract <span className="text-ink font-semibold">Lingually-Windows-x64.zip</span></p>
-                  <p>2. Double-click <span className="text-ink font-semibold">Lingually.vbs</span> or <span className="text-ink font-semibold">Launch-Lingually.bat</span></p>
-                  <p>3. Runs with pre-installed Edge WebView2</p>
+                  <p>2. Double-click <span className="text-ink font-semibold">Lingually.vbs</span> for Workbench</p>
+                  <p>3. Double-click <span className="text-ink font-semibold">Quick-Assist.vbs</span> for Floating Overlay</p>
                 </div>
               )}
 

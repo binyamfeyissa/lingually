@@ -174,9 +174,9 @@ if (fs.existsSync(path.join(ICONS_DIR, "icon.ico"))) {
 
 // Create Windows Launch Scripts
 const launchBat = `@echo off
-title Lingually Desktop Assistant
+title Lingually Desktop Workbench
 echo Starting Lingually AI Writing Workbench...
-start msedge.exe --app="%~dp0www\\index.html" --window-size=1140,780 --user-data-dir="%LOCALAPPDATA%\\Lingually\\profile"
+start msedge.exe --app="%~dp0www\\index.html" --window-size=1160,800 --user-data-dir="%LOCALAPPDATA%\\Lingually\\profile"
 exit
 `;
 fs.writeFileSync(path.join(WIN_STAGING, "Launch-Lingually.bat"), launchBat);
@@ -185,33 +185,52 @@ const launchVbs = `Set WshShell = CreateObject("WScript.Shell")
 currentPath = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
 htmlPath = currentPath & "\\www\\index.html"
 userDataDir = WshShell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\\Lingually\\profile"
-command = "msedge.exe --app=""" & htmlPath & """ --window-size=1140,780 --user-data-dir=""" & userDataDir & """"
+command = "msedge.exe --app=""" & htmlPath & """ --window-size=1160,800 --user-data-dir=""" & userDataDir & """"
 WshShell.Run command, 0, False
 `;
 fs.writeFileSync(path.join(WIN_STAGING, "Lingually.vbs"), launchVbs);
 
+// Quick Assist floating overlay launcher for Windows
+const qaBat = `@echo off
+title Lingually Quick Assistant
+start msedge.exe --app="%~dp0www\\index.html?mode=quick-assist" --window-size=480,600 --user-data-dir="%LOCALAPPDATA%\\Lingually\\profile"
+exit
+`;
+fs.writeFileSync(path.join(WIN_STAGING, "Quick-Assist.bat"), qaBat);
+
+const qaVbs = `Set WshShell = CreateObject("WScript.Shell")
+currentPath = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
+htmlPath = currentPath & "\\www\\index.html?mode=quick-assist"
+userDataDir = WshShell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\\Lingually\\profile"
+command = "msedge.exe --app=""" & htmlPath & """ --window-size=480,600 --user-data-dir=""" & userDataDir & """"
+WshShell.Run command, 0, False
+`;
+fs.writeFileSync(path.join(WIN_STAGING, "Quick-Assist.vbs"), qaVbs);
+
 const readmeWin = `=====================================================
-  Lingually — AI Writing Workbench for Windows (64-bit)
+  Lingually — AI Writing Workbench & Assistant (Windows x64)
 =====================================================
 
 QUICK LAUNCH:
-  - Double-click "Lingually.vbs" (silent launch without terminal window)
+  - FULL WORKBENCH:
+    Double-click "Lingually.vbs" (silent launch without terminal window)
     OR double-click "Launch-Lingually.bat"
+
+  - FLOATING QUICK ASSISTANT (QuillBot/Grammarly In-App Overlay):
+    Double-click "Quick-Assist.vbs"
+    OR double-click "Quick-Assist.bat"
 
 REQUIREMENTS:
   - Windows 10 (1803+) or Windows 11
   - Microsoft Edge WebView2 runtime (pre-installed natively on modern Windows)
 
-FEATURES:
-  - Local-first deterministic grammar and typo review
-  - Multi-mode paraphraser (Standard, Fluency, Formal, Shorten, Expand)
-  - Offline-ready with local IndexedDB drafts persistence
-  - Bring Your Own Key (BYOK) for direct provider API access
-
-TAURI NATIVE INSTALLER (.MSI / .EXE):
-  For native system-tray and Windows UI Automation hotkey integration:
-  - Run: npx tauri build
-  - Binary outputs to: src-tauri/target/release/bundle/nsis/
+PRODUCTION FEATURES:
+  - Full Writing Workbench: Rich text editor, document manager, live word count, readability score
+  - Direct AI Integration: Google Gemini, OpenAI, Claude, Groq, and local Ollama
+  - Live Connection Testing: Test provider API keys with real-time millisecond latency diagnostic
+  - System-Wide Quick Assistant: Floating in-app overlay for typing in any desktop application
+  - 02 // PARAPHRASE: 7 distinct modes (Standard, Fluency, Formal, Creative, Academic, Shorten, Expand) with diff viewer
+  - Local drafts autosaved in %LOCALAPPDATA%\\Lingually\\profile
 
 Documentation: https://lingually-os.vercel.app/docs/WINDOWS_BUILD.md
 GitHub: https://github.com/binyamfeyissa/lingually
