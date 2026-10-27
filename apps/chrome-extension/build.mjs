@@ -119,13 +119,26 @@ function createPng(width, height, r = 99, g = 102, b = 241) {
   return Buffer.concat([header, ihdrChunk, idatChunk, iendChunk]);
 }
 
-// Generate icons
+// Generate icons using the authentic Lingually icon if present
+const iconSource = path.join(ROOT_DIR, "public", "Images", "Lingually icon.png");
 [16, 32, 48, 128].forEach((size) => {
-  const iconBuf = createPng(size, size, 99, 102, 241);
-  fs.writeFileSync(path.join(OUT_DIR, "icons", `icon${size}.png`), iconBuf);
+  const target = path.join(OUT_DIR, "icons", `icon${size}.png`);
+  let generated = false;
+  if (fs.existsSync(iconSource)) {
+    try {
+      execSync(`sips -z ${size} ${size} "${iconSource}" --out "${target}"`, { stdio: "ignore" });
+      generated = true;
+    } catch {
+      // fallback
+    }
+  }
+  if (!generated) {
+    const iconBuf = createPng(size, size, 2, 104, 204);
+    fs.writeFileSync(target, iconBuf);
+  }
 });
 
-console.log("✅ Generated PNG extension icons.");
+console.log("✅ Generated PNG extension icons from Lingually brand assets.");
 
 // 4. Create ZIP package for distribution
 const zipFile = path.join(PUBLIC_DOWNLOADS, "lingually-chrome-extension.zip");

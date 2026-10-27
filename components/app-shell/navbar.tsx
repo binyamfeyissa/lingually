@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState } from "react";
@@ -46,10 +47,9 @@ export function Navbar({
         </Button>
 
         <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-1.5 font-bold text-xs text-brand-600 dark:text-brand-400">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Lingually</span>
-          </div>
+          <Link href="/" className="hidden sm:flex items-center gap-1.5 font-bold text-xs text-brand-600 dark:text-brand-400 hover:opacity-90 transition">
+            <img src="/Images/Lingually Logo.png" alt="Lingually" className="h-5 w-auto object-contain" />
+          </Link>
           <span className="hidden sm:inline text-foreground/30">•</span>
           <span className="text-xs font-medium text-foreground truncate max-w-[200px] sm:max-w-[320px]">
             {document?.title || "Untitled Document"}

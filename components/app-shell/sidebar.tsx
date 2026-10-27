@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState } from "react";
@@ -148,8 +149,8 @@ export function Sidebar({
     return (
       <aside aria-label="Documents Sidebar" className="w-14 border-r border-surface-border bg-surface flex flex-col items-center py-3 justify-between">
         <div className="flex flex-col items-center gap-3">
-          <Link href="/" className="p-2 rounded-lg bg-brand-500 text-white font-bold text-xs" title="Lingually">
-            <Sparkles className="h-4 w-4" />
+          <Link href="/" className="p-1 rounded-lg hover:opacity-85 transition" title="Lingually">
+            <img src="/Images/Lingually icon.png" alt="Lingually" className="h-7 w-7 object-contain" />
           </Link>
           <button
             type="button"
@@ -184,16 +185,12 @@ export function Sidebar({
       {/* Brand & New Document Header */}
       <div className="p-3.5 border-b border-surface-border space-y-3">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-brand-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">
-              L
-            </div>
-            <div>
-              <div className="font-bold text-sm tracking-tight text-foreground flex items-center gap-1">
-                Lingually
-              </div>
-              <p className="text-[10px] text-foreground/50 tracking-tight">AI Writing Workbench</p>
-            </div>
+          <Link href="/" className="flex items-center gap-2 group">
+            <img
+              src="/Images/Lingually Logo.png"
+              alt="Lingually"
+              className="h-6 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+            />
           </Link>
 
           <div className="flex items-center gap-1">

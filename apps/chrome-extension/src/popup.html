@@ -9,8 +9,8 @@
       margin: 0;
       padding: 16px;
       width: 300px;
-      background: #090d16;
-      color: #f1f5f9;
+      background: #ffffff;
+      color: #0f172a;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       box-sizing: border-box;
     }
@@ -20,7 +20,7 @@
       justify-content: space-between;
       margin-bottom: 16px;
       padding-bottom: 12px;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid #e2e8f0;
     }
     .brand {
       display: flex;
@@ -31,43 +31,48 @@
       width: 24px;
       height: 24px;
       border-radius: 6px;
-      background: linear-gradient(135deg, #6366f1, #a855f7);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-size: 13px;
-      font-weight: bold;
+    }
+    .logo-img {
+      width: 24px;
+      height: 24px;
+      object-contain: contain;
     }
     .title {
       font-size: 14px;
       font-weight: 700;
+      color: #0f172a;
     }
     .version {
       font-size: 10px;
-      color: #818cf8;
-      background: rgba(99, 102, 241, 0.15);
+      color: #0268cc;
+      background: #eef6fc;
+      border: 1px solid rgba(2, 104, 204, 0.2);
       padding: 1px 6px;
       border-radius: 10px;
       margin-left: 4px;
+      font-weight: 600;
     }
     .toggle-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
       padding: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
     .toggle-label {
       font-size: 13px;
       font-weight: 600;
+      color: #0f172a;
     }
     .toggle-sub {
       font-size: 11px;
-      color: #94a3b8;
+      color: #64748b;
       margin-top: 2px;
     }
     .switch {
@@ -88,7 +93,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: #334155;
+      background-color: #cbd5e1;
       transition: .2s;
       border-radius: 22px;
     }
@@ -102,9 +107,10 @@
       background-color: white;
       transition: .2s;
       border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
     input:checked + .slider {
-      background-color: #6366f1;
+      background-color: #0268cc;
     }
     input:checked + .slider:before {
       transform: translateX(18px);
@@ -120,8 +126,8 @@
       justify-content: center;
       gap: 8px;
       width: 100%;
-      padding: 9px 12px;
-      border-radius: 8px;
+      padding: 10px 12px;
+      border-radius: 10px;
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
@@ -130,21 +136,23 @@
       text-decoration: none;
     }
     .btn-primary {
-      background: #6366f1;
+      background: #0268cc;
       color: white;
       border: none;
+      box-shadow: 0 1px 2px rgba(2, 104, 204, 0.2);
     }
     .btn-primary:hover {
-      background: #4f46e5;
+      background: #0256a9;
     }
     .btn-secondary {
-      background: #1e293b;
-      color: #cbd5e1;
-      border: 1px solid #334155;
+      background: #ffffff;
+      color: #334155;
+      border: 1px solid #cbd5e1;
     }
     .btn-secondary:hover {
-      background: #334155;
-      color: white;
+      background: #f8fafc;
+      color: #0f172a;
+      border-color: #94a3b8;
     }
     .footer {
       margin-top: 14px;
@@ -157,7 +165,9 @@
 <body>
   <div class="header">
     <div class="brand">
-      <div class="logo-badge">L</div>
+      <div class="logo-badge">
+        <img src="icons/icon32.png" alt="Lingually" class="logo-img" />
+      </div>
       <span class="title">Lingually</span>
       <span class="version">v2.0</span>
     </div>
