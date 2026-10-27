@@ -181,9 +181,9 @@ export function Sidebar({
   }
 
   return (
-    <aside aria-label="Documents Sidebar" className="w-64 sm:w-72 border-r border-surface-border bg-surface flex flex-col h-full select-none">
+    <aside aria-label="Documents Sidebar" className="w-64 sm:w-72 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full select-none shrink-0">
       {/* Brand & New Document Header */}
-      <div className="p-3.5 border-b border-surface-border space-y-3">
+      <div className="p-3.5 border-b border-slate-200/80 dark:border-slate-800 space-y-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <img
@@ -198,7 +198,7 @@ export function Sidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="p-1 text-foreground/60 hover:text-foreground rounded hover:bg-surface-muted"
+              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               title="Collapse Sidebar"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -206,34 +206,38 @@ export function Sidebar({
           </div>
         </div>
 
-        <Button variant="primary" size="sm" onClick={handleCreateDocument} className="w-full gap-1.5 text-xs">
+        <button
+          type="button"
+          onClick={handleCreateDocument}
+          className="w-full h-8 px-3 rounded-lg bg-[#0268cc] hover:bg-[#0256a9] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition active:scale-[0.99]"
+        >
           <Plus className="h-3.5 w-3.5" />
-          New Document
-        </Button>
+          <span>New Document</span>
+        </button>
       </div>
 
       {/* Search & Favorites Filter */}
-      <div className="px-3 pt-3 pb-2 space-y-2 border-b border-surface-border">
+      <div className="px-3 pt-3 pb-2.5 space-y-2 border-b border-slate-200/80 dark:border-slate-800">
         <div className="relative">
-          <Search className="h-3.5 w-3.5 absolute left-2.5 top-2.5 text-foreground/40" />
+          <Search className="h-3.5 w-3.5 absolute left-2.5 top-2 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search documents..."
-            className="w-full h-8 pl-8 pr-3 text-xs bg-surface-muted rounded-md border border-surface-border focus:outline-none focus:border-brand-500 text-foreground placeholder:text-foreground/40"
+            className="w-full h-8 pl-8 pr-3 text-xs bg-slate-50 dark:bg-slate-800/60 rounded-md border border-slate-200 dark:border-slate-700/60 focus:outline-none focus:border-[#0268cc] focus:bg-white text-slate-800 dark:text-slate-200 placeholder:text-slate-400 transition"
           />
         </div>
 
-        <div className="flex gap-1">
+        <div className="flex gap-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
           <button
             type="button"
             onClick={() => setFilterMode("all")}
             className={cn(
-              "flex-1 py-1 text-xs rounded font-medium text-center transition-colors",
+              "flex-1 py-1 text-xs rounded-md font-medium text-center transition-all",
               filterMode === "all"
-                ? "bg-surface-subtle text-foreground font-semibold"
-                : "text-foreground/60 hover:text-foreground"
+                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-semibold shadow-xs"
+                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             )}
           >
             All ({documents.length})
@@ -242,10 +246,10 @@ export function Sidebar({
             type="button"
             onClick={() => setFilterMode("favorites")}
             className={cn(
-              "flex-1 py-1 text-xs rounded font-medium text-center transition-colors flex items-center justify-center gap-1",
+              "flex-1 py-1 text-xs rounded-md font-medium text-center transition-all flex items-center justify-center gap-1",
               filterMode === "favorites"
-                ? "bg-surface-subtle text-foreground font-semibold"
-                : "text-foreground/60 hover:text-foreground"
+                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-semibold shadow-xs"
+                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             )}
           >
             <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
@@ -263,18 +267,18 @@ export function Sidebar({
               key={doc.id}
               onClick={() => onSelectDocument(doc.id)}
               className={cn(
-                "group relative flex items-start justify-between p-2.5 rounded-lg cursor-pointer transition-colors text-xs",
+                "group relative flex items-start justify-between p-2.5 rounded-lg cursor-pointer transition-all text-xs border border-transparent",
                 isActive
-                  ? "bg-brand-50/70 text-brand-900 dark:bg-brand-950/40 dark:text-brand-200 font-medium"
-                  : "hover:bg-surface-muted text-foreground/80"
+                  ? "bg-[#eef6fc] text-[#0268cc] dark:bg-sky-950/40 dark:text-sky-300 font-medium border-[#bae6fd]/50 dark:border-sky-800/60 shadow-2xs"
+                  : "hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300"
               )}
             >
               <div className="space-y-0.5 overflow-hidden pr-2">
-                <div className="font-semibold text-foreground truncate flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-foreground/40 shrink-0" />
+                <div className="font-semibold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+                  <FileText className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-[#0268cc]" : "text-slate-400")} />
                   <span className="truncate">{doc.title || "Untitled Document"}</span>
                 </div>
-                <div className="text-[10px] text-foreground/40 flex items-center gap-2">
+                <div className="text-[10px] text-slate-400 flex items-center gap-2">
                   <span>{doc.wordCount} words</span>
                   <span>•</span>
                   <span>{new Date(doc.updatedAt).toLocaleDateString([], { month: "short", day: "numeric" })}</span>
@@ -286,7 +290,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={(e) => handleToggleFavorite(e, doc.id)}
-                  className="p-1 rounded hover:bg-surface text-foreground/60 hover:text-amber-500"
+                  className="p-1 rounded hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-amber-500 transition"
                   title={doc.favorite ? "Unfavorite" : "Favorite"}
                 >
                   <Star className={cn("h-3 w-3", doc.favorite && "fill-amber-400 text-amber-400")} />
@@ -294,7 +298,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={(e) => handleDuplicate(e, doc.id)}
-                  className="p-1 rounded hover:bg-surface text-foreground/60 hover:text-foreground"
+                  className="p-1 rounded hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
                   title="Duplicate Document"
                 >
                   <Copy className="h-3 w-3" />
@@ -305,7 +309,7 @@ export function Sidebar({
                     e.stopPropagation();
                     setExportModalDoc(doc);
                   }}
-                  className="p-1 rounded hover:bg-surface text-foreground/60 hover:text-foreground"
+                  className="p-1 rounded hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
                   title="Export Document"
                 >
                   <Download className="h-3 w-3" />
@@ -316,7 +320,7 @@ export function Sidebar({
                     e.stopPropagation();
                     setDeleteConfirmId(doc.id);
                   }}
-                  className="p-1 rounded hover:bg-surface text-foreground/60 hover:text-danger"
+                  className="p-1 rounded hover:bg-white dark:hover:bg-slate-700 text-slate-400 hover:text-rose-600 transition"
                   title="Delete Document"
                 >
                   <Trash2 className="h-3 w-3" />
@@ -327,14 +331,14 @@ export function Sidebar({
         })}
 
         {filteredDocs.length === 0 && (
-          <div className="text-center p-6 text-foreground/40 text-xs">
+          <div className="text-center p-6 text-slate-400 text-xs">
             {searchQuery ? "No matching documents found." : "No documents yet. Create one above!"}
           </div>
         )}
       </div>
 
       {/* Import / Export & Navigation Footer */}
-      <div className="p-3 border-t border-surface-border space-y-2 text-xs">
+      <div className="p-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2 text-xs bg-slate-50/50 dark:bg-slate-900/50">
         {importError && (
           <div className="p-2 rounded bg-rose-50 text-rose-800 dark:bg-rose-950 dark:text-rose-200 text-[11px]">
             {importError}
@@ -342,8 +346,8 @@ export function Sidebar({
         )}
 
         <div className="grid grid-cols-2 gap-2">
-          <label className="flex items-center justify-center gap-1.5 h-8 px-2 rounded border border-surface-border bg-surface hover:bg-surface-muted cursor-pointer text-foreground font-medium text-xs">
-            <Upload className="h-3.5 w-3.5 text-foreground/60" />
+          <label className="flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg border border-slate-200 hover:border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-slate-700 dark:text-slate-200 font-medium text-xs transition">
+            <Upload className="h-3.5 w-3.5 text-slate-500" />
             <span>Import</span>
             <input
               type="file"
@@ -357,28 +361,28 @@ export function Sidebar({
             variant="outline"
             size="sm"
             onClick={() => exportAsBackup(documents)}
-            className="h-8 gap-1.5 text-xs text-foreground font-medium"
+            className="h-8 gap-1.5 text-xs text-slate-700 dark:text-slate-200 font-medium border-slate-200 dark:border-slate-700"
             title="Download full JSON backup of all documents"
           >
-            <Download className="h-3.5 w-3.5 text-foreground/60" />
-            Backup All
+            <Download className="h-3.5 w-3.5 text-slate-500" />
+            <span>Backup All</span>
           </Button>
         </div>
 
-        <div className="pt-2 border-t border-surface-border flex items-center justify-between text-foreground/60">
+        <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-slate-500 text-xs">
           <Link
             href="/settings"
-            className="flex items-center gap-1 hover:text-foreground transition-colors font-medium text-xs"
+            className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition font-medium"
           >
             <Settings className="h-3.5 w-3.5" />
-            Settings
+            <span>Settings</span>
           </Link>
           <Link
             href="/privacy"
-            className="flex items-center gap-1 hover:text-foreground transition-colors font-medium text-xs"
+            className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition font-medium"
           >
             <Shield className="h-3.5 w-3.5" />
-            Privacy
+            <span>Privacy</span>
           </Link>
         </div>
       </div>

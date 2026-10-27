@@ -54,7 +54,7 @@ export function TiptapEditor({
     content: document.content,
     editorProps: {
       attributes: {
-        class: "focus:outline-none min-h-[480px] p-6 max-w-3xl mx-auto font-serif text-lg leading-relaxed",
+        class: "focus:outline-none min-h-[520px] px-8 sm:px-10 py-4 max-w-3xl mx-auto font-serif text-[17px] leading-[1.85] text-slate-800 dark:text-slate-200",
       },
     },
     onUpdate: ({ editor: currentEditor }) => {
@@ -198,16 +198,16 @@ export function TiptapEditor({
       )}
 
       {/* Document Workspace Body */}
-      <div className="flex-1 overflow-y-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto bg-surface rounded-xl border border-surface-border shadow-sm min-h-[600px] flex flex-col">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-8">
+        <div className="max-w-3xl mx-auto bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-xs min-h-[620px] flex flex-col">
           {/* Document Title Header */}
-          <div className="px-6 pt-6 pb-2">
+          <div className="px-8 sm:px-10 pt-8 pb-3 border-b border-slate-100 dark:border-slate-800/60">
             <input
               type="text"
               value={title}
               onChange={handleTitleChange}
               placeholder="Untitled Document..."
-              className="w-full text-2xl sm:text-3xl font-bold text-foreground bg-transparent border-none outline-none placeholder:text-foreground/30 font-sans tracking-tight"
+              className="w-full text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 font-sans tracking-tight"
             />
           </div>
 

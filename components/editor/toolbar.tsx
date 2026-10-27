@@ -42,15 +42,15 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
   const btnClass = (isActive: boolean) =>
     cn(
-      "p-1.5 rounded text-foreground/70 hover:text-foreground hover:bg-surface-muted transition-colors disabled:opacity-30 disabled:pointer-events-none",
-      isActive && "bg-surface-subtle text-brand-600 font-bold"
+      "h-7 w-7 flex items-center justify-center rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-30 disabled:pointer-events-none",
+      isActive && "bg-[#eef6fc] text-[#0268cc] dark:bg-sky-950 dark:text-sky-300 font-semibold shadow-2xs"
     );
 
   return (
     <div
       role="toolbar"
       aria-label="Text formatting"
-      className="flex flex-wrap items-center gap-0.5 px-3 py-1.5 border-b border-surface-border bg-surface text-sm sticky top-0 z-20"
+      className="flex flex-wrap items-center gap-0.5 px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs sticky top-0 z-20"
     >
       <button
         type="button"
@@ -59,7 +59,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Bold (Ctrl+B)"
         aria-label="Bold"
       >
-        <Bold className="h-4 w-4" />
+        <Bold className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -69,7 +69,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Italic (Ctrl+I)"
         aria-label="Italic"
       >
-        <Italic className="h-4 w-4" />
+        <Italic className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -79,7 +79,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Underline (Ctrl+U)"
         aria-label="Underline"
       >
-        <Underline className="h-4 w-4" />
+        <Underline className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -89,10 +89,10 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Strikethrough"
         aria-label="Strikethrough"
       >
-        <Strikethrough className="h-4 w-4" />
+        <Strikethrough className="h-3.5 w-3.5" />
       </button>
 
-      <div className="h-4 w-px bg-surface-border mx-1" />
+      <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1.5" />
 
       <button
         type="button"
@@ -101,7 +101,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Heading 1"
         aria-label="Heading 1"
       >
-        <Heading1 className="h-4 w-4" />
+        <Heading1 className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -111,7 +111,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Heading 2"
         aria-label="Heading 2"
       >
-        <Heading2 className="h-4 w-4" />
+        <Heading2 className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -121,10 +121,10 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Heading 3"
         aria-label="Heading 3"
       >
-        <Heading3 className="h-4 w-4" />
+        <Heading3 className="h-3.5 w-3.5" />
       </button>
 
-      <div className="h-4 w-px bg-surface-border mx-1" />
+      <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1.5" />
 
       <button
         type="button"
@@ -133,7 +133,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Bullet List"
         aria-label="Bullet List"
       >
-        <List className="h-4 w-4" />
+        <List className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -143,7 +143,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Numbered List"
         aria-label="Numbered List"
       >
-        <ListOrdered className="h-4 w-4" />
+        <ListOrdered className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -153,7 +153,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Blockquote"
         aria-label="Blockquote"
       >
-        <Quote className="h-4 w-4" />
+        <Quote className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -163,7 +163,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Code Block"
         aria-label="Code Block"
       >
-        <Code className="h-4 w-4" />
+        <Code className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -173,7 +173,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Insert Link"
         aria-label="Insert Link"
       >
-        <LinkIcon className="h-4 w-4" />
+        <LinkIcon className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -183,10 +183,10 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Clear Formatting"
         aria-label="Clear Formatting"
       >
-        <RemoveFormatting className="h-4 w-4" />
+        <RemoveFormatting className="h-3.5 w-3.5" />
       </button>
 
-      <div className="h-4 w-px bg-surface-border mx-1 ml-auto" />
+      <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1.5 ml-auto" />
 
       <button
         type="button"
@@ -196,7 +196,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Undo (Ctrl+Z)"
         aria-label="Undo"
       >
-        <Undo className="h-4 w-4" />
+        <Undo className="h-3.5 w-3.5" />
       </button>
 
       <button
@@ -207,7 +207,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Redo (Ctrl+Y)"
         aria-label="Redo"
       >
-        <Redo className="h-4 w-4" />
+        <Redo className="h-3.5 w-3.5" />
       </button>
     </div>
   );

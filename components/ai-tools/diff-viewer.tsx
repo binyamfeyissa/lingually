@@ -114,31 +114,30 @@ export function DiffViewer({
       </div>
 
       {/* Actions Footer */}
-      <div className="flex items-center justify-between px-3 py-2 bg-surface-muted/60 border-t border-surface-border">
-        <Button variant="ghost" size="sm" onClick={handleCopy} className="text-xs gap-1">
-          <Copy className="h-3.5 w-3.5" />
-          {copied ? "Copied" : "Copy text"}
-        </Button>
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+        <button
+          onClick={handleCopy}
+          className="h-7 px-2.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 transition"
+        >
+          <Copy className="h-3.5 w-3.5 text-slate-400" />
+          <span>{copied ? "Copied" : "Copy"}</span>
+        </button>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
+        <div className="flex items-center gap-1.5">
+          <button
             onClick={onReject}
-            className="text-xs gap-1 border-surface-border hover:bg-surface-subtle"
+            className="h-7 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1"
           >
-            <X className="h-3.5 w-3.5" />
-            Reject
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
+            <X className="h-3.5 w-3.5 text-slate-400" />
+            <span>Discard</span>
+          </button>
+          <button
             onClick={onAccept}
-            className="text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="h-7 px-3 rounded-md bg-[#0268cc] hover:bg-[#0256a9] text-white text-xs font-semibold flex items-center gap-1 shadow-xs transition active:scale-[0.99]"
           >
             <Check className="h-3.5 w-3.5" />
-            Accept & Apply
-          </Button>
+            <span>Apply</span>
+          </button>
         </div>
       </div>
     </div>

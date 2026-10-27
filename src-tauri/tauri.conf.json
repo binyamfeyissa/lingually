@@ -43,10 +43,7 @@
     "macOS": {
       "minimumSystemVersion": "10.15",
       "frameworks": ["ApplicationServices"],
-      "infoPlist": {
-        "NSAppleEventsUsageDescription": "Lingually requires accessibility permissions to read and replace text in external applications.",
-        "NSSystemAdministrationUsageDescription": "Lingually requires accessibility permissions to detect active writing fields."
-      }
+      "infoPlist": "Info.plist"
     },
     "windows": {
       "nsis": {

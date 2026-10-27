@@ -4,28 +4,60 @@
 
 :root {
   --background: #fbfbfd;
-  --foreground: #1c1d22;
+  --foreground: #111827;
   --surface: #ffffff;
-  --surface-muted: #f4f5f8;
-  --surface-subtle: #eceef2;
-  --surface-border: #e2e4ea;
-  --accent: #0c82eb;
+  --surface-muted: #f8fafc;
+  --surface-subtle: #f1f5f9;
+  --surface-border: #e2e8f0;
+  --accent: #0268cc;
+  --accent-hover: #0256a9;
+  --accent-subtle: #eef6fc;
   --accent-foreground: #ffffff;
-  --radius: 0.5rem;
+  --radius: 0.625rem;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Semantic Suggestion Categories */
+  --cat-correctness: #e11d48;
+  --cat-correctness-bg: #fff1f2;
+  --cat-correctness-border: #fecdd3;
+  --cat-clarity: #0284c7;
+  --cat-clarity-bg: #f0f9ff;
+  --cat-clarity-border: #bae6fd;
+  --cat-engagement: #059669;
+  --cat-engagement-bg: #ecfdf5;
+  --cat-engagement-border: #a7f3d0;
+  --cat-delivery: #7c3aed;
+  --cat-delivery-bg: #f5f3ff;
+  --cat-delivery-border: #ddd6fe;
 }
 
 .dark {
-  --background: #0f1117;
-  --foreground: #f0f2f5;
-  --surface: #171923;
-  --surface-muted: #1f2230;
-  --surface-subtle: #272a3a;
-  --surface-border: #313548;
-  --accent: #369ef7;
-  --accent-foreground: #ffffff;
+  --background: #0b0f17;
+  --foreground: #f8fafc;
+  --surface: #111827;
+  --surface-muted: #1e293b;
+  --surface-subtle: #334155;
+  --surface-border: #1e293b;
+  --accent: #38bdf8;
+  --accent-hover: #0284c7;
+  --accent-subtle: rgba(56, 189, 248, 0.12);
+  --accent-foreground: #0b0f17;
+
+  /* Dark mode category tokens */
+  --cat-correctness: #fb7185;
+  --cat-correctness-bg: rgba(225, 29, 72, 0.15);
+  --cat-correctness-border: rgba(225, 29, 72, 0.3);
+  --cat-clarity: #38bdf8;
+  --cat-clarity-bg: rgba(2, 132, 199, 0.15);
+  --cat-clarity-border: rgba(2, 132, 199, 0.3);
+  --cat-engagement: #34d399;
+  --cat-engagement-bg: rgba(5, 150, 105, 0.15);
+  --cat-engagement-border: rgba(5, 150, 105, 0.3);
+  --cat-delivery: #a78bfa;
+  --cat-delivery-bg: rgba(124, 58, 237, 0.15);
+  --cat-delivery-border: rgba(124, 58, 237, 0.3);
 }
 
 * {
@@ -39,12 +71,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Tiptap Editor Styling */
+/* Tiptap Editor ProseMirror Styling */
 .ProseMirror {
   min-height: 480px;
   outline: none;
   font-size: 1.125rem;
-  line-height: 1.75;
+  line-height: 1.8;
   color: var(--foreground);
 }
 
@@ -95,11 +127,15 @@ body {
 }
 
 .ProseMirror blockquote {
-  border-left: 4px solid var(--accent);
+  border-left: 3px solid var(--accent);
   padding-left: 1rem;
   margin: 1.25em 0;
   font-style: italic;
-  opacity: 0.85;
+  color: #4b5563;
+}
+
+.dark .ProseMirror blockquote {
+  color: #9ca3af;
 }
 
 .ProseMirror code {
@@ -114,7 +150,7 @@ body {
   background-color: var(--surface-muted);
   border: 1px solid var(--surface-border);
   padding: 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
   overflow-x: auto;
   font-family: var(--font-mono);
   margin-bottom: 1.25em;

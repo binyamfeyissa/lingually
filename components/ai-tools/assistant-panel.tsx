@@ -233,20 +233,20 @@ export function AssistantPanel({
   const isReady = !requiresKey || hasKey;
 
   return (
-    <aside aria-label="AI Writing Assistant" className="flex flex-col h-full bg-surface border-l border-surface-border w-full">
+    <aside aria-label="AI Writing Assistant" className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 w-full">
       {/* Top Provider Bar */}
-      <div className="p-3 border-b border-surface-border bg-surface-muted/60 space-y-2">
+      <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 space-y-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-            <Sparkles className="h-4 w-4 text-brand-500" />
-            AI Assistant
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-white">
+            <Sparkles className="h-4 w-4 text-[#0268cc]" />
+            <span>AI Assistant</span>
           </div>
           <Link
             href="/settings"
-            className="flex items-center gap-1 text-[11px] text-foreground/60 hover:text-brand-600 transition-colors"
+            className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-[#0268cc] transition-colors"
           >
             <Settings className="h-3 w-3" />
-            Settings
+            <span>Settings</span>
           </Link>
         </div>
 
@@ -254,7 +254,7 @@ export function AssistantPanel({
           <select
             value={selectedProvider}
             onChange={(e) => handleProviderChange(e.target.value as ProviderId)}
-            className="h-8 rounded border border-surface-border bg-surface px-2 text-xs text-foreground focus:border-brand-500 focus:outline-none"
+            className="h-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs text-slate-800 dark:text-slate-200 focus:border-[#0268cc] focus:outline-none"
           >
             {Object.entries(PROVIDER_CATALOG).map(([id, info]) => (
               <option key={id} value={id}>
@@ -266,7 +266,7 @@ export function AssistantPanel({
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
-            className="h-8 rounded border border-surface-border bg-surface px-2 text-xs text-foreground focus:border-brand-500 focus:outline-none truncate"
+            className="h-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs text-slate-800 dark:text-slate-200 focus:border-[#0268cc] focus:outline-none truncate"
           >
             {PROVIDER_CATALOG[selectedProvider]?.popularModels.map((m) => (
               <option key={m.id} value={m.id}>
@@ -277,7 +277,7 @@ export function AssistantPanel({
         </div>
 
         {!isReady && (
-          <div className="p-2 rounded bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 border border-amber-200 dark:border-amber-900/60 text-[11px] flex items-center justify-between">
+          <div className="p-2 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 border border-amber-200 dark:border-amber-900/60 text-[11px] flex items-center justify-between">
             <span>API key needed for {PROVIDER_CATALOG[selectedProvider]?.name}</span>
             <Link href="/settings" className="font-semibold underline ml-2">
               Add Key
@@ -287,10 +287,10 @@ export function AssistantPanel({
       </div>
 
       {/* Scope Pill */}
-      <div className="px-3.5 py-1.5 bg-surface-subtle/50 border-b border-surface-border flex items-center justify-between text-[11px] text-foreground/70">
+      <div className="px-3.5 py-1.5 bg-slate-100/60 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
         <span>
           Target:{" "}
-          <strong className="text-foreground">
+          <strong className="text-slate-800 dark:text-slate-200">
             {isSelectionActive ? "Selected Text" : "Full Document"}
           </strong>
         </span>
@@ -298,7 +298,7 @@ export function AssistantPanel({
       </div>
 
       {/* Main Tool Selector Tab Strip */}
-      <div className="p-2 border-b border-surface-border overflow-x-auto flex gap-1 scrollbar-none">
+      <div className="p-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto flex gap-1 scrollbar-none bg-slate-50/30 dark:bg-slate-900/30">
         {TOOLS.map((tool) => {
           const isActive = currentTool === tool.id;
           return (
@@ -306,10 +306,10 @@ export function AssistantPanel({
               key={tool.id}
               onClick={() => handleToolSelect(tool.id)}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
                 isActive
-                  ? "bg-brand-500 text-white shadow-sm"
-                  : "text-foreground/70 hover:bg-surface-muted hover:text-foreground"
+                  ? "bg-[#0268cc] text-white font-semibold shadow-2xs"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               {tool.icon}
@@ -461,14 +461,20 @@ export function AssistantPanel({
         {currentTool !== "ai-detector" && (
           <div className="pt-2">
             {isLoading ? (
-              <Button variant="danger" size="md" onClick={handleCancel} className="w-full">
-                Stop Generating
-              </Button>
+              <button
+                onClick={handleCancel}
+                className="w-full h-9 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99]"
+              >
+                <span>Stop Generating</span>
+              </button>
             ) : (
-              <Button variant="primary" size="md" onClick={handleRunTask} className="w-full">
+              <button
+                onClick={handleRunTask}
+                className="w-full h-9 rounded-lg bg-[#0268cc] hover:bg-[#0256a9] text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99]"
+              >
                 <Sparkles className="h-4 w-4" />
-                Run {TOOLS.find((t) => t.id === currentTool)?.label}
-              </Button>
+                <span>Run {TOOLS.find((t) => t.id === currentTool)?.label}</span>
+              </button>
             )}
           </div>
         )}
