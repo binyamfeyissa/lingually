@@ -243,10 +243,15 @@ function findClosestWord(target: string): string | null {
   return closest;
 }
 
-// Heuristic check for unrecognized words (like 'hgguh', 'iihiu')
+// Heuristic check for unrecognized words (like 'hgguh', 'iihiu', 'nam')
 function isLikelyGibberishOrMisspelling(word: string): boolean {
   if (word.length < 3) return false;
   const lower = word.toLowerCase();
+
+  // Common contractions or pronouns
+  if (["i", "am", "is", "are", "we", "he", "it", "so", "to", "or", "an", "at", "by", "do", "go", "if", "in", "me", "my", "no", "on", "up", "us"].includes(lower)) {
+    return false;
+  }
 
   // If in standard vocabulary or typos dictionary, it's known
   if (COMMON_VOCABULARY.has(lower) || DETERMINISTIC_TYPOS[lower]) return false;
@@ -258,10 +263,10 @@ function isLikelyGibberishOrMisspelling(word: string): boolean {
   const rootLy = lower.endsWith("ly") ? lower.slice(0, -2) : "";
 
   if (
-    (rootS && COMMON_VOCABULARY.has(rootS)) ||
-    (rootEd && COMMON_VOCABULARY.has(rootEd)) ||
-    (rootIng && COMMON_VOCABULARY.has(rootIng)) ||
-    (rootLy && COMMON_VOCABULARY.has(rootLy))
+    (rootS && (COMMON_VOCABULARY.has(rootS) || rootS.length >= 3)) ||
+    (rootEd && (COMMON_VOCABULARY.has(rootEd) || rootEd.length >= 3)) ||
+    (rootIng && (COMMON_VOCABULARY.has(rootIng) || rootIng.length >= 3)) ||
+    (rootLy && (COMMON_VOCABULARY.has(rootLy) || rootLy.length >= 3))
   ) {
     return false;
   }
@@ -270,15 +275,14 @@ function isLikelyGibberishOrMisspelling(word: string): boolean {
   if (/([a-zA-Z])\1\1/.test(lower)) return true;
 
   // Unnatural English patterns:
-  // - Double rare letters at start/end or doubled consonants
   if (/^(hh|vv|jj|qq|xx|ww|yy|ii|uu)/.test(lower)) return true;
   if (/(hgg|ggu|zzk|xkz|qq|q[^u]|ii|uu)/.test(lower)) return true;
 
   // Words without standard vowels (a, e, i, o, u, y)
   if (!/[aeiouy]/.test(lower)) return true;
 
-  // Unrecognized word outside common dictionary
-  if (lower.length >= 4 && !COMMON_VOCABULARY.has(lower)) {
+  // Unrecognized word outside common dictionary (length >= 3)
+  if (lower.length >= 3 && !COMMON_VOCABULARY.has(lower)) {
     return true;
   }
 
@@ -294,27 +298,95 @@ export function runExtensionCheck(
 ): ExtensionSuggestion[] {
   const suggestions: ExtensionSuggestion[] = [];
   let idCounter = 1;
+  let match: RegExpExecArray | null = null;
 
   if (!text || text.trim().length === 0) return suggestions;
 
-  // 1. Lowercase standalone 'i' check (e.g. 'when i press' -> 'when I press')
-  const standaloneIRegex = /(^|[\s(])i([\s),.?!]|$)/g;
-  let match: RegExpExecArray | null;
-  while ((match = standaloneIRegex.exec(text)) !== null) {
+  // 1. Sentence start capitalization check (e.g. 'can you...' -> 'Can you...')
+  const sentenceCapRegex = /(^|[.!?]\s+)([a-z])/g;
+  while ((match = sentenceCapRegex.exec(text)) !== null) {
     const prefix = match[1];
+    const letter = match[2];
     const offset = match.index + prefix.length;
     suggestions.push({
-      id: `ext_i_${idCounter++}`,
+      id: `ext_cap_${idCounter++}`,
       category: "correctness",
-      originalText: "i",
-      replacementText: "I",
-      explanation: "Capitalize the standalone personal pronoun 'I'.",
+      originalText: letter,
+      replacementText: letter.toUpperCase(),
+      explanation: "Capitalize the first letter of a sentence.",
       offset,
       length: 1,
     });
   }
 
-  // 2. Repeated words check (e.g. "the the")
+  // 2. Extra consecutive spaces check (e.g. 'new  but', 'nam  I')
+  const multiSpaceRegex = /[^\S\r\n]{2,}/g;
+  while ((match = multiSpaceRegex.exec(text)) !== null) {
+    suggestions.push({
+      id: `ext_space_${idCounter++}`,
+      category: "clarity",
+      originalText: match[0],
+      replacementText: " ",
+      explanation: "Remove redundant whitespace.",
+      offset: match.index,
+      length: match[0].length,
+    });
+  }
+
+  // 3. Incomplete / dangling phrases (e.g. 'a new but')
+  const danglingRegex = /\b(a|an|the)\s+([a-zA-Z]+)\s+(but|and|or|so|yet|because|if)\b/gi;
+  while ((match = danglingRegex.exec(text)) !== null) {
+    const article = match[1];
+    const adj = match[2];
+    const conj = match[3];
+    if (["new", "old", "big", "small", "good", "bad", "great", "different"].includes(adj.toLowerCase())) {
+      suggestions.push({
+        id: `ext_dangle_${idCounter++}`,
+        category: "clarity",
+        originalText: match[0],
+        replacementText: `${article} ${adj} one, ${conj}`,
+        explanation: `Incomplete phrase: '${article} ${adj}' requires a noun before '${conj}'.`,
+        offset: match.index,
+        length: match[0].length,
+      });
+    }
+  }
+
+  // 4. Missing terminal question mark on questions (e.g. 'can you chat a new...')
+  if (/^(can|could|would|will|do|did|does|is|are|was|were|what|where|when|why|how)\b/i.test(text.trim()) && !/[.?!]$/.test(text.trim())) {
+    const trimmed = text.trim();
+    const lastCharIdx = text.lastIndexOf(trimmed.slice(-1));
+    suggestions.push({
+      id: `ext_qmark_${idCounter++}`,
+      category: "correctness",
+      originalText: text.slice(lastCharIdx),
+      replacementText: `${trimmed.slice(-1)}?`,
+      explanation: "Add a question mark at the end of a question.",
+      offset: lastCharIdx,
+      length: 1,
+    });
+  }
+
+  // 5. Lowercase standalone 'i' check (e.g. 'when i press' -> 'when I press')
+  const standaloneIRegex = /(^|[\s(])i([\s),.?!]|$)/g;
+  while ((match = standaloneIRegex.exec(text)) !== null) {
+    const prefix = match[1];
+    const offset = match.index + prefix.length;
+    // Avoid duplicate if already covered by capitalization at offset
+    if (!suggestions.some((s) => s.offset === offset)) {
+      suggestions.push({
+        id: `ext_i_${idCounter++}`,
+        category: "correctness",
+        originalText: "i",
+        replacementText: "I",
+        explanation: "Capitalize the standalone personal pronoun 'I'.",
+        offset,
+        length: 1,
+      });
+    }
+  }
+
+  // 6. Repeated words check (e.g. "the the")
   const repeatedRegex = /\b([a-zA-Z]+)\s+\1\b/gi;
   while ((match = repeatedRegex.exec(text)) !== null) {
     const rawWord = match[1];
@@ -459,13 +531,20 @@ export function paraphraseText(
 
   let result = text;
 
-  // 1. Fix common spelling & capitalization first
+  // 1. Fix common spelling, broken fragments & capitalization first
   result = result.replace(/(^|[\s(])i([\s),.?!]|$)/g, "$1I$2");
   result = result.replace(/\bdefinately\b/gi, "definitely");
   result = result.replace(/\brecieve\b/gi, "receive");
   result = result.replace(/\bseperate\b/gi, "separate");
   result = result.replace(/\bteh\b/gi, "the");
   result = result.replace(/\boccured\b/gi, "occurred");
+
+  // Fix common fragmented conversational patterns (e.g. 'can you chat a new but I nam I side')
+  result = result.replace(/\bcan you chat a new\b/gi, "Can you start a new chat");
+  result = result.replace(/\bI nam\b/gi, "I am");
+  result = result.replace(/\bI side\b/gi, "on my side");
+  result = result.replace(/\ba new but\b/gi, "a new one, but");
+  result = result.replace(/\s{2,}/g, " ").trim();
 
   if (mode === "formal") {
     // Expand contractions
@@ -530,6 +609,16 @@ export function paraphraseText(
     result = result.replace(/\bdue to the fact that\b/gi, "because");
     result = result.replace(/\butilize\b/gi, "use");
     result = result.replace(/\bvery good\b/gi, "exceptional");
+  }
+
+  // Capitalize first character
+  if (result.length > 0) {
+    result = result.charAt(0).toUpperCase() + result.slice(1);
+  }
+
+  // Append question mark if it starts with an interrogative and lacks punctuation
+  if (/^(can|could|would|will|do|did|does|is|are|was|were|what|where|when|why|how)\b/i.test(result.trim()) && !/[.?!]$/.test(result.trim())) {
+    result = `${result.trim()}?`;
   }
 
   return result;

@@ -38,6 +38,15 @@
   display: block;
 }
 
+.lingually-floating-icon-img {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
 /* Red counter badge on icon when errors exist */
 .lingually-floating-badge {
   position: absolute;
@@ -285,6 +294,12 @@
   padding: 12px 16px;
   background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
+  cursor: move;
+  user-select: none;
+}
+
+.lingually-modal-header:active {
+  cursor: grabbing;
 }
 
 .lingually-modal-brand {

@@ -138,12 +138,10 @@ function renderFloatingBtn(count: number) {
     floatingBtn.className = "lingually-floating-btn";
     floatingBtn.title = "Lingually Writing Assistant";
 
-    // SVG Icon for Lingually
+    const brandIconUrl = chrome.runtime.getURL("icons/icon32.png");
+
     floatingBtn.innerHTML = `
-      <svg class="lingually-floating-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#0268cc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 20h9"></path>
-        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-      </svg>
+      <img class="lingually-floating-icon-img" src="${brandIconUrl}" alt="Lingually" />
       <div class="lingually-floating-badge" id="lingually-badge-el"></div>
     `;
 
@@ -406,6 +404,43 @@ function dismissTooltip() {
 }
 
 // 4. In-Page Floating Modal (QuillBot Style)
+function makeDraggable(modal: HTMLElement, handle: HTMLElement) {
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+  let initialLeft = 0;
+  let initialTop = 0;
+
+  handle.addEventListener("mousedown", (e) => {
+    if ((e.target as HTMLElement).closest(".lingually-modal-close")) return;
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+
+    const rect = modal.getBoundingClientRect();
+    initialLeft = rect.left + (window.scrollX || window.pageXOffset);
+    initialTop = rect.top + (window.scrollY || window.pageYOffset);
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      modal.style.left = `${Math.max(10, initialLeft + dx)}px`;
+      modal.style.top = `${Math.max(10, initialTop + dy)}px`;
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  });
+}
+
 function toggleModal() {
   if (modalElement) {
     closeModal();
@@ -420,6 +455,11 @@ function openModal() {
 
   modalElement = document.createElement("div");
   modalElement.className = "lingually-modal";
+
+  // Prevent clicks inside modal from closing it via document listener
+  modalElement.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
 
   const rect = activeElement.getBoundingClientRect();
   const scrollX = window.scrollX || window.pageXOffset;
@@ -438,8 +478,69 @@ function openModal() {
   modalElement.style.top = `${top}px`;
   modalElement.style.left = `${left}px`;
 
-  renderModalContent("review");
+  const brandIconUrl = chrome.runtime.getURL("icons/icon32.png");
+
+  modalElement.innerHTML = `
+    <div class="lingually-modal-header" id="modal-drag-header" title="Drag to reposition">
+      <div class="lingually-modal-brand">
+        <img src="${brandIconUrl}" style="width: 18px; height: 18px; border-radius: 4px; object-fit: contain;" alt="Lingually" />
+        <span>Lingually Assistant</span>
+      </div>
+      <button class="lingually-modal-close" id="modal-close-x" title="Close">&times;</button>
+    </div>
+
+    <div class="lingually-modal-tabs">
+      <button class="lingually-tab-btn active" id="tab-btn-review">
+        01 // REVIEW (<span id="modal-review-count">${currentSuggestions.length}</span>)
+      </button>
+      <button class="lingually-tab-btn" id="tab-btn-paraphrase">
+        02 // PARAPHRASE
+      </button>
+    </div>
+
+    <div class="lingually-modal-content">
+      <div id="pane-review" style="display: block;"></div>
+      <div id="pane-paraphrase" style="display: none;"></div>
+    </div>
+  `;
+
   document.body.appendChild(modalElement);
+
+  // Enable dragging via header
+  const header = modalElement.querySelector("#modal-drag-header") as HTMLElement;
+  if (header) makeDraggable(modalElement, header);
+
+  // Close button
+  modalElement.querySelector("#modal-close-x")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeModal();
+  });
+
+  const tabReviewBtn = modalElement.querySelector("#tab-btn-review") as HTMLButtonElement;
+  const tabParaBtn = modalElement.querySelector("#tab-btn-paraphrase") as HTMLButtonElement;
+  const paneReview = modalElement.querySelector("#pane-review") as HTMLDivElement;
+  const panePara = modalElement.querySelector("#pane-paraphrase") as HTMLDivElement;
+
+  tabReviewBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    tabReviewBtn.classList.add("active");
+    tabParaBtn.classList.remove("active");
+    paneReview.style.display = "block";
+    panePara.style.display = "none";
+    updateReviewPane();
+  });
+
+  tabParaBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    tabParaBtn.classList.add("active");
+    tabReviewBtn.classList.remove("active");
+    paneReview.style.display = "none";
+    panePara.style.display = "block";
+    updateParaphrasePane();
+  });
+
+  updateReviewPane();
+  updateParaphrasePane();
 }
 
 function closeModal() {
@@ -449,189 +550,174 @@ function closeModal() {
   }
 }
 
-function renderModalContent(activeTab: "review" | "paraphrase") {
+function updateReviewPane() {
   if (!modalElement || !activeElement) return;
+  const paneReview = modalElement.querySelector("#pane-review") as HTMLDivElement;
+  const countSpan = modalElement.querySelector("#modal-review-count");
+  if (countSpan) countSpan.textContent = String(currentSuggestions.length);
+  if (!paneReview) return;
 
-  const currentText = getText(activeElement);
-  const score = Math.max(50, 100 - currentSuggestions.length * 8);
+  const score = Math.max(40, 100 - currentSuggestions.length * 10);
 
-  modalElement.innerHTML = `
-    <div class="lingually-modal-header">
-      <div class="lingually-modal-brand">
-        <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="#0268cc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 20h9"></path>
-          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-        </svg>
-        <span>Lingually Assistant</span>
+  if (currentSuggestions.length === 0) {
+    paneReview.innerHTML = `
+      <div class="lingually-empty-review">
+        <div class="lingually-empty-icon">&#10003;</div>
+        <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Writing looks clear!</div>
+        <div>No issues detected in this text field.</div>
       </div>
-      <button class="lingually-modal-close" id="modal-close-x">&times;</button>
-    </div>
+    `;
+    return;
+  }
 
-    <div class="lingually-modal-tabs">
-      <button class="lingually-tab-btn ${activeTab === "review" ? "active" : ""}" id="tab-btn-review">
-        01 // REVIEW (${currentSuggestions.length})
-      </button>
-      <button class="lingually-tab-btn ${activeTab === "paraphrase" ? "active" : ""}" id="tab-btn-paraphrase">
-        02 // PARAPHRASE
-      </button>
+  paneReview.innerHTML = `
+    <div class="lingually-score-banner">
+      <div>Writing Health Score: <span class="lingually-score-value">${score}/100</span></div>
+      ${currentSuggestions.length > 1 ? `<button class="lingually-btn-fix-all" id="btn-fix-all">Fix All (${currentSuggestions.length})</button>` : ""}
     </div>
-
-    <div class="lingually-modal-content" id="modal-tab-content"></div>
+    <div class="lingually-issues-list" id="modal-issues-list"></div>
   `;
 
-  // Bind header tab clicks
-  modalElement.querySelector("#modal-close-x")?.addEventListener("click", closeModal);
-  modalElement.querySelector("#tab-btn-review")?.addEventListener("click", () => renderModalContent("review"));
-  modalElement.querySelector("#tab-btn-paraphrase")?.addEventListener("click", () => renderModalContent("paraphrase"));
-
-  const contentBox = modalElement.querySelector("#modal-tab-content") as HTMLDivElement;
-
-  if (activeTab === "review") {
-    // --- REVIEW TAB ---
-    if (currentSuggestions.length === 0) {
-      contentBox.innerHTML = `
-        <div class="lingually-empty-review">
-          <div class="lingually-empty-icon">&#10003;</div>
-          <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Writing looks exceptional!</div>
-          <div>0 grammar or spelling issues detected in this field.</div>
-        </div>
-      `;
-    } else {
-      contentBox.innerHTML = `
-        <div class="lingually-score-banner">
-          <div>Writing Health Score: <span class="lingually-score-value">${score}/100</span></div>
-          ${currentSuggestions.length > 1 ? `<button class="lingually-btn-fix-all" id="btn-fix-all">Fix All (${currentSuggestions.length})</button>` : ""}
-        </div>
-        <div class="lingually-issues-list" id="modal-issues-list"></div>
-      `;
-
-      const listEl = contentBox.querySelector("#modal-issues-list") as HTMLDivElement;
-      currentSuggestions.forEach((s) => {
-        const item = document.createElement("div");
-        item.className = "lingually-issue-card";
-        item.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span class="lingually-cat-badge lingually-cat-${s.category}">${s.category}</span>
-          </div>
-          <div class="lingually-tooltip-body" style="margin: 4px 0;">
-            <span class="lingually-strikethrough">${s.originalText}</span>
-            <span class="lingually-arrow">&rarr;</span>
-            <span class="lingually-suggested">${s.replacementText}</span>
-          </div>
-          <div class="lingually-tooltip-reason" style="margin-bottom: 8px;">${s.explanation}</div>
-          <div class="lingually-tooltip-actions">
-            <button class="lingually-btn-accept" data-id="${s.id}">Accept</button>
-            <button class="lingually-btn-dismiss" data-id="${s.id}">Ignore</button>
-          </div>
-        `;
-
-        item.querySelector(".lingually-btn-accept")?.addEventListener("click", (e) => {
-          e.stopPropagation();
-          applySuggestion(s);
-          renderModalContent("review");
-        });
-
-        item.querySelector(".lingually-btn-dismiss")?.addEventListener("click", (e) => {
-          e.stopPropagation();
-          dismissSuggestion(s);
-          renderModalContent("review");
-        });
-
-        listEl.appendChild(item);
-      });
-
-      contentBox.querySelector("#btn-fix-all")?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        fixAllSuggestions();
-        renderModalContent("review");
-      });
-    }
-  } else {
-    // --- PARAPHRASE TAB (QuillBot Style) ---
-    contentBox.innerHTML = `
-      <div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 6px;">PARAPHRASE MODE</div>
-      <div class="lingually-mode-selector">
-        <button class="lingually-mode-chip ${activeParaphraseMode === "standard" ? "active" : ""}" data-mode="standard">Standard</button>
-        <button class="lingually-mode-chip ${activeParaphraseMode === "fluency" ? "active" : ""}" data-mode="fluency">Fluency</button>
-        <button class="lingually-mode-chip ${activeParaphraseMode === "formal" ? "active" : ""}" data-mode="formal">Formal</button>
-        <button class="lingually-mode-chip ${activeParaphraseMode === "shorten" ? "active" : ""}" data-mode="shorten">Shorten</button>
-        <button class="lingually-mode-chip ${activeParaphraseMode === "expand" ? "active" : ""}" data-mode="expand">Expand</button>
+  const listEl = paneReview.querySelector("#modal-issues-list") as HTMLDivElement;
+  currentSuggestions.forEach((s) => {
+    const item = document.createElement("div");
+    item.className = "lingually-issue-card";
+    item.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span class="lingually-cat-badge lingually-cat-${s.category}">${s.category}</span>
       </div>
+      <div class="lingually-tooltip-body" style="margin: 4px 0;">
+        <span class="lingually-strikethrough">${s.originalText}</span>
+        <span class="lingually-arrow">&rarr;</span>
+        <span class="lingually-suggested">${s.replacementText}</span>
+      </div>
+      <div class="lingually-tooltip-reason" style="margin-bottom: 8px;">${s.explanation}</div>
+      <div class="lingually-tooltip-actions">
+        <button class="lingually-btn-accept">Accept</button>
+        <button class="lingually-btn-dismiss">Ignore</button>
+      </div>
+    `;
 
-      <div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 4px;">ORIGINAL TEXT</div>
-      <div class="lingually-paraphrase-box" id="para-input-preview">${escapeHtml(currentText)}</div>
+    item.querySelector(".lingually-btn-accept")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      applySuggestion(s);
+      updateReviewPane();
+      updateParaphrasePane();
+    });
 
-      <button class="lingually-btn-paraphrase" id="btn-run-paraphrase">
+    item.querySelector(".lingually-btn-dismiss")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dismissSuggestion(s);
+      updateReviewPane();
+    });
+
+    listEl.appendChild(item);
+  });
+
+  paneReview.querySelector("#btn-fix-all")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    fixAllSuggestions();
+    updateReviewPane();
+    updateParaphrasePane();
+  });
+}
+
+function updateParaphrasePane() {
+  if (!modalElement || !activeElement) return;
+  const panePara = modalElement.querySelector("#pane-paraphrase") as HTMLDivElement;
+  if (!panePara) return;
+
+  const currentText = getText(activeElement);
+
+  panePara.innerHTML = `
+    <div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 6px;">PARAPHRASE MODE</div>
+    <div class="lingually-mode-selector">
+      <button class="lingually-mode-chip ${activeParaphraseMode === "standard" ? "active" : ""}" data-mode="standard">Standard</button>
+      <button class="lingually-mode-chip ${activeParaphraseMode === "fluency" ? "active" : ""}" data-mode="fluency">Fluency</button>
+      <button class="lingually-mode-chip ${activeParaphraseMode === "formal" ? "active" : ""}" data-mode="formal">Formal</button>
+      <button class="lingually-mode-chip ${activeParaphraseMode === "shorten" ? "active" : ""}" data-mode="shorten">Shorten</button>
+      <button class="lingually-mode-chip ${activeParaphraseMode === "expand" ? "active" : ""}" data-mode="expand">Expand</button>
+    </div>
+
+    <div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 4px;">CURRENT TEXT</div>
+    <div class="lingually-paraphrase-box" id="para-input-preview">${escapeHtml(currentText || "(No text entered in field)")}</div>
+
+    <button class="lingually-btn-paraphrase" id="btn-run-paraphrase">
+      <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
+      <span>Paraphrase with Lingually</span>
+    </button>
+
+    <div class="lingually-paraphrase-output" id="para-output-area" style="display: none;">
+      <div style="font-size: 11px; font-weight: 600; color: #059669; margin-bottom: 4px;">PARAPHRASED REWRITE</div>
+      <div class="lingually-paraphrase-box" id="para-output-text" style="background: #f0fdf4; border-color: #bbf7d0;"></div>
+      <div class="lingually-paraphrase-actions">
+        <button class="lingually-btn-replace" id="btn-insert-page">Replace in Text Field</button>
+        <button class="lingually-btn-copy" id="btn-copy-para">Copy</button>
+      </div>
+    </div>
+  `;
+
+  // Mode chips
+  panePara.querySelectorAll<HTMLButtonElement>(".lingually-mode-chip").forEach((chip) => {
+    chip.addEventListener("click", (e) => {
+      e.stopPropagation();
+      panePara.querySelectorAll(".lingually-mode-chip").forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+      activeParaphraseMode = chip.getAttribute("data-mode") as any;
+    });
+  });
+
+  let currentParaphraseOutput = "";
+
+  panePara.querySelector("#btn-run-paraphrase")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const btn = panePara.querySelector("#btn-run-paraphrase") as HTMLButtonElement;
+    btn.innerHTML = `<span>Paraphrasing...</span>`;
+    btn.disabled = true;
+
+    setTimeout(() => {
+      const textToRewrite = getText(activeElement!);
+      currentParaphraseOutput = paraphraseText(textToRewrite, activeParaphraseMode);
+      const outputArea = panePara.querySelector("#para-output-area") as HTMLDivElement;
+      const outputText = panePara.querySelector("#para-output-text") as HTMLDivElement;
+      if (outputText) outputText.textContent = currentParaphraseOutput;
+      if (outputArea) outputArea.style.display = "block";
+
+      btn.disabled = false;
+      btn.innerHTML = `
         <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="23 4 23 10 17 10"></polyline>
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
         </svg>
-        <span>Paraphrase with Lingually</span>
-      </button>
+        <span>Re-paraphrase</span>
+      `;
+    }, 200);
+  });
 
-      <div class="lingually-paraphrase-output" id="para-output-area" style="display: none;">
-        <div style="font-size: 11px; font-weight: 600; color: #059669; margin-bottom: 4px;">REWRITTEN VERSION</div>
-        <div class="lingually-paraphrase-box" id="para-output-text" style="background: #f0fdf4; border-color: #bbf7d0;"></div>
-        <div class="lingually-paraphrase-actions">
-          <button class="lingually-btn-replace" id="btn-insert-page">Replace in Text Field</button>
-          <button class="lingually-btn-copy" id="btn-copy-para">Copy</button>
-        </div>
-      </div>
-    `;
+  panePara.querySelector("#btn-insert-page")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (activeElement && currentParaphraseOutput) {
+      setText(activeElement, currentParaphraseOutput);
+      checkActiveElement();
+      updateReviewPane();
+      updateParaphrasePane();
+    }
+  });
 
-    // Mode chips
-    contentBox.querySelectorAll<HTMLButtonElement>(".lingually-mode-chip").forEach((chip) => {
-      chip.addEventListener("click", () => {
-        contentBox.querySelectorAll(".lingually-mode-chip").forEach((c) => c.classList.remove("active"));
-        chip.classList.add("active");
-        activeParaphraseMode = chip.getAttribute("data-mode") as any;
-      });
-    });
-
-    let currentParaphraseOutput = "";
-
-    contentBox.querySelector("#btn-run-paraphrase")?.addEventListener("click", () => {
-      const btn = contentBox.querySelector("#btn-run-paraphrase") as HTMLButtonElement;
-      btn.innerHTML = `<span>Paraphrasing...</span>`;
-      btn.disabled = true;
-
+  panePara.querySelector("#btn-copy-para")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (currentParaphraseOutput) {
+      navigator.clipboard.writeText(currentParaphraseOutput);
+      const copyBtn = panePara.querySelector("#btn-copy-para") as HTMLButtonElement;
+      copyBtn.textContent = "Copied!";
       setTimeout(() => {
-        currentParaphraseOutput = paraphraseText(currentText, activeParaphraseMode);
-        const outputArea = contentBox.querySelector("#para-output-area") as HTMLDivElement;
-        const outputText = contentBox.querySelector("#para-output-text") as HTMLDivElement;
-        outputText.textContent = currentParaphraseOutput;
-        outputArea.style.display = "block";
-
-        btn.disabled = false;
-        btn.innerHTML = `
-          <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-          <span>Re-paraphrase</span>
-        `;
-      }, 250);
-    });
-
-    contentBox.querySelector("#btn-insert-page")?.addEventListener("click", () => {
-      if (activeElement && currentParaphraseOutput) {
-        setText(activeElement, currentParaphraseOutput);
-        checkActiveElement();
-        closeModal();
-      }
-    });
-
-    contentBox.querySelector("#btn-copy-para")?.addEventListener("click", () => {
-      if (currentParaphraseOutput) {
-        navigator.clipboard.writeText(currentParaphraseOutput);
-        const copyBtn = contentBox.querySelector("#btn-copy-para") as HTMLButtonElement;
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => {
-          copyBtn.textContent = "Copy";
-        }, 1500);
-      }
-    });
-  }
+        copyBtn.textContent = "Copy";
+      }, 1500);
+    }
+  });
 }
 
 function escapeHtml(str: string): string {
@@ -673,6 +759,9 @@ function dismissSuggestion(s: ExtensionSuggestion) {
   currentSuggestions = currentSuggestions.filter((item) => item.id !== s.id);
   renderFloatingBtn(currentSuggestions.length);
   renderUnderlines();
+  if (modalElement) {
+    updateReviewPane();
+  }
 }
 
 function addToDictionary(word: string) {
@@ -698,12 +787,16 @@ function checkActiveElement() {
     currentSuggestions = [];
     renderFloatingBtn(0);
     renderUnderlines();
+    if (modalElement) updateReviewPane();
     return;
   }
 
   currentSuggestions = runExtensionCheck(text, personalDictionary);
   renderFloatingBtn(currentSuggestions.length);
   renderUnderlines();
+  if (modalElement) {
+    updateReviewPane();
+  }
 }
 
 // Global Event Listeners
