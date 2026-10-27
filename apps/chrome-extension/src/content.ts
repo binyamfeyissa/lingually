@@ -411,25 +411,38 @@ function showTooltip(s: ExtensionSuggestion, rect: DOMRect, scrollX: number, scr
   tooltipElement.style.top = `${top}px`;
   tooltipElement.style.left = `${Math.max(scrollX + 8, left)}px`;
 
+  const isRemoval = s.replacementText === "";
   const isRephrase = s.explanation.toLowerCase().includes("rephrase");
+
+  const suggestedDisplay = isRemoval
+    ? `<span class="lingually-suggested-remove">[Remove word]</span>`
+    : `<span class="lingually-suggested">${escapeHtml(s.replacementText)}</span>`;
+
+  const acceptBtnText = isRemoval
+    ? "Remove"
+    : isRephrase
+    ? "Accept Rephrase"
+    : "Accept";
+
+  const badgeText = isRemoval ? "UNRECOGNIZED" : isRephrase ? "REPHRASE" : s.category;
 
   tooltipElement.innerHTML = `
     <div class="lingually-tooltip-header">
-      <span class="lingually-cat-badge lingually-cat-${s.category}">${isRephrase ? "REPHRASE" : s.category}</span>
+      <span class="lingually-cat-badge lingually-cat-${s.category}">${badgeText}</span>
       <span style="font-size: 11px; color: #94a3b8; cursor: pointer;" id="tooltip-close-btn">&times;</span>
     </div>
     <div class="lingually-tooltip-body">
-      <span class="lingually-strikethrough">${s.originalText}</span>
+      <span class="lingually-strikethrough">${escapeHtml(s.originalText)}</span>
       <span class="lingually-arrow">&rarr;</span>
-      <span class="lingually-suggested">${s.replacementText}</span>
+      ${suggestedDisplay}
     </div>
-    <div class="lingually-tooltip-reason">${s.explanation}</div>
+    <div class="lingually-tooltip-reason">${escapeHtml(s.explanation)}</div>
     <div class="lingually-tooltip-actions">
-      <button class="lingually-btn-accept" id="tooltip-accept-btn">${isRephrase ? "Accept Rephrase" : "Accept"}</button>
+      <button class="lingually-btn-accept ${isRemoval ? "lingually-btn-remove" : ""}" id="tooltip-accept-btn">${acceptBtnText}</button>
       ${isRephrase ? `<button class="lingually-btn-dismiss" id="tooltip-open-modal-btn">Paraphrase Modes</button>` : ""}
       <button class="lingually-btn-dismiss" id="tooltip-dismiss-btn">Ignore</button>
     </div>
-    ${!isRephrase ? `<button class="lingually-btn-dict-link" id="tooltip-dict-btn">Add "${s.originalText}" to dictionary</button>` : ""}
+    ${!isRephrase ? `<button class="lingually-btn-dict-link" id="tooltip-dict-btn">Add "${escapeHtml(s.originalText)}" to dictionary</button>` : ""}
   `;
 
   document.body.appendChild(tooltipElement);
@@ -679,22 +692,38 @@ function updateReviewPane() {
 
   const listEl = paneReview.querySelector("#modal-issues-list") as HTMLDivElement;
   currentSuggestions.forEach((s) => {
+    const isRemoval = s.replacementText === "";
+    const isRephrase = s.explanation.toLowerCase().includes("rephrase");
+
+    const suggestedDisplay = isRemoval
+      ? `<span class="lingually-suggested-remove">[Remove word]</span>`
+      : `<span class="lingually-suggested">${escapeHtml(s.replacementText)}</span>`;
+
+    const acceptBtnText = isRemoval
+      ? "Remove"
+      : isRephrase
+      ? "Accept Rephrase"
+      : "Accept";
+
+    const badgeText = isRemoval ? "UNRECOGNIZED" : isRephrase ? "REPHRASE" : s.category;
+
     const item = document.createElement("div");
     item.className = "lingually-issue-card";
     item.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span class="lingually-cat-badge lingually-cat-${s.category}">${s.category}</span>
+        <span class="lingually-cat-badge lingually-cat-${s.category}">${badgeText}</span>
       </div>
       <div class="lingually-tooltip-body" style="margin: 4px 0;">
-        <span class="lingually-strikethrough">${s.originalText}</span>
+        <span class="lingually-strikethrough">${escapeHtml(s.originalText)}</span>
         <span class="lingually-arrow">&rarr;</span>
-        <span class="lingually-suggested">${s.replacementText}</span>
+        ${suggestedDisplay}
       </div>
-      <div class="lingually-tooltip-reason" style="margin-bottom: 8px;">${s.explanation}</div>
+      <div class="lingually-tooltip-reason" style="margin-bottom: 8px;">${escapeHtml(s.explanation)}</div>
       <div class="lingually-tooltip-actions">
-        <button class="lingually-btn-accept">Accept</button>
+        <button class="lingually-btn-accept ${isRemoval ? "lingually-btn-remove" : ""}">${acceptBtnText}</button>
         <button class="lingually-btn-dismiss">Ignore</button>
       </div>
+      ${!isRephrase ? `<button class="lingually-btn-dict-link" style="margin-top: 6px;">Add "${escapeHtml(s.originalText)}" to dictionary</button>` : ""}
     `;
 
     item.querySelector(".lingually-btn-accept")?.addEventListener("click", (e) => {
@@ -707,6 +736,12 @@ function updateReviewPane() {
     item.querySelector(".lingually-btn-dismiss")?.addEventListener("click", (e) => {
       e.stopPropagation();
       dismissSuggestion(s);
+      updateReviewPane();
+    });
+
+    item.querySelector(".lingually-btn-dict-link")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      addToDictionary(s.originalText);
       updateReviewPane();
     });
 
@@ -759,41 +794,52 @@ function updateParaphrasePane() {
     </div>
   `;
 
-  // Mode chips
-  panePara.querySelectorAll<HTMLButtonElement>(".lingually-mode-chip").forEach((chip) => {
-    chip.addEventListener("click", (e) => {
-      e.stopPropagation();
-      panePara.querySelectorAll(".lingually-mode-chip").forEach((c) => c.classList.remove("active"));
-      chip.classList.add("active");
-      activeParaphraseMode = chip.getAttribute("data-mode") as any;
-    });
-  });
-
   let currentParaphraseOutput = "";
 
-  panePara.querySelector("#btn-run-paraphrase")?.addEventListener("click", (e) => {
-    e.stopPropagation();
+  const runParaphrase = () => {
+    const textToRewrite = getText(activeElement!);
+    if (!textToRewrite || textToRewrite.trim().length === 0) return;
+
     const btn = panePara.querySelector("#btn-run-paraphrase") as HTMLButtonElement;
-    btn.innerHTML = `<span>Paraphrasing...</span>`;
-    btn.disabled = true;
+    if (btn) {
+      btn.innerHTML = `<span>Paraphrasing...</span>`;
+      btn.disabled = true;
+    }
 
     setTimeout(() => {
-      const textToRewrite = getText(activeElement!);
       currentParaphraseOutput = paraphraseText(textToRewrite, activeParaphraseMode);
       const outputArea = panePara.querySelector("#para-output-area") as HTMLDivElement;
       const outputText = panePara.querySelector("#para-output-text") as HTMLDivElement;
       if (outputText) outputText.textContent = currentParaphraseOutput;
       if (outputArea) outputArea.style.display = "block";
 
-      btn.disabled = false;
-      btn.innerHTML = `
-        <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-        </svg>
-        <span>Re-paraphrase</span>
-      `;
-    }, 200);
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          <span>Re-paraphrase</span>
+        `;
+      }
+    }, 120);
+  };
+
+  // Mode chips: auto re-paraphrase immediately on chip click
+  panePara.querySelectorAll<HTMLButtonElement>(".lingually-mode-chip").forEach((chip) => {
+    chip.addEventListener("click", (e) => {
+      e.stopPropagation();
+      panePara.querySelectorAll(".lingually-mode-chip").forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+      activeParaphraseMode = chip.getAttribute("data-mode") as any;
+      runParaphrase();
+    });
+  });
+
+  panePara.querySelector("#btn-run-paraphrase")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    runParaphrase();
   });
 
   panePara.querySelector("#btn-insert-page")?.addEventListener("click", (e) => {
@@ -817,6 +863,11 @@ function updateParaphrasePane() {
       }, 1500);
     }
   });
+
+  // Auto-run if input has text so results are immediately visible
+  if (currentText && currentText.trim().length > 0) {
+    runParaphrase();
+  }
 }
 
 function escapeHtml(str: string): string {
@@ -830,10 +881,19 @@ function applySuggestion(s: ExtensionSuggestion) {
   if (!activeElement) return;
   const fullText = getText(activeElement);
 
-  const before = fullText.slice(0, s.offset);
-  const after = fullText.slice(s.offset + s.length);
-  const updated = before + s.replacementText + after;
+  let before = fullText.slice(0, s.offset);
+  let after = fullText.slice(s.offset + s.length);
 
+  // If this is a removal, also trim adjacent whitespace cleanly
+  if (s.replacementText === "") {
+    if (before.endsWith(" ") && (after.startsWith(" ") || after.length === 0 || /^[.,!?;:]/.test(after))) {
+      before = before.slice(0, -1);
+    } else if (before.length === 0 && after.startsWith(" ")) {
+      after = after.slice(1);
+    }
+  }
+
+  const updated = before + s.replacementText + after;
   setText(activeElement, updated);
   checkActiveElement();
 }
@@ -845,8 +905,15 @@ function fixAllSuggestions() {
   // Apply suggestions from right to left so offsets remain valid
   const sorted = [...currentSuggestions].sort((a, b) => b.offset - a.offset);
   for (const s of sorted) {
-    const before = fullText.slice(0, s.offset);
-    const after = fullText.slice(s.offset + s.length);
+    let before = fullText.slice(0, s.offset);
+    let after = fullText.slice(s.offset + s.length);
+    if (s.replacementText === "") {
+      if (before.endsWith(" ") && (after.startsWith(" ") || after.length === 0 || /^[.,!?;:]/.test(after))) {
+        before = before.slice(0, -1);
+      } else if (before.length === 0 && after.startsWith(" ")) {
+        after = after.slice(1);
+      }
+    }
     fullText = before + s.replacementText + after;
   }
 

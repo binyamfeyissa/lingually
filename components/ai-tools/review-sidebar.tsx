@@ -315,8 +315,11 @@ export function ReviewSidebar({
                       {s.originalText}
                     </span>
                     <ArrowRight className="h-3 w-3 text-muted shrink-0" />
-                    <span className="font-semibold text-accent bg-accent/10 border border-accent/20 px-1 py-0.5">
-                      {s.replacementText || "[OMIT]"}
+                    <span className={cn(
+                      "font-semibold px-1 py-0.5 border",
+                      s.replacementText ? "text-accent bg-accent/10 border-accent/20" : "text-danger bg-danger/10 border-danger/20 italic"
+                    )}>
+                      {s.replacementText || "[REMOVE WORD]"}
                     </span>
                   </div>
 
@@ -355,10 +358,13 @@ export function ReviewSidebar({
                           e.stopPropagation();
                           handleAcceptSuggestion(s);
                         }}
-                        className="h-6 px-2.5 font-mono text-[10px] uppercase tracking-wider font-semibold bg-invert-bg text-invert-fg hover:opacity-85 flex items-center gap-1 transition"
+                        className={cn(
+                          "h-6 px-2.5 font-mono text-[10px] uppercase tracking-wider font-semibold hover:opacity-85 flex items-center gap-1 transition",
+                          s.replacementText ? "bg-invert-bg text-invert-fg" : "bg-danger text-white"
+                        )}
                       >
                         <Check className="h-3 w-3" />
-                        <span>ACCEPT</span>
+                        <span>{s.replacementText ? "ACCEPT" : "REMOVE"}</span>
                       </button>
                     </div>
                   </div>

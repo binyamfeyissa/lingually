@@ -252,6 +252,27 @@
   background: #0253a3;
 }
 
+.lingually-btn-remove {
+  background: #e11d48 !important;
+  color: #ffffff !important;
+  border-color: #e11d48 !important;
+}
+
+.lingually-btn-remove:hover {
+  background: #be123c !important;
+  border-color: #be123c !important;
+}
+
+.lingually-suggested-remove {
+  color: #e11d48;
+  font-weight: 700;
+  font-size: 11px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
 .lingually-btn-dismiss {
   background: #f8fafc;
   color: #475569;

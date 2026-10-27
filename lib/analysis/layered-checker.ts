@@ -158,6 +158,18 @@ const DETERMINISTIC_DELIVERY: Array<{
   { pattern: /\bjust wanted to\b/gi, replacement: "wanted to", explanation: "'Just' can sound overly apologetic in professional delivery." },
 ];
 
+function isLikelyGibberish(word: string): boolean {
+  const lower = word.toLowerCase();
+  if (lower.length <= 2) {
+    return !["a", "i", "am", "an", "as", "at", "be", "by", "do", "go", "he", "hi", "if", "in", "is", "it", "me", "my", "no", "of", "ok", "on", "or", "so", "to", "up", "us", "we"].includes(lower);
+  }
+  if (/([a-zA-Z])\1\1/.test(lower)) return true;
+  if (/[b-df-hj-np-tv-z]{5,}/.test(lower)) return true;
+  if (/(hgg|ggu|zzk|xkz|qq|q[^u]|ii|uu)/.test(lower)) return true;
+  if (!/[aeiouy]/.test(lower)) return true;
+  return false;
+}
+
 /**
  * Runs Layer A (instant local deterministic checks).
  */
@@ -312,6 +324,22 @@ export function runLocalDeterministicCheck(
         });
         continue;
       }
+    }
+
+    // Unrecognized word / Gibberish detection (e.g. 'ffgvffv')
+    if (isLikelyGibberish(rawWord)) {
+      suggestions.push({
+        id: `det_gib_${idCounter++}`,
+        category: "correctness",
+        originalText: rawWord,
+        replacementText: "",
+        explanation: `Unrecognized word '${rawWord}'. Remove it or add to dictionary if correct.`,
+        offset: match.index,
+        length: rawWord.length,
+        ruleId: "unrecognized_word",
+        severity: "error",
+      });
+      continue;
     }
   }
 

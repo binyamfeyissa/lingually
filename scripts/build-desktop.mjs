@@ -311,6 +311,22 @@ const desktopHtml = `<!DOCTYPE html>
             offset: m.index,
             length: m[0].length
           });
+          continue;
+        }
+
+        const isGibberish = lower.length <= 2
+          ? !["a", "i", "am", "an", "as", "at", "be", "by", "do", "go", "he", "hi", "if", "in", "is", "it", "me", "my", "no", "of", "ok", "on", "or", "so", "to", "up", "us", "we"].includes(lower)
+          : /([a-zA-Z])\\1\\1/.test(lower) || /[b-df-hj-np-tv-z]{5,}/.test(lower) || !/[aeiouy]/.test(lower);
+
+        if (isGibberish) {
+          suggestions.push({
+            category: "correctness",
+            original: m[0],
+            replacement: "",
+            explanation: "Unrecognized word '" + m[0] + "'. Remove it or ignore.",
+            offset: m.index,
+            length: m[0].length
+          });
         }
       }
 
@@ -385,22 +401,32 @@ const desktopHtml = `<!DOCTYPE html>
       }
 
       suggs.forEach(s => {
+        const isRemoval = s.replacement === "";
         const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = \`
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span class="pill pill-\${s.category}">\${s.category}</span>
+            <span class="pill pill-\${s.category}">\${isRemoval ? "UNRECOGNIZED" : s.category}</span>
           </div>
           <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">\${s.explanation}</div>
           <div style="font-family: monospace; font-size: 12px; background: #f8fafc; padding: 6px 8px; border-radius: 6px; margin-bottom: 6px;">
-            <span style="text-decoration: line-through; color: #e11d48;">\${s.original}</span> &rarr; <span style="color: #059669; font-weight: bold;">\${s.replacement}</span>
+            <span style="text-decoration: line-through; color: #e11d48;">\${s.original}</span> &rarr; \${isRemoval ? '<span style="color: #e11d48; font-weight: bold; font-style: italic;">[Remove word]</span>' : '<span style="color: #059669; font-weight: bold;">' + s.replacement + '</span>'}
           </div>
-          <button class="btn-accept-sugg">Accept Suggestion</button>
+          <button class="btn-accept-sugg" style="\${isRemoval ? 'background: #e11d48;' : ''}">\${isRemoval ? 'Remove Word' : 'Accept Suggestion'}</button>
         \`;
 
         card.querySelector(".btn-accept-sugg").addEventListener("click", () => {
           const full = editor.value;
-          editor.value = full.slice(0, s.offset) + s.replacement + full.slice(s.offset + s.length);
+          let before = full.slice(0, s.offset);
+          let after = full.slice(s.offset + s.length);
+          if (isRemoval) {
+            if (before.endsWith(" ") && (after.startsWith(" ") || after.length === 0 || /^[.,!?;:]/.test(after))) {
+              before = before.slice(0, -1);
+            } else if (before.length === 0 && after.startsWith(" ")) {
+              after = after.slice(1);
+            }
+          }
+          editor.value = before + s.replacement + after;
           localStorage.setItem('lingually_desktop_draft', editor.value);
           renderSuggestions();
         });
