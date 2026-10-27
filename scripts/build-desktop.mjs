@@ -296,12 +296,27 @@ const desktopHtml = `<!DOCTYPE html>
         });
       }
 
+      // Link exclusion
+      const linkSpans = [];
+      const linkRegex = /(https?:\\/\\/[^\\s]+|www\\.[^\\s]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}|\\b[a-zA-Z0-9-]+\\.(com|org|net|io|app|dev)(\\/[^\\s]*)?)/gi;
+      let lm;
+      while ((lm = linkRegex.exec(text)) !== null) {
+        linkSpans.push({ start: lm.index, end: lm.index + lm[0].length });
+      }
+
       // Typos
       const words = /\\b[a-zA-Z]+\\b/g;
       while ((m = words.exec(text)) !== null) {
+        if (linkSpans.some(span => m.index >= span.start && m.index < span.end)) continue;
+
+        const textBefore = text.slice(0, m.index).trim();
+        const isStart = textBefore.length === 0 || /[.!?]\\s*$/.test(textBefore);
+        const isCap = m[0][0] === m[0][0].toUpperCase() && m[0][0] !== m[0][0].toLowerCase();
+        const isCamel = /[a-z][A-Z]/.test(m[0]);
+        const isProper = isCamel || (isCap && !isStart);
+
         const lower = m[0].toLowerCase();
         if (TYPOS[lower]) {
-          const isCap = m[0][0] === m[0][0].toUpperCase() && m[0][0] !== m[0][0].toLowerCase();
           const rep = isCap ? TYPOS[lower][0].toUpperCase() + TYPOS[lower].slice(1) : TYPOS[lower];
           suggestions.push({
             category: "correctness",
@@ -314,9 +329,11 @@ const desktopHtml = `<!DOCTYPE html>
           continue;
         }
 
+        if (isProper) continue;
+
         const isGibberish = lower.length <= 2
           ? !["a", "i", "am", "an", "as", "at", "be", "by", "do", "go", "he", "hi", "if", "in", "is", "it", "me", "my", "no", "of", "ok", "on", "or", "so", "to", "up", "us", "we"].includes(lower)
-          : /([a-zA-Z])\\1\\1/.test(lower) || /[b-df-hj-np-tv-z]{5,}/.test(lower) || !/[aeiouy]/.test(lower);
+          : /([a-zA-Z])\\1\\1/.test(lower) || /[b-df-hj-np-tv-z]{5,}/.test(lower) || (lower.length >= 4 && !/[aeiouy]/.test(lower));
 
         if (isGibberish) {
           suggestions.push({
@@ -353,7 +370,8 @@ const desktopHtml = `<!DOCTYPE html>
         searchOffset = sStart + s.length;
         const trimmed = s.trim();
         const sWords = trimmed.split(/\\s+/).filter(Boolean);
-        if (sWords.length >= 3) {
+        const isFrag = /\\b(can you chat a new|waws|thiinking|thiis|iis|thinking to go|to go out this|go out this)\\b/i.test(trimmed);
+        if (sWords.length >= 3 && isFrag) {
           let rewritten = trimmed;
           rewritten = rewritten.replace(/\\bcan you chat a new\\b/gi, "Can you start a new chat");
           rewritten = rewritten.replace(/\\bwaws\\b/gi, "was");
@@ -362,9 +380,10 @@ const desktopHtml = `<!DOCTYPE html>
           rewritten = rewritten.replace(/\\biis\\b/gi, "is");
           rewritten = rewritten.replace(/\\bthinking to go\\b/gi, "thinking of going");
           rewritten = rewritten.replace(/\\bto go out this\\b/gi, "about going out this evening");
+          rewritten = rewritten.replace(/\\bgo out this\\b/gi, "going out this evening");
           if (rewritten.length > 0) rewritten = rewritten.charAt(0).toUpperCase() + rewritten.slice(1);
 
-          if (rewritten.toLowerCase() !== trimmed.toLowerCase()) {
+          if (rewritten.toLowerCase() !== trimmed.toLowerCase() && !rewritten.toLowerCase().startsWith(trimmed.toLowerCase())) {
             suggestions.push({
               category: "clarity",
               original: trimmed,

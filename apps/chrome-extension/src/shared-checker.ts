@@ -226,7 +226,44 @@ const COMMON_VOCABULARY = new Set([
   "build", "stay", "fall", "cut", "reach", "kill", "remain", "suggest", "raise", "pass",
   "sell", "require", "report", "decide", "pull", "thinking", "thought", "going", "night", "tonight",
   "evening", "weekend", "outside", "dinner", "lunch", "breakfast", "food", "movie", "fun", "friend",
-  "friends", "family", "house", "home", "car", "drive", "sleep", "felt", "feel", "wants", "wanted"
+  "friends", "family", "house", "home", "car", "drive", "sleep", "felt", "feel", "wants", "wanted",
+  "consequently", "essence", "agenda", "furthermore", "moreover", "therefore", "accordingly", "considering",
+  "heading", "venturing", "contemplating", "endeavoring", "assistance", "specifically", "regarding",
+  "deliberate", "perspective", "performance", "recommendation", "structure", "development", "workbench",
+  "interface", "platform", "extension", "application", "browser", "document", "paragraph", "sentence",
+  "selection", "dictionary", "paraphrase", "clarity", "engagement", "delivery", "correctness", "accuracy",
+  "context", "definition", "information", "experience", "opportunity", "knowledge", "strategy", "solution",
+  "possible", "important", "necessary", "problem", "difficult", "simple", "example", "already", "general",
+  "particular", "usually", "certain", "different", "similar", "available", "several", "together", "against",
+  "without", "within", "between", "toward", "course", "matter", "perhaps", "however", "although", "except"
+]);
+
+export const COMMON_NAMES = new Set([
+  // Names
+  "john", "david", "sarah", "mary", "michael", "james", "robert", "william", "thomas", "charles",
+  "daniel", "matthew", "anthony", "mark", "donald", "steven", "paul", "andrew", "joshua", "kenneth",
+  "kevin", "brian", "george", "edward", "ronald", "timothy", "jason", "jeffrey", "ryan", "jacob",
+  "gary", "nicholas", "eric", "jonathan", "stephen", "larry", "justin", "scott", "brandon", "benjamin",
+  "samuel", "gregory", "alexander", "patrick", "frank", "raymond", "jack", "dennis", "jerry", "tyler",
+  "aaron", "jose", "adam", "nathan", "henry", "douglas", "zachary", "peter", "kyle", "walter",
+  "ethan", "jeremy", "harold", "keith", "christian", "roger", "noah", "gerald", "carl", "terry",
+  "sean", "arthur", "austin", "lawrence", "jesse", "dylan", "bryan", "joe", "jordan", "billy",
+  "bruce", "albert", "gabriel", "logan", "alan", "juan", "wayne", "roy", "ralph", "randy",
+  "eugene", "vincent", "russell", "louis", "philip", "bobby", "johnny", "bradley", "binyam",
+  "emma", "olivia", "ava", "isabella", "sophia", "mia", "charlotte", "amelia", "harper", "evelyn",
+  "abigail", "emily", "elizabeth", "mila", "ella", "avery", "sofia", "camila", "aria", "scarlett",
+  "victoria", "madison", "luna", "grace", "chloe", "penelope", "layla", "riley", "zoey", "nora",
+  "lily", "eleanor", "hannah", "lillian", "addison", "aubrey", "ellie", "stella", "natalie", "zoe",
+  "leah", "hazel", "violet", "aurora", "savannah", "audrey", "brooklyn", "bella", "claire", "skylar",
+  "lucy", "paisley", "everly", "anna", "caroline", "nova", "genesis", "emilia", "kennedy", "samantha",
+  "maya", "willow", "kinsley", "naomi", "aaliyah", "elena", "ariana", "allison", "gabriella", "alice",
+  "madelyn", "cora", "ruby", "eva", "serenity", "autumn", "adeline", "hailey", "gianna", "valentine",
+  // Brands / Organizations / Platforms / Places
+  "google", "apple", "microsoft", "amazon", "meta", "twitter", "facebook", "instagram", "quillbot",
+  "grammarly", "openai", "github", "gitlab", "youtube", "linkedin", "slack", "discord", "reddit",
+  "tauri", "vercel", "nextjs", "react", "typescript", "javascript", "python", "node", "macos", "windows",
+  "linux", "ios", "android", "chrome", "firefox", "safari", "edge",
+  "london", "paris", "tokyo", "berlin", "york", "california", "america", "europe", "asia", "africa"
 ]);
 
 // Helper: Calculate Levenshtein distance
@@ -272,12 +309,18 @@ const VALID_SHORT_WORDS = new Set([
   "me", "my", "no", "of", "ok", "on", "or", "so", "to", "up", "us", "we"
 ]);
 
-// Heuristic check for unrecognized words (like 'hgguh', 'iihiu', 'nam', 'ky', 'vry')
-function isLikelyGibberishOrMisspelling(word: string): boolean {
+// Heuristic check for unrecognized gibberish words (like 'ffgvffv', 'hgguh', 'iihiu')
+function isLikelyGibberishOrMisspelling(
+  word: string,
+  isProperNoun: boolean = false
+): boolean {
   const lower = word.toLowerCase();
 
-  // If in standard vocabulary or typos dictionary, it's known
-  if (COMMON_VOCABULARY.has(lower) || DETERMINISTIC_TYPOS[lower]) return false;
+  // If in standard vocabulary, known typos, or names, it's NOT gibberish
+  if (COMMON_VOCABULARY.has(lower) || DETERMINISTIC_TYPOS[lower] || COMMON_NAMES.has(lower)) return false;
+
+  // Proper nouns / Names / CamelCase words are NEVER flagged as gibberish
+  if (isProperNoun || /[a-z][A-Z]/.test(word)) return false;
 
   // 1 or 2 letter words: check valid English words
   if (lower.length <= 2) {
@@ -299,20 +342,18 @@ function isLikelyGibberishOrMisspelling(word: string): boolean {
     return false;
   }
 
-  // 3+ identical consecutive characters (e.g. 'aaa', 'ggg')
+  // 3+ identical consecutive characters (e.g. 'aaa', 'ggg', 'fff')
   if (/([a-zA-Z])\1\1/.test(lower)) return true;
 
-  // Unnatural English patterns:
-  if (/^(hh|vv|jj|qq|xx|ww|yy|ii|uu)/.test(lower)) return true;
-  if (/(hgg|ggu|zzk|xkz|qq|q[^u]|ii|uu)/.test(lower)) return true;
+  // 5 or more consecutive consonants (unnatural in English): e.g. 'ffgvffv', 'zxcklj'
+  if (/[b-df-hj-np-tv-z]{5,}/.test(lower)) return true;
 
-  // Words without standard vowels (a, e, i, o, u, y)
-  if (!/[aeiouy]/.test(lower)) return true;
+  // Words without standard vowels (a, e, i, o, u, y) with length >= 4
+  if (lower.length >= 4 && !/[aeiouy]/.test(lower)) return true;
 
-  // Unrecognized word outside common dictionary (length >= 3)
-  if (lower.length >= 3 && !COMMON_VOCABULARY.has(lower)) {
-    return true;
-  }
+  // Unnatural English patterns / keyboard mash:
+  if (/^(hh|vv|jj|xx|ww)/.test(lower) && !["which", "who", "whom", "whose", "where", "when", "why", "what", "white", "while", "wheel"].includes(lower)) return true;
+  if (/(hgg|ggu|zzk|xkz|qq|q[^u]|ii|uu)/.test(lower) && !["skiing", "radii", "pompeii", "hawaii"].includes(lower)) return true;
 
   return false;
 }
@@ -429,6 +470,14 @@ export function runExtensionCheck(
     });
   }
 
+  // Exclude all URLs, links, emails, and paths from word analysis
+  const linkSpans: Array<{ start: number; end: number }> = [];
+  const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|\b[a-zA-Z0-9-]+\.(com|org|net|edu|gov|io|app|dev|co|ai|uk|de|fr|ca|me)(\/[^\s]*)?|\/[a-zA-Z0-9_\-./]+)/gi;
+  let lMatch: RegExpExecArray | null = null;
+  while ((lMatch = linkRegex.exec(text)) !== null) {
+    linkSpans.push({ start: lMatch.index, end: lMatch.index + lMatch[0].length });
+  }
+
   // 3. Known Typos & Unrecognized words check
   const wordRegex = /\b[a-zA-Z]+\b/g;
   while ((match = wordRegex.exec(text)) !== null) {
@@ -436,10 +485,22 @@ export function runExtensionCheck(
     const lower = rawWord.toLowerCase();
     if (personalDictionary.has(lower)) continue;
 
+    // Skip words inside links, URLs, emails, or file paths
+    if (linkSpans.some((span) => match!.index >= span.start && match!.index < span.end)) {
+      continue;
+    }
+
+    const textBefore = text.slice(0, match.index).trim();
+    const isSentenceStart = textBefore.length === 0 || /[.!?]\s*$/.test(textBefore) || /\n\s*$/.test(textBefore);
+    const isCap = rawWord[0] === rawWord[0].toUpperCase() && rawWord[0] !== rawWord[0].toLowerCase();
+    const isCamelCase = /[a-z][A-Z]/.test(rawWord);
+    const isKnownName = COMMON_NAMES.has(lower);
+    const isProperNoun = isCamelCase || isKnownName || (isCap && !isSentenceStart);
+
     // A. Known exact typo
     if (DETERMINISTIC_TYPOS[lower]) {
       const entry = DETERMINISTIC_TYPOS[lower];
-      const isCapitalized = rawWord[0] === rawWord[0].toUpperCase() && rawWord[0] !== rawWord[0].toLowerCase();
+      const isCapitalized = isCap;
       const replacement = isCapitalized
         ? entry.replacement.charAt(0).toUpperCase() + entry.replacement.slice(1)
         : entry.replacement;
@@ -456,11 +517,16 @@ export function runExtensionCheck(
       continue;
     }
 
+    // Never judge names, proper nouns, or CamelCase identifiers
+    if (isProperNoun) {
+      continue;
+    }
+
     // B. Redundant double 'i' check (e.g., 'thiis' -> 'this', 'thiinking' -> 'thinking', 'iis' -> 'is', 'fiix' -> 'fix')
     if (/ii/.test(lower) && !["skiing", "radii", "pompeii", "hawaii"].includes(lower)) {
       const singleI = lower.replace(/ii/g, "i");
       if (COMMON_VOCABULARY.has(singleI) || VALID_SHORT_WORDS.has(singleI) || DETERMINISTIC_TYPOS[singleI]) {
-        const isCapitalized = rawWord[0] === rawWord[0].toUpperCase() && rawWord[0] !== rawWord[0].toLowerCase();
+        const isCapitalized = isCap;
         const replacement = isCapitalized ? singleI.charAt(0).toUpperCase() + singleI.slice(1) : singleI;
         suggestions.push({
           id: `ext_double_i_${idCounter++}`,
@@ -475,10 +541,9 @@ export function runExtensionCheck(
       }
     }
 
-    // C. Unrecognized word / Gibberish detection (e.g., 'hgguh', 'iihiu', 'ffgvffv')
-    if (isLikelyGibberishOrMisspelling(rawWord)) {
+    // C. Unrecognized word / Gibberish detection (e.g., 'ffgvffv', 'hgguh')
+    if (isLikelyGibberishOrMisspelling(rawWord, isProperNoun)) {
       const closest = findClosestWord(lower);
-      const isCap = rawWord[0] === rawWord[0].toUpperCase();
       const rep = closest
         ? isCap ? closest.charAt(0).toUpperCase() + closest.slice(1) : closest
         : "";
@@ -583,9 +648,14 @@ export function runExtensionCheck(
         /\bgo out this\b/i.test(trimmed) ||
         /\bnam\b/i.test(trimmed);
 
-      if (sentenceIssues.length >= 1 || isFragmented || words.length >= 4) {
-        const paraphrased = paraphraseText(trimmed, "standard");
-        if (paraphrased.toLowerCase() !== trimmed.toLowerCase()) {
+      // ONLY suggest rephrase if there is structural fragmentation or multiple distinct errors (>=2)
+      // Never trigger simply because words.length >= 4!
+      if (isFragmented || sentenceIssues.length >= 2) {
+        const paraphrased = paraphraseText(trimmed, "standard", true);
+        if (
+          paraphrased.toLowerCase() !== trimmed.toLowerCase() &&
+          !paraphrased.toLowerCase().startsWith(trimmed.toLowerCase())
+        ) {
           const trimmedStart = sStart + rawSentence.indexOf(trimmed);
           suggestions.push({
             id: `ext_rephrase_${idCounter++}`,
@@ -616,7 +686,8 @@ export function runExtensionCheck(
  */
 export function paraphraseText(
   text: string,
-  mode: "standard" | "fluency" | "formal" | "shorten" | "expand" = "standard"
+  mode: "standard" | "fluency" | "formal" | "shorten" | "expand" = "standard",
+  forChecker: boolean = false
 ): string {
   if (!text || text.trim().length === 0) return text;
 
@@ -820,21 +891,31 @@ export function paraphraseText(
   }
 
   // GUARANTEED DIFFERENTIATION FALLTHROUGH:
-  // If the output text is still identical to the input text, guarantee a visible, mode-appropriate transformation!
-  if (result.trim().toLowerCase() === text.trim().toLowerCase()) {
+  // Only for manual user-triggered paraphraser mode selection when text is identical.
+  // NEVER run this for checker calls (to avoid infinite rephrase loops like "In essence, in essence, ...")
+  if (!forChecker && result.trim().toLowerCase() === text.trim().toLowerCase()) {
+    const l = result.trim().toLowerCase();
     if (mode === "formal") {
-      result = `It should be noted that ${result.charAt(0).toLowerCase() + result.slice(1)}`;
+      if (!l.startsWith("it should be noted that") && !l.startsWith("consequently") && !l.startsWith("therefore")) {
+        result = `It should be noted that ${result.charAt(0).toLowerCase() + result.slice(1)}`;
+      }
     } else if (mode === "expand") {
-      result = `${result.replace(/[.?!]?$/, "")}, which is particularly significant to take into account.`;
+      if (!l.endsWith("take into account.") && !l.endsWith("take into account")) {
+        result = `${result.replace(/[.?!]?$/, "")}, which is particularly significant to take into account.`;
+      }
     } else if (mode === "shorten") {
       result = result.replace(/^(however|furthermore|moreover|consequently|therefore|additionally),?\s*/i, "");
       if (result.length > 20) {
         result = result.replace(/\b(that|which|who|whom)\b/gi, "");
       }
     } else if (mode === "fluency") {
-      result = `Clearly, ${result.charAt(0).toLowerCase() + result.slice(1)}`;
+      if (!l.startsWith("clearly,") && !l.startsWith("honestly,") && !l.startsWith("naturally,")) {
+        result = `Clearly, ${result.charAt(0).toLowerCase() + result.slice(1)}`;
+      }
     } else {
-      result = `In essence, ${result.charAt(0).toLowerCase() + result.slice(1)}`;
+      if (!l.startsWith("in essence,") && !l.startsWith("basically,") && !l.startsWith("in summary,")) {
+        result = `In essence, ${result.charAt(0).toLowerCase() + result.slice(1)}`;
+      }
     }
   }
 

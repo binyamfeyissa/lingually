@@ -158,15 +158,42 @@ const DETERMINISTIC_DELIVERY: Array<{
   { pattern: /\bjust wanted to\b/gi, replacement: "wanted to", explanation: "'Just' can sound overly apologetic in professional delivery." },
 ];
 
-function isLikelyGibberish(word: string): boolean {
+const COMMON_NAMES = new Set([
+  "john", "david", "sarah", "mary", "michael", "james", "robert", "william", "thomas", "charles",
+  "daniel", "matthew", "anthony", "mark", "donald", "steven", "paul", "andrew", "joshua", "kenneth",
+  "kevin", "brian", "george", "edward", "ronald", "timothy", "jason", "jeffrey", "ryan", "jacob",
+  "gary", "nicholas", "eric", "jonathan", "stephen", "larry", "justin", "scott", "brandon", "benjamin",
+  "samuel", "gregory", "alexander", "patrick", "frank", "raymond", "jack", "dennis", "jerry", "tyler",
+  "aaron", "jose", "adam", "nathan", "henry", "douglas", "zachary", "peter", "kyle", "walter",
+  "ethan", "jeremy", "harold", "keith", "christian", "roger", "noah", "gerald", "carl", "terry",
+  "sean", "arthur", "austin", "lawrence", "jesse", "dylan", "bryan", "joe", "jordan", "billy",
+  "bruce", "albert", "gabriel", "logan", "alan", "juan", "wayne", "roy", "ralph", "randy",
+  "eugene", "vincent", "russell", "louis", "philip", "bobby", "johnny", "bradley", "binyam",
+  "emma", "olivia", "ava", "isabella", "sophia", "mia", "charlotte", "amelia", "harper", "evelyn",
+  "abigail", "emily", "elizabeth", "mila", "ella", "avery", "sofia", "camila", "aria", "scarlett",
+  "victoria", "madison", "luna", "grace", "chloe", "penelope", "layla", "riley", "zoey", "nora",
+  "lily", "eleanor", "hannah", "lillian", "addison", "aubrey", "ellie", "stella", "natalie", "zoe",
+  "leah", "hazel", "violet", "aurora", "savannah", "audrey", "brooklyn", "bella", "claire", "skylar",
+  "lucy", "paisley", "everly", "anna", "caroline", "nova", "genesis", "emilia", "kennedy", "samantha",
+  "maya", "willow", "kinsley", "naomi", "aaliyah", "elena", "ariana", "allison", "gabriella", "alice",
+  "madelyn", "cora", "ruby", "eva", "serenity", "autumn", "adeline", "hailey", "gianna", "valentine",
+  "google", "apple", "microsoft", "amazon", "meta", "twitter", "facebook", "instagram", "quillbot",
+  "grammarly", "openai", "github", "gitlab", "youtube", "linkedin", "slack", "discord", "reddit",
+  "tauri", "vercel", "nextjs", "react", "typescript", "javascript", "python", "node", "macos", "windows",
+  "linux", "ios", "android", "chrome", "firefox", "safari", "edge",
+  "london", "paris", "tokyo", "berlin", "york", "california", "america", "europe", "asia", "africa"
+]);
+
+function isLikelyGibberish(word: string, isProperNoun: boolean = false): boolean {
   const lower = word.toLowerCase();
+  if (isProperNoun || COMMON_NAMES.has(lower) || /[a-z][A-Z]/.test(word)) return false;
   if (lower.length <= 2) {
     return !["a", "i", "am", "an", "as", "at", "be", "by", "do", "go", "he", "hi", "if", "in", "is", "it", "me", "my", "no", "of", "ok", "on", "or", "so", "to", "up", "us", "we"].includes(lower);
   }
   if (/([a-zA-Z])\1\1/.test(lower)) return true;
   if (/[b-df-hj-np-tv-z]{5,}/.test(lower)) return true;
   if (/(hgg|ggu|zzk|xkz|qq|q[^u]|ii|uu)/.test(lower)) return true;
-  if (!/[aeiouy]/.test(lower)) return true;
+  if (lower.length >= 4 && !/[aeiouy]/.test(lower)) return true;
   return false;
 }
 
@@ -275,6 +302,14 @@ export function runLocalDeterministicCheck(
     }
   }
 
+  // Exclude all URLs, links, emails, and paths from word analysis
+  const linkSpans: Array<{ start: number; end: number }> = [];
+  const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|\b[a-zA-Z0-9-]+\.(com|org|net|edu|gov|io|app|dev|co|ai|uk|de|fr|ca|me)(\/[^\s]*)?|\/[a-zA-Z0-9_\-./]+)/gi;
+  let lMatch: RegExpExecArray | null = null;
+  while ((lMatch = linkRegex.exec(text)) !== null) {
+    linkSpans.push({ start: lMatch.index, end: lMatch.index + lMatch[0].length });
+  }
+
   // 2. Common Typos check
   const wordRegex = /\b[a-zA-Z]+\b/g;
   while ((match = wordRegex.exec(text)) !== null) {
@@ -283,10 +318,22 @@ export function runLocalDeterministicCheck(
 
     if (personalDictionary.has(lower)) continue;
 
+    // Skip words inside links, URLs, emails, or file paths
+    if (linkSpans.some((span) => match!.index >= span.start && match!.index < span.end)) {
+      continue;
+    }
+
+    const textBefore = text.slice(0, match.index).trim();
+    const isSentenceStart = textBefore.length === 0 || /[.!?]\s*$/.test(textBefore) || /\n\s*$/.test(textBefore);
+    const isCap = rawWord[0] === rawWord[0].toUpperCase() && rawWord[0] !== rawWord[0].toLowerCase();
+    const isCamelCase = /[a-z][A-Z]/.test(rawWord);
+    const isKnownName = COMMON_NAMES.has(lower);
+    const isProperNoun = isCamelCase || isKnownName || (isCap && !isSentenceStart);
+
     if (DETERMINISTIC_TYPOS[lower]) {
       const entry = DETERMINISTIC_TYPOS[lower];
       // Preserve uppercase start if original was capitalized
-      const isCapitalized = rawWord[0] === rawWord[0].toUpperCase() && rawWord[0] !== rawWord[0].toLowerCase();
+      const isCapitalized = isCap;
       const replacement = isCapitalized
         ? entry.replacement.charAt(0).toUpperCase() + entry.replacement.slice(1)
         : entry.replacement;
@@ -305,11 +352,16 @@ export function runLocalDeterministicCheck(
       continue;
     }
 
+    // Never judge names, proper nouns, or CamelCase identifiers
+    if (isProperNoun) {
+      continue;
+    }
+
     // Double 'i' check (e.g. 'thiis' -> 'this', 'thiinking' -> 'thinking', 'iis' -> 'is', 'fiix' -> 'fix')
     if (/ii/.test(lower) && !["skiing", "radii", "pompeii", "hawaii"].includes(lower)) {
       const singleI = lower.replace(/ii/g, "i");
       if (DETERMINISTIC_TYPOS[singleI] || ["this", "thinking", "is", "it", "fix", "will", "like", "drive", "since"].includes(singleI)) {
-        const isCapitalized = rawWord[0] === rawWord[0].toUpperCase() && rawWord[0] !== rawWord[0].toLowerCase();
+        const isCapitalized = isCap;
         const replacement = isCapitalized ? singleI.charAt(0).toUpperCase() + singleI.slice(1) : singleI;
         suggestions.push({
           id: `det_double_i_${idCounter++}`,
@@ -327,7 +379,7 @@ export function runLocalDeterministicCheck(
     }
 
     // Unrecognized word / Gibberish detection (e.g. 'ffgvffv')
-    if (isLikelyGibberish(rawWord)) {
+    if (isLikelyGibberish(rawWord, isProperNoun)) {
       suggestions.push({
         id: `det_gib_${idCounter++}`,
         category: "correctness",
@@ -436,7 +488,8 @@ export function runLocalDeterministicCheck(
         /\bgo out this\b/i.test(trimmed) ||
         /\bnam\b/i.test(trimmed);
 
-      if (sentenceIssues.length >= 1 || isFragmented || words.length >= 4) {
+      // Only suggest rephrasing if the sentence is fragmented or has 2+ distinct errors
+      if (isFragmented || sentenceIssues.length >= 2) {
         let rewritten = trimmed;
         rewritten = rewritten.replace(/\bcan you chat a new\b/gi, "Can you start a new chat");
         rewritten = rewritten.replace(/\bI nam\b/gi, "I am");

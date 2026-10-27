@@ -20,6 +20,7 @@ let mirrorElement: HTMLDivElement | null = null;
 
 // Paraphrase state
 let activeParaphraseMode: "standard" | "fluency" | "formal" | "shorten" | "expand" = "standard";
+const dismissedRephrases: Set<string> = new Set();
 
 // Load settings
 chrome.storage.sync.get(["lingually_enabled", "lingually_dictionary"], (res: Record<string, any>) => {
@@ -538,7 +539,19 @@ function toggleModal() {
   }
 }
 
-function openModal() {
+function getReviewSuggestions(): ExtensionSuggestion[] {
+  return currentSuggestions.filter(
+    (s) => !s.id.startsWith("ext_rephrase") && !s.explanation.toLowerCase().includes("rephrase")
+  );
+}
+
+function getRephraseSuggestion(): ExtensionSuggestion | undefined {
+  return currentSuggestions.find(
+    (s) => s.id.startsWith("ext_rephrase") || s.explanation.toLowerCase().includes("rephrase")
+  );
+}
+
+function openModal(initialTab: "review" | "paraphrase" = "review") {
   if (!activeElement) return;
   if (modalElement) closeModal();
 
@@ -568,6 +581,7 @@ function openModal() {
   modalElement.style.left = `${left}px`;
 
   const brandIconUrl = chrome.runtime.getURL("icons/icon32.png");
+  const reviewCount = getReviewSuggestions().length;
 
   modalElement.innerHTML = `
     <div class="lingually-modal-header" id="modal-drag-header" title="Drag to reposition">
@@ -586,17 +600,17 @@ function openModal() {
     </div>
 
     <div class="lingually-modal-tabs">
-      <button class="lingually-tab-btn active" id="tab-btn-review">
-        01 // REVIEW (<span id="modal-review-count">${currentSuggestions.length}</span>)
+      <button class="lingually-tab-btn ${initialTab === "review" ? "active" : ""}" id="tab-btn-review">
+        01 // REVIEW (<span id="modal-review-count">${reviewCount}</span>)
       </button>
-      <button class="lingually-tab-btn" id="tab-btn-paraphrase">
+      <button class="lingually-tab-btn ${initialTab === "paraphrase" ? "active" : ""}" id="tab-btn-paraphrase">
         02 // PARAPHRASE
       </button>
     </div>
 
     <div class="lingually-modal-content">
-      <div id="pane-review" style="display: block;"></div>
-      <div id="pane-paraphrase" style="display: none;"></div>
+      <div id="pane-review" style="display: ${initialTab === "review" ? "block" : "none"};"></div>
+      <div id="pane-paraphrase" style="display: ${initialTab === "paraphrase" ? "block" : "none"};"></div>
     </div>
   `;
 
@@ -665,18 +679,20 @@ function closeModal() {
 function updateReviewPane() {
   if (!modalElement || !activeElement) return;
   const paneReview = modalElement.querySelector("#pane-review") as HTMLDivElement;
-  const countSpan = modalElement.querySelector("#modal-review-count");
-  if (countSpan) countSpan.textContent = String(currentSuggestions.length);
   if (!paneReview) return;
 
-  const score = Math.max(40, 100 - currentSuggestions.length * 10);
+  const reviewSuggestions = getReviewSuggestions();
+  const countSpan = modalElement.querySelector("#modal-review-count");
+  if (countSpan) countSpan.textContent = String(reviewSuggestions.length);
 
-  if (currentSuggestions.length === 0) {
+  const score = Math.max(40, 100 - reviewSuggestions.length * 10);
+
+  if (reviewSuggestions.length === 0) {
     paneReview.innerHTML = `
       <div class="lingually-empty-review">
         <div class="lingually-empty-icon">&#10003;</div>
         <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Writing looks clear!</div>
-        <div>No issues detected in this text field.</div>
+        <div>No spelling or grammar errors detected.</div>
       </div>
     `;
     return;
@@ -685,27 +701,21 @@ function updateReviewPane() {
   paneReview.innerHTML = `
     <div class="lingually-score-banner">
       <div>Writing Health Score: <span class="lingually-score-value">${score}/100</span></div>
-      ${currentSuggestions.length > 1 ? `<button class="lingually-btn-fix-all" id="btn-fix-all">Fix All (${currentSuggestions.length})</button>` : ""}
+      ${reviewSuggestions.length > 1 ? `<button class="lingually-btn-fix-all" id="btn-fix-all">Fix All (${reviewSuggestions.length})</button>` : ""}
     </div>
     <div class="lingually-issues-list" id="modal-issues-list"></div>
   `;
 
   const listEl = paneReview.querySelector("#modal-issues-list") as HTMLDivElement;
-  currentSuggestions.forEach((s) => {
+  reviewSuggestions.forEach((s) => {
     const isRemoval = s.replacementText === "";
-    const isRephrase = s.explanation.toLowerCase().includes("rephrase");
 
     const suggestedDisplay = isRemoval
       ? `<span class="lingually-suggested-remove">[Remove word]</span>`
       : `<span class="lingually-suggested">${escapeHtml(s.replacementText)}</span>`;
 
-    const acceptBtnText = isRemoval
-      ? "Remove"
-      : isRephrase
-      ? "Accept Rephrase"
-      : "Accept";
-
-    const badgeText = isRemoval ? "UNRECOGNIZED" : isRephrase ? "REPHRASE" : s.category;
+    const acceptBtnText = isRemoval ? "Remove" : "Accept";
+    const badgeText = isRemoval ? "UNRECOGNIZED" : s.category;
 
     const item = document.createElement("div");
     item.className = "lingually-issue-card";
@@ -723,7 +733,7 @@ function updateReviewPane() {
         <button class="lingually-btn-accept ${isRemoval ? "lingually-btn-remove" : ""}">${acceptBtnText}</button>
         <button class="lingually-btn-dismiss">Ignore</button>
       </div>
-      ${!isRephrase ? `<button class="lingually-btn-dict-link" style="margin-top: 6px;">Add "${escapeHtml(s.originalText)}" to dictionary</button>` : ""}
+      <button class="lingually-btn-dict-link" style="margin-top: 6px;">Add "${escapeHtml(s.originalText)}" to dictionary</button>
     `;
 
     item.querySelector(".lingually-btn-accept")?.addEventListener("click", (e) => {
@@ -762,6 +772,75 @@ function updateParaphrasePane() {
   if (!panePara) return;
 
   const currentText = getText(activeElement);
+  const rephraseSugg = getRephraseSuggestion();
+
+  panePara.innerHTML = `
+    ${
+      rephraseSugg
+        ? `
+      <div class="lingually-rephrase-box-modal" style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span class="lingually-cat-badge lingually-cat-clarity">SUGGESTED REPHRASE</span>
+        </div>
+        <div class="lingually-tooltip-body" style="margin: 4px 0;">
+          <span class="lingually-strikethrough">${escapeHtml(rephraseSugg.originalText)}</span>
+          <span class="lingually-arrow">&rarr;</span>
+          <span class="lingually-suggested" style="color: #0284c7;">${escapeHtml(rephraseSugg.replacementText)}</span>
+        </div>
+        <div class="lingually-tooltip-reason" style="margin-bottom: 8px;">${escapeHtml(rephraseSugg.explanation)}</div>
+        <div class="lingually-tooltip-actions">
+          <button class="lingually-btn-accept" id="btn-modal-accept-rephrase" style="background: #0284c7; border-color: #0284c7;">Accept Rephrase</button>
+          <button class="lingually-btn-dismiss" id="btn-modal-dismiss-rephrase">Ignore</button>
+        </div>
+      </div>
+    `
+        : ""
+    }
+
+    <div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 6px;">PARAPHRASE MODE</div>
+    <div class="lingually-mode-selector">
+      <button class="lingually-mode-chip ${activeParaphraseMode === "standard" ? "active" : ""}" data-mode="standard">Standard</button>
+      <button class="lingually-mode-chip ${activeParaphraseMode === "fluency" ? "active" : ""}" data-mode="fluency">Fluency</button>
+      <button class="lingually-mode-chip ${activeParaphraseMode === "formal" ? "active" : ""}" data-mode="formal">Formal</button>
+      <button class="lingually-mode-chip ${activeParaphraseMode === "shorten" ? "active" : ""}" data-mode="shorten">Shorten</button>
+      <button class="lingually-mode-chip ${activeParaphraseMode === "expand" ? "active" : ""}" data-mode="expand">Expand</button>
+    </div>
+
+    <div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 4px;">CURRENT TEXT</div>
+    <div class="lingually-paraphrase-box" id="para-input-preview">${escapeHtml(currentText || "(No text entered in field)")}</div>
+
+    <button class="lingually-btn-paraphrase" id="btn-run-paraphrase">
+      <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
+      <span>Paraphrase with Lingually</span>
+    </button>
+
+    <div class="lingually-paraphrase-output" id="para-output-area" style="display: none;">
+      <div style="font-size: 11px; font-weight: 600; color: #059669; margin-bottom: 4px;">PARAPHRASED REWRITE</div>
+      <div class="lingually-paraphrase-box" id="para-output-text" style="background: #f0fdf4; border-color: #bbf7d0;"></div>
+      <div class="lingually-paraphrase-actions">
+        <button class="lingually-btn-replace" id="btn-insert-page">Replace in Text Field</button>
+        <button class="lingually-btn-copy" id="btn-copy-para">Copy</button>
+      </div>
+    </div>
+  `;
+
+  if (rephraseSugg) {
+    panePara.querySelector("#btn-modal-accept-rephrase")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      applySuggestion(rephraseSugg);
+      updateReviewPane();
+      updateParaphrasePane();
+    });
+
+    panePara.querySelector("#btn-modal-dismiss-rephrase")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dismissSuggestion(rephraseSugg);
+      updateParaphrasePane();
+    });
+  }
 
   panePara.innerHTML = `
     <div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 6px;">PARAPHRASE MODE</div>
@@ -879,6 +958,11 @@ function escapeHtml(str: string): string {
 
 function applySuggestion(s: ExtensionSuggestion) {
   if (!activeElement) return;
+  if (s.id.startsWith("ext_rephrase") || s.explanation.toLowerCase().includes("rephrase")) {
+    dismissedRephrases.add(s.originalText.trim().toLowerCase());
+    dismissedRephrases.add(s.replacementText.trim().toLowerCase());
+  }
+
   const fullText = getText(activeElement);
 
   let before = fullText.slice(0, s.offset);
@@ -902,8 +986,9 @@ function fixAllSuggestions() {
   if (!activeElement || currentSuggestions.length === 0) return;
   let fullText = getText(activeElement);
 
-  // Apply suggestions from right to left so offsets remain valid
-  const sorted = [...currentSuggestions].sort((a, b) => b.offset - a.offset);
+  // Apply review suggestions from right to left so offsets remain valid
+  const toFix = getReviewSuggestions();
+  const sorted = [...toFix].sort((a, b) => b.offset - a.offset);
   for (const s of sorted) {
     let before = fullText.slice(0, s.offset);
     let after = fullText.slice(s.offset + s.length);
@@ -922,11 +1007,16 @@ function fixAllSuggestions() {
 }
 
 function dismissSuggestion(s: ExtensionSuggestion) {
+  if (s.id.startsWith("ext_rephrase") || s.explanation.toLowerCase().includes("rephrase")) {
+    dismissedRephrases.add(s.originalText.trim().toLowerCase());
+    dismissedRephrases.add(s.replacementText.trim().toLowerCase());
+  }
   currentSuggestions = currentSuggestions.filter((item) => item.id !== s.id);
-  renderFloatingBtn(currentSuggestions.length);
+  renderFloatingBtn(getReviewSuggestions().length);
   renderUnderlines();
   if (modalElement) {
     updateReviewPane();
+    updateParaphrasePane();
   }
 }
 
@@ -953,15 +1043,25 @@ function checkActiveElement() {
     currentSuggestions = [];
     renderFloatingBtn(0);
     renderUnderlines();
-    if (modalElement) updateReviewPane();
+    if (modalElement) {
+      updateReviewPane();
+      updateParaphrasePane();
+    }
     return;
   }
 
-  currentSuggestions = runExtensionCheck(text, personalDictionary);
-  renderFloatingBtn(currentSuggestions.length);
+  const rawSuggestions = runExtensionCheck(text, personalDictionary);
+  currentSuggestions = rawSuggestions.filter(
+    (s) =>
+      !dismissedRephrases.has(s.originalText.trim().toLowerCase()) &&
+      !dismissedRephrases.has(s.replacementText.trim().toLowerCase())
+  );
+
+  renderFloatingBtn(getReviewSuggestions().length);
   renderUnderlines();
   if (modalElement) {
     updateReviewPane();
+    updateParaphrasePane();
   }
 }
 
