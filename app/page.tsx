@@ -78,6 +78,8 @@ export default function HomePage() {
   const [activeSuggestionId, setActiveSuggestionId] = useState<string>("s1");
   const [isCopiedCommand, setIsCopiedCommand] = useState(false);
   const [showChromeInstallHelp, setShowChromeInstallHelp] = useState(false);
+  const [showMacInstallHelp, setShowMacInstallHelp] = useState(false);
+  const [showWindowsInstallHelp, setShowWindowsInstallHelp] = useState(false);
 
   const applySuggestion = (id: string) => {
     const s = suggestions.find((item) => item.id === id);
@@ -737,20 +739,49 @@ export default function HomePage() {
             <div>
               <div className="flex items-center justify-between font-mono text-[10px] text-muted mb-2">
                 <Laptop className="w-4 h-4 text-accent" />
-                <span className="text-muted border border-line px-1 py-0.2">TAURI 2</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/30 px-1 py-0.2">
+                  UNIVERSAL .DMG
+                </span>
               </div>
               <h4 className="font-display text-sm font-bold text-ink">macOS Desktop</h4>
               <p className="font-sans text-xs text-muted mt-1 leading-relaxed">
-                Universal binary supporting Apple Silicon (M-series) and Intel architectures with native shortcuts.
+                Universal application supporting Apple Silicon (M-series) & Intel Macs with offline local drafts.
               </p>
             </div>
-            <Link
-              href="/docs/MACOS_BUILD.md"
-              className="inline-flex items-center justify-center gap-1.5 h-8 font-mono text-[10px] uppercase tracking-wider font-semibold border border-line text-ink hover:bg-bg-raised transition"
-            >
-              <ExternalLink className="w-3 h-3" />
-              <span>BUILD DOCS</span>
-            </Link>
+            <div className="space-y-2">
+              <a
+                href="/downloads/Lingually-macOS-Universal.dmg"
+                download="Lingually-macOS-Universal.dmg"
+                className="w-full inline-flex items-center justify-center gap-1.5 h-8 font-mono text-[10px] uppercase tracking-wider font-semibold border border-line text-ink hover:bg-bg-raised transition"
+              >
+                <Download className="w-3 h-3" />
+                <span>DOWNLOAD (.DMG)</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowMacInstallHelp((v) => !v)}
+                className="w-full text-center font-mono text-[9px] uppercase tracking-wider text-accent hover:underline flex items-center justify-center gap-1"
+              >
+                <span>{showMacInstallHelp ? "Hide Install Steps" : "How to install on Mac →"}</span>
+              </button>
+
+              {showMacInstallHelp && (
+                <div className="p-2.5 bg-bg-raised border border-line text-[11px] font-mono space-y-1 text-muted leading-tight mt-1">
+                  <p className="text-ink font-semibold text-[10px] uppercase tracking-wider">Mac Setup (15s):</p>
+                  <p>1. Open <span className="text-ink font-semibold">Lingually-macOS-Universal.dmg</span></p>
+                  <p>2. Drag <span className="text-ink font-semibold">Lingually</span> to Applications</p>
+                  <p>3. Also available: <a href="/downloads/Lingually-macOS-Universal.zip" download className="text-accent underline">Direct .ZIP</a></p>
+                </div>
+              )}
+
+              <Link
+                href="/docs/MACOS_BUILD.md"
+                className="block text-center font-mono text-[9px] uppercase tracking-wider text-muted hover:text-ink pt-0.5"
+              >
+                <span>Build Docs & Rust Guide →</span>
+              </Link>
+            </div>
           </div>
 
           {/* Windows */}
@@ -758,20 +789,49 @@ export default function HomePage() {
             <div>
               <div className="flex items-center justify-between font-mono text-[10px] text-muted mb-2">
                 <Laptop className="w-4 h-4 text-accent" />
-                <span className="text-muted border border-line px-1 py-0.2">TAURI 2</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/30 px-1 py-0.2">
+                  WINDOWS 64-BIT
+                </span>
               </div>
               <h4 className="font-display text-sm font-bold text-ink">Windows Desktop</h4>
               <p className="font-sans text-xs text-muted mt-1 leading-relaxed">
-                64-bit application with Windows UI Automation hooks, system tray, and local persistence.
+                Standalone package with native Microsoft Edge WebView2 runtime and offline drafts persistence.
               </p>
             </div>
-            <Link
-              href="/docs/WINDOWS_BUILD.md"
-              className="inline-flex items-center justify-center gap-1.5 h-8 font-mono text-[10px] uppercase tracking-wider font-semibold border border-line text-ink hover:bg-bg-raised transition"
-            >
-              <ExternalLink className="w-3 h-3" />
-              <span>BUILD DOCS</span>
-            </Link>
+            <div className="space-y-2">
+              <a
+                href="/downloads/Lingually-Windows-x64.zip"
+                download="Lingually-Windows-x64.zip"
+                className="w-full inline-flex items-center justify-center gap-1.5 h-8 font-mono text-[10px] uppercase tracking-wider font-semibold border border-line text-ink hover:bg-bg-raised transition"
+              >
+                <Download className="w-3 h-3" />
+                <span>DOWNLOAD (.ZIP)</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowWindowsInstallHelp((v) => !v)}
+                className="w-full text-center font-mono text-[9px] uppercase tracking-wider text-accent hover:underline flex items-center justify-center gap-1"
+              >
+                <span>{showWindowsInstallHelp ? "Hide Run Steps" : "How to run on Windows →"}</span>
+              </button>
+
+              {showWindowsInstallHelp && (
+                <div className="p-2.5 bg-bg-raised border border-line text-[11px] font-mono space-y-1 text-muted leading-tight mt-1">
+                  <p className="text-ink font-semibold text-[10px] uppercase tracking-wider">Windows Setup (10s):</p>
+                  <p>1. Extract <span className="text-ink font-semibold">Lingually-Windows-x64.zip</span></p>
+                  <p>2. Double-click <span className="text-ink font-semibold">Lingually.vbs</span> or <span className="text-ink font-semibold">Launch-Lingually.bat</span></p>
+                  <p>3. Runs with pre-installed Edge WebView2</p>
+                </div>
+              )}
+
+              <Link
+                href="/docs/WINDOWS_BUILD.md"
+                className="block text-center font-mono text-[9px] uppercase tracking-wider text-muted hover:text-ink pt-0.5"
+              >
+                <span>Build Docs & Rust Guide →</span>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
