@@ -313,9 +313,17 @@ export function TiptapEditor({
   documentRef.current = document;
   const titleRef = useRef(title);
   titleRef.current = title;
+  const isNavigatingAwayRef = useRef(false);
 
   // Flush unsaved changes on beforeunload or warn on SPA navigation (Bug 24)
   useEffect(() => {
+    isNavigatingAwayRef.current = false;
+    try {
+      window.history.pushState({ linguallyEditorTrap: true }, "", window.location.href);
+    } catch {
+      //
+    }
+
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (editorRef.current && saveStatusRef.current === "unsaved" && documentRef.current) {
         const snapshot = getEditorSnapshot(editorRef.current);
@@ -331,24 +339,39 @@ export function TiptapEditor({
     };
 
     const handlePopState = () => {
+      if (isNavigatingAwayRef.current) return;
+
       if (saveStatusRef.current === "unsaved") {
         const leave = window.confirm("You have unsaved changes. Leave this page?");
         if (!leave) {
-          window.history.pushState(null, "", window.location.href);
-        } else if (editorRef.current && documentRef.current) {
-          const snapshot = getEditorSnapshot(editorRef.current);
-          DocumentRepository.updateDocument(documentRef.current.id, {
-            title: titleRef.current.trim() || "Untitled Document",
-            content: snapshot.html,
-            plainText: snapshot.plainText,
-          }).catch(() => {});
+          // Re-arm history trap to stay on the page
+          try {
+            window.history.pushState({ linguallyEditorTrap: true }, "", window.location.href);
+          } catch {
+            //
+          }
+        } else {
+          if (editorRef.current && documentRef.current) {
+            const snapshot = getEditorSnapshot(editorRef.current);
+            DocumentRepository.updateDocument(documentRef.current.id, {
+              title: titleRef.current.trim() || "Untitled Document",
+              content: snapshot.html,
+              plainText: snapshot.plainText,
+            }).catch(() => {});
+          }
+          isNavigatingAwayRef.current = true;
+          window.history.back();
         }
+      } else {
+        isNavigatingAwayRef.current = true;
+        window.history.back();
       }
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("popstate", handlePopState);
     return () => {
+      isNavigatingAwayRef.current = true;
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("popstate", handlePopState);
       if (autosaveTimeoutRef.current) {

@@ -166,26 +166,79 @@ async function handleGemini({
     return NextResponse.json({ error: "Google Gemini API key is missing. Configure it in Settings." }, { status: 401 });
   }
 
-  // Gracefully upgrade retired/deprecated Gemini model IDs to active production model (Bug 45)
-  const deprecatedModels = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
-  const model = deprecatedModels.includes(rawModel) ? "gemini-3.8-flash" : rawModel;
+  // Gracefully upgrade retired/deprecated Gemini model IDs to active production models (Bug 45)
+  const flashFallbacks = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.5-flash"];
+  let model = rawModel;
+  if (flashFallbacks.includes(rawModel)) {
+    model = "gemini-3.8-flash";
+  } else if (rawModel === "gemini-2.5-pro") {
+    model = "gemini-3.1-pro-preview";
+  }
 
-  const endpoint = stream
-    ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey.trim()}`
-    : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
+  // Helper to fetch with a 30s timeout to prevent 90s hangs under high demand
+  const executeGeminiCall = async (targetModel: string) => {
+    const endpoint = stream
+      ? `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:streamGenerateContent?alt=sse&key=${apiKey.trim()}`
+      : `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey.trim()}`;
 
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      generationConfig: {
-        temperature,
-        maxOutputTokens: maxTokens,
-      },
-    }),
-  });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          generationConfig: {
+            temperature,
+            maxOutputTokens: maxTokens,
+          },
+        }),
+      });
+      clearTimeout(timeoutId);
+      return res;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
+  };
+
+  let response: Response;
+  try {
+    response = await executeGeminiCall(model);
+  } catch (err: any) {
+    // Retry once if timed out or network error
+    try {
+      await new Promise((r) => setTimeout(r, 1000));
+      response = await executeGeminiCall(model);
+    } catch {
+      // Fallback model if primary model times out under high demand
+      const fallbackModel = model === "gemini-3.8-flash" ? "gemini-3.1-pro-preview" : "gemini-3.8-flash";
+      response = await executeGeminiCall(fallbackModel);
+    }
+  }
+
+  // If overloaded (503 / 429), retry or fallback
+  if (!response.ok && (response.status === 503 || response.status === 429)) {
+    await new Promise((r) => setTimeout(r, 1200));
+    try {
+      const retryResponse = await executeGeminiCall(model);
+      if (retryResponse.ok) {
+        response = retryResponse;
+      } else {
+        const fallbackModel = model === "gemini-3.8-flash" ? "gemini-3.1-pro-preview" : "gemini-3.8-flash";
+        const altResponse = await executeGeminiCall(fallbackModel);
+        if (altResponse.ok) {
+          response = altResponse;
+        }
+      }
+    } catch {
+      // Proceed to standard error handling
+    }
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

@@ -105,8 +105,9 @@ export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<
 
   // 2. Query Wikipedia Public Search Corpus (Open API)
   try {
-    const wikiQueries = extractDistinctiveQueries(trimmed, 3);
+    const wikiQueries = extractDistinctiveQueries(trimmed, 4);
     const matchedSentences = new Set<string>();
+    const checkedWikiTitles = new Set<string>();
 
     for (const query of wikiQueries) {
       const cleanQuery = query.replace(/["']/g, "").trim();
@@ -119,14 +120,18 @@ export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<
         const data = await res.json();
         const items = data.query?.search || [];
         for (const item of items.slice(0, 2)) {
+          const titleKey = (item.title || "").toLowerCase();
+          if (checkedWikiTitles.has(titleKey)) continue;
+          checkedWikiTitles.add(titleKey);
+
           const rawSnippet = (item.snippet || "").replace(/<[^>]+>/g, " ");
           const sim = computeTextSimilarity(cleanQuery, rawSnippet);
-          if (sim >= 0.25) {
-            // Also attempt to fetch lead extract for accurate verbatim passage overlap (Bug 40)
+          if (sim >= 0.2) {
+            // Fetch full article extract (omitting exintro=1) for comprehensive body passage matching (Bug 40)
             let articleText = rawSnippet;
             try {
               const extractRes = await fetch(
-                `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(item.title)}&format=json&origin=*`,
+                `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&titles=${encodeURIComponent(item.title)}&format=json&origin=*`,
                 { headers: { Accept: "application/json" } }
               );
               if (extractRes.ok) {
@@ -134,26 +139,56 @@ export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<
                 const pages = extData.query?.pages || {};
                 const firstPage = Object.values(pages)[0] as { extract?: string } | undefined;
                 if (firstPage?.extract) {
-                  articleText += " " + firstPage.extract;
+                  articleText = rawSnippet + " " + firstPage.extract.slice(0, 150000);
                 }
               }
             } catch {
               // fallback to rawSnippet
             }
 
-            // Check document sentences against the Wikipedia article text
-            const lowerArticle = articleText.toLowerCase();
+            // Normalize article text for robust punctuation-insensitive and citation-insensitive matching
+            const normArticle = articleText
+              .toLowerCase()
+              .replace(/\[[0-9a-z\s]+\]/gi, " ")
+              .replace(/[^\p{L}\p{N}\s]/gu, " ")
+              .replace(/\s+/g, " ");
+
             let matchedForThisSource = 0;
 
             for (const sentence of docSentences) {
               if (matchedSentences.has(sentence)) continue;
-              const cleanSentence = sentence.replace(/["'’]/g, "").trim().toLowerCase();
-              if (cleanSentence.length < 15) continue;
+              const normSentence = sentence
+                .toLowerCase()
+                .replace(/\[[0-9a-z\s]+\]/gi, " ")
+                .replace(/[^\p{L}\p{N}\s]/gu, " ")
+                .replace(/\s+/g, " ")
+                .trim();
 
-              const isDirectMatch = lowerArticle.includes(cleanSentence) || lowerArticle.includes(cleanQuery.toLowerCase());
-              const sentenceSim = computeTextSimilarity(sentence, articleText);
+              if (normSentence.length < 15) continue;
 
-              if (isDirectMatch || sentenceSim >= 0.45) {
+              let isSentenceMatch = false;
+
+              // Direct substring match
+              if (normArticle.includes(normSentence)) {
+                isSentenceMatch = true;
+              } else {
+                // Check 5-word shingle in article
+                const words = normSentence.split(" ").filter((w) => w.length > 2);
+                if (words.length >= 5) {
+                  for (let i = 0; i <= words.length - 5; i++) {
+                    const shingle = words.slice(i, i + 5).join(" ");
+                    if (normArticle.includes(shingle)) {
+                      isSentenceMatch = true;
+                      break;
+                    }
+                  }
+                }
+                if (!isSentenceMatch && computeTextSimilarity(sentence, articleText) >= 0.35) {
+                  isSentenceMatch = true;
+                }
+              }
+
+              if (isSentenceMatch) {
                 matchedSentences.add(sentence);
                 const sWords = sentence.split(/\s+/).filter(Boolean).length;
                 matchedForThisSource += sWords;

@@ -71,8 +71,15 @@ export class GeminiAdapter implements ProviderAdapter {
         const methods: string[] = m.supportedGenerationMethods || [];
         const isGenerative = methods.length === 0 || methods.includes("generateContent");
         const id = (m.name || "").replace(/^models\//, "");
-        // Exclude retired models reported in Bug 45
-        if (id === "gemini-2.0-flash" || id === "gemini-1.5-flash" || id === "gemini-1.5-pro") return false;
+        // Exclude retired models reported in Bug 45 (2.5, 2.0, and 1.5 families)
+        const retiredIds = [
+          "gemini-2.5-flash",
+          "gemini-2.5-pro",
+          "gemini-2.0-flash",
+          "gemini-1.5-flash",
+          "gemini-1.5-pro",
+        ];
+        if (retiredIds.includes(id)) return false;
         return isGenerative;
       });
 

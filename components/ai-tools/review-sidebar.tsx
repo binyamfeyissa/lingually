@@ -12,6 +12,8 @@ import { WritingToolId } from "@/types/writing-tools";
 import { runLocalDeterministicCheck, compileLayeredCheckResult } from "@/lib/analysis/layered-checker";
 import { checkPlagiarism, extractDistinctiveQueries } from "@/lib/analysis/plagiarism";
 import { PersonalDictionary, WritingGoalsManager } from "@/lib/settings/dictionary-and-goals";
+import { CredentialStorage } from "@/lib/security/api-key-storage";
+import Link from "next/link";
 import { AssistantPanel } from "./assistant-panel";
 import { AIDetectorTool } from "./ai-detector-tool";
 import { Button } from "../shared/button";
@@ -245,8 +247,17 @@ export function ReviewSidebar({
       setDistinctiveQueries(queries);
       // Realistic simulated analysis latency for local n-gram scan
       await new Promise((resolve) => setTimeout(resolve, 650));
+      const activeKey = typeof window !== "undefined"
+        ? CredentialStorage.getApiKey("openai") ||
+          CredentialStorage.getApiKey("gemini") ||
+          CredentialStorage.getApiKey("anthropic") ||
+          CredentialStorage.getApiKey("groq") ||
+          undefined
+        : undefined;
+
       const report = await checkPlagiarism({
         text: currentText,
+        searchApiKey: activeKey,
       });
       setPlagiarismReport(report);
     } catch {
@@ -591,6 +602,33 @@ export function ReviewSidebar({
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {plagiarismSubTab === "plagiarism" && (
               <div className="space-y-3 text-xs">
+                {/* Gating Status Notice (Bug 40) */}
+                {typeof window !== "undefined" &&
+                (CredentialStorage.getApiKey("openai") ||
+                  CredentialStorage.getApiKey("gemini") ||
+                  CredentialStorage.getApiKey("anthropic") ||
+                  CredentialStorage.getApiKey("groq")) ? (
+                  <div className="p-2 border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-[10px] flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-semibold uppercase tracking-wider">
+                      <Check className="h-3 w-3 text-emerald-500" />
+                      <span>AI KEY ACTIVE // WEB SEARCH ENABLED</span>
+                    </div>
+                    <span className="opacity-80 text-[9px]">FULL CORPUS</span>
+                  </div>
+                ) : (
+                  <div className="p-2.5 border border-line bg-bg-raised font-mono text-[10px] space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold uppercase tracking-wider text-ink">AI KEY RECOMMENDED</span>
+                      <Link href="/settings" className="text-accent underline font-semibold hover:opacity-80">
+                        ADD KEY →
+                      </Link>
+                    </div>
+                    <p className="text-muted leading-relaxed">
+                      AI key recommended for web-wide scanning. Currently scanning Wikipedia reference corpus & local revisions.
+                    </p>
+                  </div>
+                )}
+
                 <div className="p-4 border border-line bg-bg-raised text-center space-y-2">
                   <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-muted">
                     <span>SIMILARITY METRIC</span>
@@ -613,7 +651,7 @@ export function ReviewSidebar({
                     className="w-full h-8"
                   >
                     <RefreshCw className="h-3 w-3 mr-1" />
-                    RUN LOCAL N-GRAM SCAN
+                    RUN LOCAL & WIKIPEDIA SCAN
                   </Button>
                 </div>
 

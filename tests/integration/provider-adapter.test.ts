@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { providerRegistry } from "@/lib/ai/provider-registry";
+import { PROVIDER_CATALOG } from "@/lib/ai/model-capabilities";
 import { readSSEStream } from "@/lib/ai/streaming";
 import { parseGrammarOutput, parseAlternativesOutput } from "@/lib/ai/task-runner";
 
@@ -146,5 +147,18 @@ describe("Provider Adapters & Streaming Pipeline", () => {
     expect(res.success).toBe(false);
     expect(res.message).toMatch(/(invalid.*key|sk-ant-)/i);
     expect(res.message).not.toContain("Failed to fetch");
+  });
+
+  it("offers active Gemini models and filters out retired models (Bug 45)", async () => {
+    const popular = PROVIDER_CATALOG.gemini.popularModels;
+    const popularIds = popular.map((m) => m.id);
+
+    expect(popularIds).toContain("gemini-3.8-flash");
+    expect(popularIds).toContain("gemini-3.1-pro-preview");
+    expect(popularIds).not.toContain("gemini-2.5-flash");
+    expect(popularIds).not.toContain("gemini-2.5-pro");
+    expect(popularIds).not.toContain("gemini-2.0-flash");
+    expect(popularIds).not.toContain("gemini-1.5-flash");
+    expect(popularIds).not.toContain("gemini-1.5-pro");
   });
 });
