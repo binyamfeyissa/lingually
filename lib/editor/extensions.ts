@@ -3,8 +3,13 @@ import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
+import { IssueDecorations } from "./issue-decorations";
+import { WritingSuggestion } from "@/types/suggestions";
 
-export function getEditorExtensions(placeholder = "Write clearly. Rewrite confidently. Highlight text to trigger AI actions...") {
+export function getEditorExtensions(
+  placeholder = "Write clearly. Rewrite confidently. Highlight text to trigger AI actions...",
+  suggestions: WritingSuggestion[] = []
+) {
   return [
     StarterKit.configure({
       heading: {
@@ -44,5 +49,6 @@ export function getEditorExtensions(placeholder = "Write clearly. Rewrite confid
       emptyEditorClass: "is-editor-empty before:text-foreground/30 before:content-[attr(data-placeholder)] before:float-left before:pointer-events-none before:h-0",
     }),
     CharacterCount,
+    IssueDecorations.configure({ suggestions }),
   ];
 }

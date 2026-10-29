@@ -37,6 +37,7 @@ export interface ReviewSidebarProps {
   onApplySuggestion: (suggestion: WritingSuggestion) => void;
   onApplyAIRewrite: (replacement: string, selectionOnly: boolean) => void;
   onJumpToSuggestion?: (suggestion: WritingSuggestion) => void;
+  onSuggestionsChange?: (suggestions: WritingSuggestion[]) => void;
   activeToolId?: WritingToolId;
   onToolChange?: (toolId: WritingToolId) => void;
 }
@@ -49,6 +50,7 @@ export function ReviewSidebar({
   onApplySuggestion,
   onApplyAIRewrite,
   onJumpToSuggestion,
+  onSuggestionsChange,
   activeToolId = "improve",
   onToolChange,
 }: ReviewSidebarProps) {
@@ -110,6 +112,13 @@ export function ReviewSidebar({
   const suggestions = (checkResult?.suggestions || []).filter(
     (s) => !dismissedSignatures.has(s.signature || s.id)
   );
+
+  // Notify parent of active visible suggestions for inline editor underlines (Bug 37)
+  useEffect(() => {
+    if (onSuggestionsChange) {
+      onSuggestionsChange(suggestions);
+    }
+  }, [suggestions, onSuggestionsChange]);
   const filteredSuggestions = suggestions.filter(
     (s) => filterCategory === "all" || s.category === filterCategory
   );

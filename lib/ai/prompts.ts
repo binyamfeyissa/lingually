@@ -20,6 +20,12 @@ export interface BuildPromptOptions {
   shortenExpandMode?: ShortenExpandMode;
   targetLanguage?: string;
   customInstruction?: string;
+  goals?: {
+    formality?: string;
+    domain?: string;
+    audience?: string;
+    intent?: string;
+  };
   surroundingContext?: {
     before?: string;
     after?: string;
@@ -58,9 +64,15 @@ export function buildPrompt(options: BuildPromptOptions): PromptPayload {
     ? "NOTE: The user has selected a specific excerpt within their larger document. Your output will directly replace or complement this excerpt, so maintain syntactic and stylistic compatibility with surrounding prose."
     : "NOTE: You are processing the user's entire document.";
 
+  const effectiveBasePrompt = `${BASE_SYSTEM_PROMPT}${
+    options.goals
+      ? `\nUSER WRITING GOALS: Formality = ${options.goals.formality || "neutral"}, Domain/Audience = ${options.goals.domain || "general"}. Align tone and vocabulary accordingly.`
+      : ""
+  }`;
+
   switch (toolId) {
     case "grammar": {
-      const systemPrompt = `${BASE_SYSTEM_PROMPT}
+      const systemPrompt = `${effectiveBasePrompt}
 You are a meticulous copyeditor. Identify and fix spelling, grammar, punctuation, agreement, syntax, and phrasing errors.
 Provide your response in strict JSON format matching this schema:
 {
@@ -287,7 +299,7 @@ ${text}
 
     default: {
       return {
-        systemPrompt: BASE_SYSTEM_PROMPT,
+        systemPrompt: effectiveBasePrompt,
         userPrompt: `Please improve the following text:\n\n${text}`,
       };
     }

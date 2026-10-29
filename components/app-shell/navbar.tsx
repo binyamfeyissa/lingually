@@ -84,7 +84,10 @@ export function Navbar({
               <span className="font-mono text-[10px] text-muted uppercase tracking-wider hidden sm:inline">
                 {"DOC //"}
               </span>
-              <span className="font-mono text-xs text-ink truncate max-w-[160px] sm:max-w-[280px]">
+              <span
+                title={document?.title || "Untitled Document"}
+                className="font-mono text-xs text-ink truncate max-w-[180px] sm:max-w-[420px] cursor-default"
+              >
                 {document?.title || "Untitled Document"}
               </span>
             </div>

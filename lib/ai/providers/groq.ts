@@ -8,10 +8,11 @@ export class GroqAdapter implements ProviderAdapter {
   name = "Groq";
 
   validateConfig(config: ProviderConfig): { isValid: boolean; error?: string } {
-    if (!config.apiKey || !config.apiKey.trim()) {
+    const key = config.apiKey?.trim();
+    if (!key) {
       return { isValid: false, error: "Groq API key is required." };
     }
-    if (!config.apiKey.startsWith("gsk_")) {
+    if (!key.startsWith("gsk_")) {
       return {
         isValid: false,
         error: "Groq API keys typically start with 'gsk_'. Please check your key from console.groq.com.",
@@ -21,6 +22,14 @@ export class GroqAdapter implements ProviderAdapter {
   }
 
   async testConnection(config: ProviderConfig): Promise<{ success: boolean; message: string; latencyMs?: number }> {
+    const validation = this.validateConfig(config);
+    if (!validation.isValid) {
+      return {
+        success: false,
+        message: validation.error || "Invalid Groq configuration.",
+      };
+    }
+
     const start = Date.now();
     try {
       const response = await fetch("https://api.groq.com/openai/v1/models", {

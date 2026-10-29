@@ -113,4 +113,69 @@ describe("Layered Deterministic Checker & Security", () => {
     expect(sanitized).not.toContain(fakeKey);
     expect(sanitized).toContain("[REDACTED]");
   });
+
+  it("does not flag common English words as unrecognized (Bug 33)", () => {
+    const text = "We should give the dog a bone when it jumps. Two pairs of shoes require deep intelligence and rewriting precision.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const unrec = suggestions.filter((s) => s.ruleId === "unrecognized_word");
+    expect(unrec.length).toBe(0);
+  });
+
+  it("produces zero unrecognized-word issues on the untouched Welcome document (Bug 33)", () => {
+    const welcomeText = `Lingually is a complete, private, and open-source AI writing workbench. It pairs deep editing intelligence with the rewriting precision of modern language models—without requiring an expensive subscription or locking your private thoughts in someone else's cloud.
+
+How to use this editor:
+- Select text: Highlight any sentence or paragraph to trigger the contextual AI action menu.
+- Refine your writing: Fix grammar, rephrase in distinct styles, modulate tone, or condense complex paragraphs using the assistant panel on the right.
+- Bring Your Own Key (BYOK): Click Settings to configure OpenAI, Gemini, Claude, Groq, Ollama (local), or any OpenAI-compatible API endpoint.
+- Local-First Storage: All your documents stay stored in your browser's IndexedDB. Nothing is sent anywhere unless you trigger an AI action.
+
+Try highlighting this sentence right now and clicking Improve Writing or Paraphrase to see the side-by-side diff comparison in action!`;
+    const suggestions = runLocalDeterministicCheck(welcomeText);
+    const unrec = suggestions.filter((s) => s.ruleId === "unrecognized_word");
+    expect(unrec).toEqual([]);
+  });
+
+  it("flags singular subject with plural verb: 'The dog run' (Bug 34)", () => {
+    const text = "The dog run fast.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const sv = suggestions.find((s) => s.ruleId === "grammar_confusion" && s.originalText.includes("dog run"));
+    expect(sv).toBeDefined();
+    expect(sv?.replacementText).toBe("The dog runs");
+  });
+
+  it("flags plural pronoun with singular verb: 'They runs' (Bug 34)", () => {
+    const text = "They runs fast.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const sv = suggestions.find((s) => s.ruleId === "grammar_confusion" && s.originalText.includes("They runs"));
+    expect(sv).toBeDefined();
+    expect(sv?.replacementText).toBe("They run");
+  });
+
+  it("flags plural noun with singular 'is': 'The dogs is happy' (Bug 34)", () => {
+    const text = "The dogs is happy.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const sv = suggestions.find((s) => s.ruleId === "grammar_confusion" && s.originalText.includes("dogs is"));
+    expect(sv).toBeDefined();
+    expect(sv?.replacementText).toBe("The dogs are");
+  });
+
+  it("flags missing possessive apostrophe in 'dogs bone' (Bug 6)", () => {
+    const text = "The dogs bone is small.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const poss = suggestions.find((s) => s.originalText.includes("dogs bone"));
+    expect(poss).toBeDefined();
+    expect(poss?.replacementText).toContain("dog's bone");
+  });
+
+  it("visibly expands issue list when switching GOALS to formal/academic (Bug 28)", () => {
+    const text = "This is a lot of stuff and really very good.";
+    const neutralSuggestions = runLocalDeterministicCheck(text, new Set(), { formality: "neutral", domain: "general" });
+    const formalSuggestions = runLocalDeterministicCheck(text, new Set(), { formality: "formal", domain: "academic" });
+
+    // Formal goals flags informal delivery patterns
+    const formalDelivery = formalSuggestions.filter((s) => s.ruleId === "formal_vocabulary");
+    expect(formalDelivery.length).toBeGreaterThan(0);
+    expect(formalSuggestions.length).toBeGreaterThan(neutralSuggestions.length);
+  });
 });

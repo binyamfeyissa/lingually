@@ -8,10 +8,11 @@ export class AnthropicAdapter implements ProviderAdapter {
   name = "Anthropic Claude";
 
   validateConfig(config: ProviderConfig): { isValid: boolean; error?: string } {
-    if (!config.apiKey || !config.apiKey.trim()) {
+    const key = config.apiKey?.trim();
+    if (!key) {
       return { isValid: false, error: "Anthropic API key is required." };
     }
-    if (!config.apiKey.startsWith("sk-ant-")) {
+    if (!key.startsWith("sk-ant-")) {
       return {
         isValid: false,
         error: "Anthropic API keys typically start with 'sk-ant-'. Please check your key from console.anthropic.com.",

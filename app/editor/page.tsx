@@ -53,6 +53,9 @@ export default function EditorPage() {
     timestamp: number;
   } | null>(null);
 
+  // Active suggestions for inline editor underlines (Bug 37)
+  const [editorSuggestions, setEditorSuggestions] = useState<WritingSuggestion[]>([]);
+
   const loadDocuments = useCallback(async (selectDocId?: string) => {
     try {
       await runDocumentMigrations();
@@ -232,8 +235,9 @@ export default function EditorPage() {
               </div>
             )}
             <TiptapEditor
-              key={`${activeDocument.id}-${activeDocument.updatedAt}`}
+              key={activeDocument.id}
               document={activeDocument}
+              suggestions={editorSuggestions}
               onDocumentChange={handleDocumentChange}
               onLiveTextChange={handleLiveTextChange}
               onSelectionChange={handleSelectionChange}
@@ -261,6 +265,7 @@ export default function EditorPage() {
               isSelectionActive={isSelectionActive}
               onApplySuggestion={handleApplySuggestion}
               onApplyAIRewrite={handleApplyAIRewrite}
+              onSuggestionsChange={setEditorSuggestions}
               activeToolId={activeAITool}
               onToolChange={(toolId) => setActiveAITool(toolId)}
             />

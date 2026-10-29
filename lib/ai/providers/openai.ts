@@ -8,10 +8,11 @@ export class OpenAIAdapter implements ProviderAdapter {
   name = "OpenAI";
 
   validateConfig(config: ProviderConfig): { isValid: boolean; error?: string } {
-    if (!config.apiKey || !config.apiKey.trim()) {
+    const key = config.apiKey?.trim();
+    if (!key) {
       return { isValid: false, error: "OpenAI API key is required." };
     }
-    if (!config.apiKey.startsWith("sk-")) {
+    if (!key.startsWith("sk-")) {
       return {
         isValid: false,
         error: "OpenAI API keys typically start with 'sk-'. Please check your key.",
@@ -21,6 +22,14 @@ export class OpenAIAdapter implements ProviderAdapter {
   }
 
   async testConnection(config: ProviderConfig): Promise<{ success: boolean; message: string; latencyMs?: number }> {
+    const validation = this.validateConfig(config);
+    if (!validation.isValid) {
+      return {
+        success: false,
+        message: validation.error || "Invalid OpenAI configuration.",
+      };
+    }
+
     const start = Date.now();
     try {
       const response = await fetch("https://api.openai.com/v1/models", {

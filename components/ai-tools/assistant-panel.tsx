@@ -13,6 +13,7 @@ import {
 import { ProviderId } from "@/types/provider";
 import { AITaskRunner } from "@/lib/ai/task-runner";
 import { CredentialStorage } from "@/lib/security/api-key-storage";
+import { WritingGoalsManager } from "@/lib/settings/dictionary-and-goals";
 import { PROVIDER_CATALOG } from "@/lib/ai/model-capabilities";
 import { calculateTextStatistics } from "@/lib/analysis/statistics";
 import { DiffViewer } from "./diff-viewer";
@@ -35,6 +36,8 @@ import {
   ShieldAlert,
   Settings,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
@@ -127,6 +130,19 @@ export function AssistantPanel({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AIResult | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const tabStripRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLButtonElement>(null);
+
+  // Keep active tool tab scrolled into view (Bug 35)
+  useEffect(() => {
+    if (activeTabRef.current) {
+      activeTabRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+    }
+  }, [currentTool]);
 
   // Sync external tool change
   useEffect(() => {
@@ -196,6 +212,7 @@ export function AssistantPanel({
         shortenExpandMode,
         targetLanguage,
         customInstruction: customPrompt,
+        goals: WritingGoalsManager.getGoals(),
         onStreamChunk: (delta, accumulated) => {
           setStreamingDelta(accumulated);
         },
@@ -301,26 +318,48 @@ export function AssistantPanel({
         <span>{wordCount} WORDS</span>
       </div>
 
-      {/* Main Tool Selector Tab Strip */}
-      <div className="p-1.5 border-b border-line overflow-x-auto flex gap-1 scrollbar-none bg-bg-sunken/20">
-        {TOOLS.map((tool) => {
-          const isActive = currentTool === tool.id;
-          return (
-            <button
-              key={tool.id}
-              onClick={() => handleToolSelect(tool.id)}
-              className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-none font-mono text-[10px] uppercase tracking-wider whitespace-nowrap transition-colors border",
-                isActive
-                  ? "bg-invert-bg text-invert-fg border-transparent font-semibold"
-                  : "bg-bg text-muted border-line hover:text-ink hover:border-line-strong"
-              )}
-            >
-              {tool.icon}
-              <span>{tool.label}</span>
-            </button>
-          );
-        })}
+      {/* Main Tool Selector Tab Strip with visible scroll affordance (Bug 35) */}
+      <div className="relative border-b border-line bg-bg-sunken/20 flex items-center">
+        <button
+          type="button"
+          aria-label="Scroll tools left"
+          onClick={() => tabStripRef.current?.scrollBy({ left: -100, behavior: "smooth" })}
+          className="h-full px-1 py-2 text-muted hover:text-ink hover:bg-bg-raised border-r border-line shrink-0 transition z-10 flex items-center justify-center"
+        >
+          <ChevronLeft className="h-3 w-3" />
+        </button>
+        <div
+          ref={tabStripRef}
+          className="p-1.5 overflow-x-auto flex gap-1 scrollbar-none flex-1 scroll-smooth"
+        >
+          {TOOLS.map((tool) => {
+            const isActive = currentTool === tool.id;
+            return (
+              <button
+                key={tool.id}
+                ref={isActive ? activeTabRef : undefined}
+                onClick={() => handleToolSelect(tool.id)}
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 rounded-none font-mono text-[10px] uppercase tracking-wider whitespace-nowrap transition-colors border shrink-0",
+                  isActive
+                    ? "bg-invert-bg text-invert-fg border-transparent font-semibold"
+                    : "bg-bg text-muted border-line hover:text-ink hover:border-line-strong"
+                )}
+              >
+                {tool.icon}
+                <span>{tool.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          aria-label="Scroll tools right"
+          onClick={() => tabStripRef.current?.scrollBy({ left: 100, behavior: "smooth" })}
+          className="h-full px-1 py-2 text-muted hover:text-ink hover:bg-bg-raised border-l border-line shrink-0 transition z-10 flex items-center justify-center"
+        >
+          <ChevronRight className="h-3 w-3" />
+        </button>
       </div>
 
       {/* Tool-specific Settings & Controls */}

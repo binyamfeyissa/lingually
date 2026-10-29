@@ -4,6 +4,7 @@ import {
   WritingGoals,
   LayeredCheckResult,
 } from "@/types/suggestions";
+import { ENGLISH_WORDLIST } from "./wordlist";
 
 // Layer A: Common deterministic spelling / typographical corrections
 const DETERMINISTIC_TYPOS: Record<string, { replacement: string; explanation: string }> = {
@@ -195,6 +196,190 @@ const DETERMINISTIC_CONFUSIONS: Array<{
     pattern: /\b(he|she|it)\s+write\b/gi,
     replacement: "$1 writes",
     explanation: "Subject-verb agreement: singular third-person subject requires 'writes'.",
+  },
+  // Bug 34: Plural nouns with singular auxiliary verbs
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+is\b/gi,
+    replacement: "$1$2 are",
+    explanation: "Subject-verb agreement: plural subject requires 'are' (not 'is').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+was\b/gi,
+    replacement: "$1$2 were",
+    explanation: "Subject-verb agreement: plural subject requires 'were' (not 'was').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+has\b/gi,
+    replacement: "$1$2 have",
+    explanation: "Subject-verb agreement: plural subject requires 'have' (not 'has').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+does\b/gi,
+    replacement: "$1$2 do",
+    explanation: "Subject-verb agreement: plural subject requires 'do' (not 'does').",
+  },
+  // Bug 34: Singular noun subjects with base verb form (reverse direction)
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+run\b/gi,
+    replacement: "$1$2 runs",
+    explanation: "Subject-verb agreement: singular subject requires 'runs' (not 'run').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+walk\b/gi,
+    replacement: "$1$2 walks",
+    explanation: "Subject-verb agreement: singular subject requires 'walks' (not 'walk').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+write\b/gi,
+    replacement: "$1$2 writes",
+    explanation: "Subject-verb agreement: singular subject requires 'writes' (not 'write').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+read\b/gi,
+    replacement: "$1$2 reads",
+    explanation: "Subject-verb agreement: singular subject requires 'reads' (not 'read').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+speak\b/gi,
+    replacement: "$1$2 speaks",
+    explanation: "Subject-verb agreement: singular subject requires 'speaks' (not 'speak').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+show\b/gi,
+    replacement: "$1$2 shows",
+    explanation: "Subject-verb agreement: singular subject requires 'shows' (not 'show').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+make\b/gi,
+    replacement: "$1$2 makes",
+    explanation: "Subject-verb agreement: singular subject requires 'makes' (not 'make').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+create\b/gi,
+    replacement: "$1$2 creates",
+    explanation: "Subject-verb agreement: singular subject requires 'creates' (not 'create').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+work\b/gi,
+    replacement: "$1$2 works",
+    explanation: "Subject-verb agreement: singular subject requires 'works' (not 'work').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+help\b/gi,
+    replacement: "$1$2 helps",
+    explanation: "Subject-verb agreement: singular subject requires 'helps' (not 'help').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+need\b/gi,
+    replacement: "$1$2 needs",
+    explanation: "Subject-verb agreement: singular subject requires 'needs' (not 'need').",
+  },
+  {
+    pattern: /\b(the\s+)?(dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car)\s+want\b/gi,
+    replacement: "$1$2 wants",
+    explanation: "Subject-verb agreement: singular subject requires 'wants' (not 'want').",
+  },
+  // Bug 34: Plural pronouns with singular verb (-s form)
+  {
+    pattern: /\b(they|we)\s+runs\b/gi,
+    replacement: "$1 run",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'run' (not 'runs').",
+  },
+  {
+    pattern: /\b(they|we)\s+walks\b/gi,
+    replacement: "$1 walk",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'walk' (not 'walks').",
+  },
+  {
+    pattern: /\b(they|we)\s+writes\b/gi,
+    replacement: "$1 write",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'write' (not 'writes').",
+  },
+  {
+    pattern: /\b(they|we)\s+reads\b/gi,
+    replacement: "$1 read",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'read' (not 'reads').",
+  },
+  {
+    pattern: /\b(they|we)\s+speaks\b/gi,
+    replacement: "$1 speak",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'speak' (not 'speaks').",
+  },
+  {
+    pattern: /\b(they|we)\s+shows\b/gi,
+    replacement: "$1 show",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'show' (not 'shows').",
+  },
+  {
+    pattern: /\b(they|we)\s+makes\b/gi,
+    replacement: "$1 make",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'make' (not 'makes').",
+  },
+  {
+    pattern: /\b(they|we)\s+creates\b/gi,
+    replacement: "$1 create",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'create' (not 'creates').",
+  },
+  {
+    pattern: /\b(they|we)\s+works\b/gi,
+    replacement: "$1 work",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'work' (not 'works').",
+  },
+  {
+    pattern: /\b(they|we)\s+helps\b/gi,
+    replacement: "$1 help",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'help' (not 'helps').",
+  },
+  {
+    pattern: /\b(they|we)\s+needs\b/gi,
+    replacement: "$1 need",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'need' (not 'needs').",
+  },
+  {
+    pattern: /\b(they|we)\s+wants\b/gi,
+    replacement: "$1 want",
+    explanation: "Subject-verb agreement: plural pronoun requires base verb 'want' (not 'wants').",
+  },
+  {
+    pattern: /\b(they|we)\s+is\b/gi,
+    replacement: "$1 are",
+    explanation: "Subject-verb agreement: plural pronoun requires 'are' (not 'is').",
+  },
+  {
+    pattern: /\b(they|we)\s+was\b/gi,
+    replacement: "$1 were",
+    explanation: "Subject-verb agreement: plural pronoun requires 'were' (not 'was').",
+  },
+  {
+    pattern: /\b(they|we)\s+has\b/gi,
+    replacement: "$1 have",
+    explanation: "Subject-verb agreement: plural pronoun requires 'have' (not 'has').",
+  },
+  {
+    pattern: /\b(they|we)\s+does\b/gi,
+    replacement: "$1 do",
+    explanation: "Subject-verb agreement: plural pronoun requires 'do' (not 'does').",
+  },
+  // Bug 6: Missing possessive apostrophe in common contexts
+  {
+    pattern: /\b(the\s+)?dogs\s+(bone|toy|food|collar|leash|bowl|bed|house|coat|tail|paw|name)\b/gi,
+    replacement: "$1dog's $2",
+    explanation: "Missing possessive apostrophe. Did you mean \"dog's $2\"?",
+  },
+  {
+    pattern: /\b(the\s+)?cats\s+(toy|food|collar|bowl|bed|house|tail|paw|name)\b/gi,
+    replacement: "$1cat's $2",
+    explanation: "Missing possessive apostrophe. Did you mean \"cat's $2\"?",
+  },
+  {
+    pattern: /\b(the\s+)?birds\s+(nest|food|cage|wing|beak|feathers|song)\b/gi,
+    replacement: "$1bird's $2",
+    explanation: "Missing possessive apostrophe. Did you mean \"bird's $2\"?",
+  },
+  {
+    pattern: /\b(the\s+)?(students|teachers|authors|users|members|fathers|mothers|brothers|sisters)\s+(book|desk|room|car|laptop|computer|name|work)\b/gi,
+    replacement: "$1$2's $3",
+    explanation: "Missing possessive apostrophe. Use an apostrophe to indicate ownership.",
   },
   // Grammatical confusions
   { pattern: /\bcould of\b/gi, replacement: "could have", explanation: "Use 'could have' instead of 'could of'." },
@@ -405,29 +590,50 @@ const COMMON_CONTRACTIONS = new Set([
   "i'd", "he'd", "she'd", "we'd", "they'd", "you'd", "i'll", "he'll", "she'll", "we'll", "they'll", "you'll"
 ]);
 
-function isKnownWord(lower: string): boolean {
+function isKnownWord(lower: string, personalDictionary?: Set<string>): boolean {
   const normalized = lower.replace(/’/g, "'");
+  if (personalDictionary?.has(normalized)) return true;
   if (COMMON_CONTRACTIONS.has(normalized)) return true;
   if (normalized.endsWith("'s")) {
     const stem = normalized.slice(0, -2);
-    if (isKnownWord(stem)) return true;
+    if (isKnownWord(stem, personalDictionary)) return true;
   }
-  if (VALID_SHORT_WORDS.has(normalized) || COMMON_VOCABULARY.has(normalized) || COMMON_NAMES.has(normalized) || DETERMINISTIC_TYPOS[normalized]) {
+  if (
+    VALID_SHORT_WORDS.has(normalized) ||
+    ENGLISH_WORDLIST.has(normalized) ||
+    COMMON_VOCABULARY.has(normalized) ||
+    COMMON_NAMES.has(normalized) ||
+    DETERMINISTIC_TYPOS[normalized]
+  ) {
     return true;
   }
   const suffixes = ["s", "es", "ed", "ing", "ly", "ment", "tion", "able", "ible", "ness", "ful", "less", "er", "est", "ive", "al"];
   for (const suf of suffixes) {
     if (normalized.endsWith(suf) && normalized.length > suf.length + 2) {
       const stem = normalized.slice(0, -suf.length);
-      if (COMMON_VOCABULARY.has(stem) || COMMON_VOCABULARY.has(stem + "e")) return true;
+      if (
+        ENGLISH_WORDLIST.has(stem) ||
+        ENGLISH_WORDLIST.has(stem + "e") ||
+        COMMON_VOCABULARY.has(stem) ||
+        COMMON_VOCABULARY.has(stem + "e")
+      ) {
+        return true;
+      }
+      // Doubled consonant check (e.g. running -> run, stopping -> stop)
+      if (stem.length > 2 && stem[stem.length - 1] === stem[stem.length - 2]) {
+        const singleConsonant = stem.slice(0, -1);
+        if (ENGLISH_WORDLIST.has(singleConsonant) || COMMON_VOCABULARY.has(singleConsonant)) {
+          return true;
+        }
+      }
     }
   }
   return false;
 }
 
-function isLikelyGibberish(word: string, isProperNoun: boolean = false): boolean {
+function isLikelyGibberish(word: string, isProperNoun: boolean = false, personalDictionary?: Set<string>): boolean {
   const lower = word.toLowerCase();
-  if (isKnownWord(lower) || isProperNoun || COMMON_NAMES.has(lower) || /[a-z][A-Z]/.test(word)) return false;
+  if (isKnownWord(lower, personalDictionary) || isProperNoun || COMMON_NAMES.has(lower) || /[a-z][A-Z]/.test(word)) return false;
   if (lower.length <= 2) {
     return !VALID_SHORT_WORDS.has(lower);
   }
@@ -436,7 +642,7 @@ function isLikelyGibberish(word: string, isProperNoun: boolean = false): boolean
   if (/(hgg|ggu|zzk|xkz|qq|q[^u]|ii|uu)/.test(lower)) return true;
   if (lower.length >= 4 && !/[aeiouy]/.test(lower)) return true;
   // Generic unrecognized word (e.g. 'blorp')
-  return !isKnownWord(lower);
+  return !isKnownWord(lower, personalDictionary);
 }
 
 /**
@@ -681,7 +887,7 @@ export function runLocalDeterministicCheck(
     }
 
     // Unrecognized word / Gibberish detection (e.g. 'ffgvffv', 'blorp')
-    if (isLikelyGibberish(baseWord, isProperNoun)) {
+    if (isLikelyGibberish(baseWord, isProperNoun, personalDictionary)) {
       const contextSnippet = text.slice(Math.max(0, match.index - 12), Math.min(text.length, match.index + rawWord.length + 12)).replace(/\s+/g, " ").trim().toLowerCase();
       suggestions.push({
         id: `det_gib_${idCounter++}`,
@@ -829,6 +1035,47 @@ export function runLocalDeterministicCheck(
           ruleId: "formal_contractions",
           severity: "warning",
           signature: `formal_contractions:${match[0].toLowerCase()}`,
+        });
+      }
+    }
+
+    // Bug 28: Visible informal vocabulary suggestions when targeting formal or academic delivery
+    const INFORMAL_DELIVERY: Array<{ pattern: RegExp; replacement: string; explanation: string }> = [
+      { pattern: /\bvery good\b/gi, replacement: "exceptional", explanation: "Use precise formal vocabulary instead of 'very good'." },
+      { pattern: /\bvery bad\b/gi, replacement: "detrimental", explanation: "Use precise formal vocabulary instead of 'very bad'." },
+      { pattern: /\bvery fast\b/gi, replacement: "rapid", explanation: "Use 'rapid' or 'swift' in formal prose." },
+      { pattern: /\bvery big\b/gi, replacement: "substantial", explanation: "Use 'substantial' or 'considerable' in formal writing." },
+      { pattern: /\bvery small\b/gi, replacement: "minimal", explanation: "Use 'minimal' or 'negligible' in formal writing." },
+      { pattern: /\ba lot of\b/gi, replacement: "numerous", explanation: "Use 'numerous' or 'considerable' in formal writing." },
+      { pattern: /\ba lot\b/gi, replacement: "considerably", explanation: "Use 'considerably' or 'substantially' in formal writing." },
+      { pattern: /\bkinda\b/gi, replacement: "somewhat", explanation: "Avoid colloquial 'kinda' in formal writing." },
+      { pattern: /\bgonna\b/gi, replacement: "going to", explanation: "Avoid colloquial 'gonna' in formal writing." },
+      { pattern: /\bwanna\b/gi, replacement: "want to", explanation: "Avoid colloquial 'wanna' in formal writing." },
+      { pattern: /\bgotta\b/gi, replacement: "must", explanation: "Avoid colloquial 'gotta' in formal writing." },
+      { pattern: /\bguys\b/gi, replacement: "colleagues", explanation: "Use 'colleagues' or 'individuals' in formal writing." },
+      { pattern: /\bkids\b/gi, replacement: "children", explanation: "Use 'children' in formal or academic prose." },
+      { pattern: /\bstuff\b/gi, replacement: "materials", explanation: "Use specific nouns instead of informal 'stuff'." },
+      { pattern: /\bthings\b/gi, replacement: "elements", explanation: "Use specific terms instead of vague 'things' in formal writing." },
+      { pattern: /\breally\b/gi, replacement: "significantly", explanation: "Avoid conversational intensifier 'really' in formal prose." },
+      { pattern: /\bpretty\s+(much|good|fast|slow|bad)\b/gi, replacement: "substantially $1", explanation: "Avoid informal modifier 'pretty' in formal writing." },
+      { pattern: /\bokay\b/gi, replacement: "acceptable", explanation: "Use formal terms like 'acceptable' or 'satisfactory'." },
+      { pattern: /\bok\b/gi, replacement: "acceptable", explanation: "Use formal terms like 'acceptable' or 'satisfactory'." },
+    ];
+
+    for (const item of INFORMAL_DELIVERY) {
+      item.pattern.lastIndex = 0;
+      while ((match = item.pattern.exec(text)) !== null) {
+        suggestions.push({
+          id: `det_goal_informal_${idCounter++}`,
+          category: "delivery",
+          originalText: match[0],
+          replacementText: item.replacement,
+          explanation: item.explanation,
+          offset: match.index,
+          length: match[0].length,
+          ruleId: "formal_vocabulary",
+          severity: "info",
+          signature: `formal_vocabulary:${match[0].toLowerCase()}`,
         });
       }
     }

@@ -10,9 +10,12 @@ import { WordCountBar } from "./word-count-bar";
 import { DocumentRecord } from "@/types/document";
 import { DocumentRepository } from "@/lib/documents/repository";
 import { WritingToolId } from "@/types/writing-tools";
+import { WritingSuggestion } from "@/types/suggestions";
+import { issueDecorationsKey } from "@/lib/editor/issue-decorations";
 
 export interface TiptapEditorProps {
   document: DocumentRecord;
+  suggestions?: WritingSuggestion[];
   onDocumentChange?: (doc: DocumentRecord) => void;
   onLiveTextChange?: (plainText: string, html: string) => void;
   onSelectionChange?: (selectedText: string, hasSelection: boolean) => void;
@@ -33,6 +36,7 @@ export interface TiptapEditorProps {
 
 export function TiptapEditor({
   document,
+  suggestions = [],
   onDocumentChange,
   onLiveTextChange,
   onSelectionChange,
@@ -49,10 +53,11 @@ export function TiptapEditor({
 
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastProcessedReplacementRef = useRef<number>(0);
+  const lastDocIdRef = useRef(document?.id);
 
   // Initialize Tiptap editor
   const editor = useEditor({
-    extensions: getEditorExtensions(),
+    extensions: getEditorExtensions("", suggestions),
     content: document.content,
     editorProps: {
       attributes: {
@@ -81,18 +86,32 @@ export function TiptapEditor({
     },
   });
 
-  // Keep editor content in sync when switching documents or restoring snapshots
+  // Keep editor content in sync when switching documents or restoring snapshots (Bug 3, Bug 4)
   useEffect(() => {
     if (editor && document) {
       setTitle(document.title);
-      const currentHtml = editor.getHTML();
-      if (currentHtml !== document.content) {
+      const isDocSwitch = lastDocIdRef.current !== document.id;
+      lastDocIdRef.current = document.id;
+
+      const currentText = editor.getText();
+      const incomingText = document.plainText || "";
+
+      // Only setContent when switching documents, or when external content changed (e.g. revision restore)
+      if (isDocSwitch || (currentText !== incomingText && incomingText.length > 0)) {
         editor.commands.setContent(document.content || "<p></p>");
       }
       setSaveStatus("saved");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [document?.id, document?.updatedAt, editor]);
+  }, [document?.id, document?.plainText, document?.content, editor]);
+
+  // Keep issue decorations updated when suggestions change (Bug 37)
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) {
+      const tr = editor.state.tr.setMeta(issueDecorationsKey, { suggestions });
+      editor.view.dispatch(tr);
+    }
+  }, [editor, suggestions]);
 
   // Handle incoming AI replacements
   useEffect(() => {
@@ -136,9 +155,8 @@ export function TiptapEditor({
       lastProcessedReplacementRef.current = suggestionPayload.timestamp;
 
       const currentHtml = editor.getHTML();
-      if (currentHtml.includes(suggestionPayload.originalText)) {
-        const preHtml = currentHtml;
-        const prePlain = editor.getText();
+      const currentPlain = editor.getText();
+      if (currentHtml.includes(suggestionPayload.originalText) || currentPlain.includes(suggestionPayload.originalText)) {
         // Create revision snapshot with TRUE pre-replacement text
         DocumentRepository.createRevision(
           document.id,
@@ -146,14 +164,37 @@ export function TiptapEditor({
           `Accepted suggestion for "${suggestionPayload.originalText}"`,
           {
             title: title.trim() || document.title,
-            content: preHtml,
-            plainText: prePlain,
+            content: currentHtml,
+            plainText: currentPlain,
           }
         ).catch(() => {});
 
-        // Replace first occurrence in content
-        const updatedHtml = currentHtml.replace(suggestionPayload.originalText, suggestionPayload.replacementText);
-        editor.commands.setContent(updatedHtml);
+        // Use ranged replacement where possible to preserve undo stack (Bug 3)
+        let replacedWithRange = false;
+        editor.state.doc.descendants((node, pos) => {
+          if (replacedWithRange) return false;
+          if (node.isText && node.text) {
+            const idx = node.text.indexOf(suggestionPayload.originalText);
+            if (idx !== -1) {
+              const from = pos + idx;
+              const to = from + suggestionPayload.originalText.length;
+              editor
+                .chain()
+                .focus()
+                .setTextSelection({ from, to })
+                .insertContent(suggestionPayload.replacementText)
+                .run();
+              replacedWithRange = true;
+              return false;
+            }
+          }
+        });
+
+        // Fallback to HTML replace if cross-node
+        if (!replacedWithRange) {
+          const updatedHtml = currentHtml.replace(suggestionPayload.originalText, suggestionPayload.replacementText);
+          editor.commands.setContent(updatedHtml);
+        }
         saveDocumentNow();
       }
     }
@@ -289,6 +330,7 @@ export function TiptapEditor({
             <input
               type="text"
               value={title}
+              title={title || "Untitled Document"}
               onChange={handleTitleChange}
               placeholder="Untitled Document..."
               className="w-full font-display text-2xl sm:text-3xl font-bold text-ink bg-transparent border-none outline-none placeholder:text-muted/40 tracking-tight"

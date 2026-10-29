@@ -8,10 +8,11 @@ export class GeminiAdapter implements ProviderAdapter {
   name = "Google Gemini";
 
   validateConfig(config: ProviderConfig): { isValid: boolean; error?: string } {
-    if (!config.apiKey || !config.apiKey.trim()) {
+    const key = config.apiKey?.trim();
+    if (!key) {
       return { isValid: false, error: "Google Gemini API key is required." };
     }
-    if (!config.apiKey.startsWith("AIza")) {
+    if (!key.startsWith("AIza")) {
       return {
         isValid: false,
         error: "Google Gemini API keys typically start with 'AIza'. Please check your key from Google AI Studio.",
@@ -21,6 +22,14 @@ export class GeminiAdapter implements ProviderAdapter {
   }
 
   async testConnection(config: ProviderConfig): Promise<{ success: boolean; message: string; latencyMs?: number }> {
+    const validation = this.validateConfig(config);
+    if (!validation.isValid) {
+      return {
+        success: false,
+        message: validation.error || "Invalid Google Gemini configuration.",
+      };
+    }
+
     const start = Date.now();
     try {
       const response = await fetch(
