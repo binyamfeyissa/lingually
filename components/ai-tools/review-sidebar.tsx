@@ -29,6 +29,18 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
+function formatSuggestionDisplay(text: string | undefined, isReplacement = false): string {
+  if (text === undefined || text === "") {
+    return isReplacement ? "[REMOVE]" : "[EMPTY]";
+  }
+  if (/^\s+$/.test(text)) {
+    if (text === " ") return "␣ [space]";
+    if (text === "  ") return "␣␣ [double space]";
+    return `[${text.length} spaces]`;
+  }
+  return text;
+}
+
 export interface ReviewSidebarProps {
   documentId?: string;
   currentText: string;
@@ -445,14 +457,14 @@ export function ReviewSidebar({
 
                   <div className="flex items-center gap-1.5 font-mono text-xs flex-wrap">
                     <span className="line-through text-danger bg-danger/10 border border-danger/20 px-1 py-0.5">
-                      {s.originalText}
+                      {formatSuggestionDisplay(s.originalText, false)}
                     </span>
                     <ArrowRight className="h-3 w-3 text-muted shrink-0" />
                     <span className={cn(
                       "font-semibold px-1 py-0.5 border",
                       s.replacementText ? "text-accent bg-accent/10 border-accent/20" : "text-danger bg-danger/10 border-danger/20 italic"
                     )}>
-                      {s.replacementText || "[REMOVE WORD]"}
+                      {formatSuggestionDisplay(s.replacementText, true)}
                     </span>
                   </div>
 

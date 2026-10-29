@@ -165,7 +165,7 @@ Try highlighting this sentence right now and clicking Improve Writing or Paraphr
     const suggestions = runLocalDeterministicCheck(text);
     const poss = suggestions.find((s) => s.originalText.includes("dogs bone"));
     expect(poss).toBeDefined();
-    expect(poss?.replacementText).toContain("dog's bone");
+    expect(poss?.replacementText).toContain("dogs' bone");
     expect(poss?.explanation).not.toContain("$2");
     expect(poss?.explanation).not.toContain("$1");
   });

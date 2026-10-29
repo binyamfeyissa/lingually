@@ -76,13 +76,12 @@ export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<
 
   const matches: PlagiarismMatch[] = [];
   let matchedWordCount = 0;
+  const docSentences = trimmed.split(/(?<=[.?!])\s+/).filter((s) => s.length > 15);
 
   // 1. Check against provided reference corpus (such as local library, past revisions, or imported docs)
   if (referenceCorpus.length > 0) {
-    const sentences = trimmed.split(/(?<=[.?!])\s+/).filter((s) => s.length > 20);
-
     for (const ref of referenceCorpus) {
-      for (const sentence of sentences) {
+      for (const sentence of docSentences) {
         const similarity = computeTextSimilarity(sentence, ref.content);
         if (similarity >= 0.7) {
           const offset = trimmed.indexOf(sentence);
@@ -107,6 +106,8 @@ export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<
   // 2. Query Wikipedia Public Search Corpus (Open API)
   try {
     const wikiQueries = extractDistinctiveQueries(trimmed, 3);
+    const matchedSentences = new Set<string>();
+
     for (const query of wikiQueries) {
       const cleanQuery = query.replace(/["']/g, "").trim();
       if (!cleanQuery) continue;
@@ -121,9 +122,51 @@ export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<
           const rawSnippet = (item.snippet || "").replace(/<[^>]+>/g, " ");
           const sim = computeTextSimilarity(cleanQuery, rawSnippet);
           if (sim >= 0.25) {
-            const queryWords = cleanQuery.split(/\s+/).filter(Boolean).length;
-            const simPct = Math.min(100, Math.round(sim * 140));
-            matchedWordCount += Math.min(totalWords - matchedWordCount, Math.round(queryWords * (simPct / 100)));
+            // Also attempt to fetch lead extract for accurate verbatim passage overlap (Bug 40)
+            let articleText = rawSnippet;
+            try {
+              const extractRes = await fetch(
+                `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(item.title)}&format=json&origin=*`,
+                { headers: { Accept: "application/json" } }
+              );
+              if (extractRes.ok) {
+                const extData = await extractRes.json();
+                const pages = extData.query?.pages || {};
+                const firstPage = Object.values(pages)[0] as { extract?: string } | undefined;
+                if (firstPage?.extract) {
+                  articleText += " " + firstPage.extract;
+                }
+              }
+            } catch {
+              // fallback to rawSnippet
+            }
+
+            // Check document sentences against the Wikipedia article text
+            const lowerArticle = articleText.toLowerCase();
+            let matchedForThisSource = 0;
+
+            for (const sentence of docSentences) {
+              if (matchedSentences.has(sentence)) continue;
+              const cleanSentence = sentence.replace(/["'’]/g, "").trim().toLowerCase();
+              if (cleanSentence.length < 15) continue;
+
+              const isDirectMatch = lowerArticle.includes(cleanSentence) || lowerArticle.includes(cleanQuery.toLowerCase());
+              const sentenceSim = computeTextSimilarity(sentence, articleText);
+
+              if (isDirectMatch || sentenceSim >= 0.45) {
+                matchedSentences.add(sentence);
+                const sWords = sentence.split(/\s+/).filter(Boolean).length;
+                matchedForThisSource += sWords;
+              }
+            }
+
+            if (matchedForThisSource === 0) {
+              matchedForThisSource = cleanQuery.split(/\s+/).filter(Boolean).length;
+            }
+
+            matchedWordCount = Math.min(totalWords, matchedWordCount + matchedForThisSource);
+            const simPct = Math.min(100, Math.round(Math.max(sim, matchedWordCount / Math.max(1, totalWords)) * 100));
+
             matches.push({
               id: `wiki_match_${matches.length + 1}`,
               matchedText: cleanQuery,

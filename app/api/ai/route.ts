@@ -147,7 +147,7 @@ async function handleOpenAI({
 
 async function handleGemini({
   apiKey,
-  model,
+  model: rawModel,
   systemPrompt,
   userPrompt,
   temperature,
@@ -165,6 +165,10 @@ async function handleGemini({
   if (!apiKey) {
     return NextResponse.json({ error: "Google Gemini API key is missing. Configure it in Settings." }, { status: 401 });
   }
+
+  // Gracefully upgrade retired/deprecated Gemini model IDs to active production model (Bug 45)
+  const deprecatedModels = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+  const model = deprecatedModels.includes(rawModel) ? "gemini-3.8-flash" : rawModel;
 
   const endpoint = stream
     ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey.trim()}`

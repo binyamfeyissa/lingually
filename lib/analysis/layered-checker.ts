@@ -375,26 +375,26 @@ const DETERMINISTIC_CONFUSIONS: Array<{
     replacement: "$1 do",
     explanation: "Subject-verb agreement: plural pronoun requires 'do' (not 'does').",
   },
-  // Bug 6: Missing possessive apostrophe in common contexts
+  // Bug 6: Missing possessive apostrophe in common contexts (plural possessive dogs'/cats'/birds')
   {
     pattern: /\b(the\s+)?dogs\s+(bone|toy|food|collar|leash|bowl|bed|house|coat|tail|paw|name)\b/gi,
-    replacement: "$1dog's $2",
-    explanation: "Missing possessive apostrophe. Use an apostrophe to indicate possession.",
+    replacement: "$1dogs' $2",
+    explanation: "Missing possessive apostrophe. Use dogs' (or dog's) to indicate possession.",
   },
   {
     pattern: /\b(the\s+)?cats\s+(toy|food|collar|bowl|bed|house|tail|paw|name)\b/gi,
-    replacement: "$1cat's $2",
-    explanation: "Missing possessive apostrophe. Use an apostrophe to indicate possession.",
+    replacement: "$1cats' $2",
+    explanation: "Missing possessive apostrophe. Use cats' (or cat's) to indicate possession.",
   },
   {
     pattern: /\b(the\s+)?birds\s+(nest|food|cage|wing|beak|feathers|song)\b/gi,
-    replacement: "$1bird's $2",
-    explanation: "Missing possessive apostrophe. Use an apostrophe to indicate possession.",
+    replacement: "$1birds' $2",
+    explanation: "Missing possessive apostrophe. Use birds' (or bird's) to indicate possession.",
   },
   {
     pattern: /\b(the\s+)?(students|teachers|authors|users|members|fathers|mothers|brothers|sisters)\s+(book|desk|room|car|laptop|computer|name|work)\b/gi,
-    replacement: "$1$2's $3",
-    explanation: "Missing possessive apostrophe. Use an apostrophe to indicate ownership.",
+    replacement: "$1$2' $3",
+    explanation: "Missing possessive apostrophe. Use an apostrophe after 's' for plural possessive.",
   },
   // Deterministic sentence-grammar: Singular noun + plural auxiliary 'are' (e.g. 'my name are Binyam')
   {

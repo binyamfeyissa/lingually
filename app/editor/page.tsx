@@ -50,6 +50,8 @@ export default function EditorPage() {
   const [suggestionPayload, setSuggestionPayload] = useState<{
     originalText: string;
     replacementText: string;
+    offset?: number;
+    length?: number;
     timestamp: number;
   } | null>(null);
 
@@ -202,6 +204,8 @@ export default function EditorPage() {
     setSuggestionPayload({
       originalText: suggestion.originalText,
       replacementText: suggestion.replacementText,
+      offset: suggestion.offset,
+      length: suggestion.length,
       timestamp: Date.now(),
     });
   }, []);

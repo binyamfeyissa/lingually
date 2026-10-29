@@ -57,7 +57,9 @@ export function WordCountBar({
             </span>
           )}
           {saveStatus === "unsaved" && (
-            <span className="text-muted/60">UNSAVED</span>
+            <span className="text-muted/60" title="Autosaves automatically as you type or navigate">
+              UNSAVED (AUTOSAVING)
+            </span>
           )}
         </div>
 

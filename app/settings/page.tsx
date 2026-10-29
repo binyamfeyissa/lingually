@@ -56,7 +56,7 @@ export default function SettingsPage() {
 
   const [providerModels, setProviderModels] = useState<Record<ProviderId, string>>({
     openai: "gpt-4o-mini",
-    gemini: "gemini-2.0-flash",
+    gemini: "gemini-3.8-flash",
     anthropic: "claude-3-5-haiku-20241022",
     groq: "llama-3.3-70b-versatile",
     ollama: "llama3.2:latest",

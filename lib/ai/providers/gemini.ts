@@ -64,14 +64,51 @@ export class GeminiAdapter implements ProviderAdapter {
       if (!res.ok) return PROVIDER_CATALOG.gemini.popularModels;
 
       const data = await res.json();
-      const apiModels = (data.models || []).map((m: { name: string; displayName?: string }) => {
-        const id = m.name.replace(/^models\//, "");
-        return id;
+      const rawList: any[] = data.models || [];
+
+      // Filter for models supporting content generation and exclude known deprecated models
+      const validGenerative = rawList.filter((m) => {
+        const methods: string[] = m.supportedGenerationMethods || [];
+        const isGenerative = methods.length === 0 || methods.includes("generateContent");
+        const id = (m.name || "").replace(/^models\//, "");
+        // Exclude retired models reported in Bug 45
+        if (id === "gemini-2.0-flash" || id === "gemini-1.5-flash" || id === "gemini-1.5-pro") return false;
+        return isGenerative;
       });
 
-      const set = new Set(apiModels);
-      const matched = PROVIDER_CATALOG.gemini.popularModels.filter((m) => set.has(m.id));
-      return matched.length > 0 ? matched : PROVIDER_CATALOG.gemini.popularModels;
+      if (validGenerative.length === 0) {
+        return PROVIDER_CATALOG.gemini.popularModels;
+      }
+
+      // Map models dynamically to ModelCapability
+      const capabilities: ModelCapability[] = validGenerative.map((m) => {
+        const id = (m.name || "").replace(/^models\//, "");
+        const matchedPopular = PROVIDER_CATALOG.gemini.popularModels.find((p) => p.id === id);
+        if (matchedPopular) return matchedPopular;
+
+        return {
+          id,
+          name: m.displayName || id,
+          providerId: "gemini",
+          contextWindow: m.inputTokenLimit || 1048576,
+          supportsStreaming: true,
+          supportsStructuredOutput: true,
+          recommendedFor: id.includes("flash") ? ["speed", "grammar", "general"] : ["rewrite", "general"],
+          description: m.description || `Google Gemini model ${id}.`,
+        };
+      });
+
+      // Sort so popular models appear at the top
+      capabilities.sort((a, b) => {
+        const aPop = PROVIDER_CATALOG.gemini.popularModels.findIndex((p) => p.id === a.id);
+        const bPop = PROVIDER_CATALOG.gemini.popularModels.findIndex((p) => p.id === b.id);
+        if (aPop !== -1 && bPop !== -1) return aPop - bPop;
+        if (aPop !== -1) return -1;
+        if (bPop !== -1) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      return capabilities;
     } catch {
       return PROVIDER_CATALOG.gemini.popularModels;
     }

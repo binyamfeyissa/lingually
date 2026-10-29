@@ -11,7 +11,7 @@ import { DocumentRecord } from "@/types/document";
 import { DocumentRepository } from "@/lib/documents/repository";
 import { WritingToolId } from "@/types/writing-tools";
 import { WritingSuggestion } from "@/types/suggestions";
-import { issueDecorationsKey } from "@/lib/editor/issue-decorations";
+import { issueDecorationsKey, mapPlainTextOffsetToDocPos } from "@/lib/editor/issue-decorations";
 
 export interface TiptapEditorProps {
   document: DocumentRecord;
@@ -30,6 +30,8 @@ export interface TiptapEditorProps {
   suggestionPayload?: {
     originalText: string;
     replacementText: string;
+    offset?: number;
+    length?: number;
     timestamp: number;
   } | null;
   restorePayload?: {
@@ -104,18 +106,19 @@ export function TiptapEditor({
     },
   });
 
-  // Keep editor content in sync when switching documents (Bug 3)
+  // Keep editor content in sync when switching documents (Bug 3, Bug 36)
   useEffect(() => {
     if (editor && document) {
-      setTitle(document.title);
       if (lastDocIdRef.current !== document.id) {
         lastDocIdRef.current = document.id;
+        setTitle(document.title);
+        titleRef.current = document.title;
         editor.commands.setContent(document.content || "<p></p>");
         setSaveStatus("saved");
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [document?.id, document?.title, editor]);
+  }, [document?.id, editor]);
 
   // Handle explicit snapshot restorations from History (Bug 4)
   const lastProcessedRestoreRef = useRef<number>(0);
@@ -194,34 +197,74 @@ export function TiptapEditor({
           "before-ai-apply",
           `Accepted suggestion for "${suggestionPayload.originalText}"`,
           {
-            title: title.trim() || document.title,
+            title: titleRef.current.trim() || document.title,
             content: currentHtml,
             plainText: currentPlain,
           }
         ).catch(() => {});
 
-        // Use ranged replacement where possible to preserve undo stack (Bug 3)
         let replacedWithRange = false;
-        editor.state.doc.descendants((node, pos) => {
-          if (replacedWithRange) return false;
-          if (node.isText && node.text) {
-            const idx = node.text.indexOf(suggestionPayload.originalText);
-            if (idx !== -1) {
-              const from = pos + idx;
-              const to = from + suggestionPayload.originalText.length;
-              editor
-                .chain()
-                .focus()
-                .setTextSelection({ from, to })
-                .insertContent(suggestionPayload.replacementText)
-                .run();
-              replacedWithRange = true;
-              return false;
+
+        // 1. Position-based exact replacement (Bug 42, Bug 44)
+        if (
+          typeof suggestionPayload.offset === "number" &&
+          typeof suggestionPayload.length === "number" &&
+          suggestionPayload.length > 0
+        ) {
+          const mapped = mapPlainTextOffsetToDocPos(
+            editor.state.doc,
+            suggestionPayload.offset,
+            suggestionPayload.length
+          );
+          if (mapped) {
+            try {
+              const docText = editor.state.doc.textBetween(mapped.from, mapped.to);
+              if (docText === suggestionPayload.originalText) {
+                if (suggestionPayload.replacementText === "") {
+                  editor.chain().focus().deleteRange({ from: mapped.from, to: mapped.to }).run();
+                } else {
+                  editor
+                    .chain()
+                    .focus()
+                    .setTextSelection({ from: mapped.from, to: mapped.to })
+                    .insertContent(suggestionPayload.replacementText)
+                    .run();
+                }
+                replacedWithRange = true;
+              }
+            } catch {
+              //
             }
           }
-        });
+        }
 
-        // Fallback to HTML replace if cross-node
+        // 2. Fallback to ranged scan if offset mapping was not usable
+        if (!replacedWithRange) {
+          editor.state.doc.descendants((node, pos) => {
+            if (replacedWithRange) return false;
+            if (node.isText && node.text) {
+              const idx = node.text.indexOf(suggestionPayload.originalText);
+              if (idx !== -1) {
+                const from = pos + idx;
+                const to = from + suggestionPayload.originalText.length;
+                if (suggestionPayload.replacementText === "") {
+                  editor.chain().focus().deleteRange({ from, to }).run();
+                } else {
+                  editor
+                    .chain()
+                    .focus()
+                    .setTextSelection({ from, to })
+                    .insertContent(suggestionPayload.replacementText)
+                    .run();
+                }
+                replacedWithRange = true;
+                return false;
+              }
+            }
+          });
+        }
+
+        // 3. Fallback to HTML replace if cross-node
         if (!replacedWithRange) {
           const updatedHtml = currentHtml.replace(suggestionPayload.originalText, suggestionPayload.replacementText);
           editor.commands.setContent(updatedHtml);
@@ -239,7 +282,7 @@ export function TiptapEditor({
     try {
       const snapshot = getEditorSnapshot(editor);
       const updated = await DocumentRepository.updateDocument(document.id, {
-        title: title.trim() || "Untitled Document",
+        title: titleRef.current.trim() || "Untitled Document",
         content: snapshot.html,
         plainText: snapshot.plainText,
       });
@@ -251,7 +294,7 @@ export function TiptapEditor({
     } catch {
       setSaveStatus("unsaved");
     }
-  }, [editor, document?.id, title, onDocumentChange]);
+  }, [editor, document?.id, onDocumentChange]);
 
   const triggerDebouncedAutosave = useCallback(() => {
     if (autosaveTimeoutRef.current) {
@@ -324,7 +367,9 @@ export function TiptapEditor({
   }, []);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
+    const val = e.target.value;
+    titleRef.current = val;
+    setTitle(val);
     setSaveStatus("unsaved");
     triggerDebouncedAutosave();
   };
