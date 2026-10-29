@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AIRequestSchema, validateBaseUrl } from "@/lib/security/validation";
+import { sanitizeErrorMessage } from "@/lib/security/sanitization";
 import { ProviderId } from "@/types/provider";
 
 export const runtime = "nodejs";
@@ -122,7 +123,8 @@ async function handleOpenAI({
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const message = errorData?.error?.message || `OpenAI returned status ${response.status}`;
+    const rawMessage = errorData?.error?.message || `OpenAI returned status ${response.status}`;
+    const message = sanitizeErrorMessage(rawMessage, apiKey);
     return NextResponse.json({ error: message }, { status: response.status });
   }
 
@@ -183,7 +185,8 @@ async function handleGemini({
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const message = errorData?.error?.message || `Gemini returned status ${response.status}`;
+    const rawMessage = errorData?.error?.message || `Gemini returned status ${response.status}`;
+    const message = sanitizeErrorMessage(rawMessage, apiKey);
     return NextResponse.json({ error: message }, { status: response.status });
   }
 
@@ -250,7 +253,8 @@ async function handleAnthropic({
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const message = errorData?.error?.message || `Anthropic returned status ${response.status}`;
+    const rawMessage = errorData?.error?.message || `Anthropic returned status ${response.status}`;
+    const message = sanitizeErrorMessage(rawMessage, apiKey);
     return NextResponse.json({ error: message }, { status: response.status });
   }
 
@@ -318,7 +322,8 @@ async function handleGroq({
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const message = errorData?.error?.message || `Groq returned status ${response.status}`;
+    const rawMessage = errorData?.error?.message || `Groq returned status ${response.status}`;
+    const message = sanitizeErrorMessage(rawMessage, apiKey);
     return NextResponse.json({ error: message }, { status: response.status });
   }
 
@@ -432,7 +437,8 @@ async function handleOpenAICompatible({
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const message = errorData?.error?.message || `Endpoint returned status ${response.status}`;
+    const rawMessage = errorData?.error?.message || `Endpoint returned status ${response.status}`;
+    const message = sanitizeErrorMessage(rawMessage, apiKey);
     return NextResponse.json({ error: message }, { status: response.status });
   }
 

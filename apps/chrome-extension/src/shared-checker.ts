@@ -17,6 +17,11 @@ export interface ExtensionSuggestion {
 
 // 1. High-confidence known English misspellings & typographical errors
 export const DETERMINISTIC_TYPOS: Record<string, { replacement: string; explanation: string }> = {
+  testt: { replacement: "test", explanation: "Correct spelling contains a single 't'." },
+  dogss: { replacement: "dogs", explanation: "Spelled 'dogs' with a single 's'." },
+  quikly: { replacement: "quickly", explanation: "Spelled 'quickly'." },
+  timelyy: { replacement: "timely", explanation: "Spelled 'timely'." },
+  systm: { replacement: "system", explanation: "Spelled 'system'." },
   teh: { replacement: "the", explanation: "Corrects typographical inversion." },
   recieve: { replacement: "receive", explanation: "Remember 'i' before 'e' except after 'c'." },
   seperate: { replacement: "separate", explanation: "Correct spelling contains 'para'." },
@@ -456,7 +461,8 @@ export function runExtensionCheck(
   }
 
   // 6. Repeated words check (e.g. "the the")
-  const repeatedRegex = /\b([a-zA-Z]+)\s+\1\b/gi;
+  // Only match repeated words on the same line (exclude newline/heading boundaries)
+  const repeatedRegex = /\b([a-zA-Z]+)[^\S\r\n]+\1\b/gi;
   while ((match = repeatedRegex.exec(text)) !== null) {
     const rawWord = match[1];
     suggestions.push({
@@ -479,11 +485,16 @@ export function runExtensionCheck(
   }
 
   // 3. Known Typos & Unrecognized words check
-  const wordRegex = /\b[a-zA-Z]+\b/g;
+  const wordRegex = /\b[a-zA-Z]+(?:['’][a-zA-Z]+)?\b/g;
   while ((match = wordRegex.exec(text)) !== null) {
     const rawWord = match[0];
     const lower = rawWord.toLowerCase();
     if (personalDictionary.has(lower)) continue;
+
+    // Check base word for possessives (e.g. browser's, cat's)
+    const isPossessive = /['’]s$/i.test(rawWord);
+    const baseWord = isPossessive ? lower.replace(/['’]s$/, "") : lower;
+    if (personalDictionary.has(baseWord) || COMMON_VOCABULARY.has(baseWord)) continue;
 
     // Skip words inside links, URLs, emails, or file paths
     if (linkSpans.some((span) => match!.index >= span.start && match!.index < span.end)) {

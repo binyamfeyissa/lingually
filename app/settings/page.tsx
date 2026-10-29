@@ -7,6 +7,8 @@ import { PROVIDER_CATALOG } from "@/lib/ai/model-capabilities";
 import { providerRegistry } from "@/lib/ai/provider-registry";
 import { CredentialStorage } from "@/lib/security/api-key-storage";
 import { DocumentRepository } from "@/lib/documents/repository";
+import { PersonalDictionary } from "@/lib/settings/dictionary-and-goals";
+import { sanitizeErrorMessage } from "@/lib/security/sanitization";
 import { Button } from "@/components/shared/button";
 import { Modal } from "@/components/shared/modal";
 import { ThemeToggle } from "@/components/app-shell/theme-toggle";
@@ -24,6 +26,9 @@ import {
   EyeOff,
   ArrowLeft,
   RotateCw,
+  BookA,
+  Plus,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -78,6 +83,19 @@ export default function SettingsPage() {
     "openai-compatible": {},
   });
 
+  const [verifiedProviders, setVerifiedProviders] = useState<Record<ProviderId, boolean>>({
+    openai: false,
+    gemini: false,
+    anthropic: false,
+    groq: false,
+    ollama: false,
+    "openai-compatible": false,
+  });
+
+  // Personal Dictionary state
+  const [customWords, setCustomWords] = useState<string[]>([]);
+  const [newWordInput, setNewWordInput] = useState<string>("");
+
   // General & Storage Preferences
   const [storageMode, setStorageMode] = useState<StoragePreference>("local");
   const [defaultProvider, setDefaultProvider] = useState<ProviderId>("openai");
@@ -105,6 +123,15 @@ export default function SettingsPage() {
     setProviderBaseUrls(urls);
     setProviderModels(models);
 
+    try {
+      const savedVerified = localStorage.getItem("lingually_verified_providers");
+      if (savedVerified) {
+        setVerifiedProviders(JSON.parse(savedVerified));
+      }
+    } catch {}
+
+    setCustomWords(PersonalDictionary.getWords());
+
     setStorageMode(CredentialStorage.getStorageMode());
     const savedDefault = (localStorage.getItem("lingually_default_provider") as ProviderId) || "openai";
     setDefaultProvider(savedDefault);
@@ -113,15 +140,27 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const saveVerifiedStatus = (pId: ProviderId, verified: boolean) => {
+    setVerifiedProviders((prev) => {
+      const updated = { ...prev, [pId]: verified };
+      try {
+        localStorage.setItem("lingually_verified_providers", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
   const handleSaveKey = (pId: ProviderId, keyVal: string) => {
     setProviderKeys((prev) => ({ ...prev, [pId]: keyVal }));
     CredentialStorage.setApiKey(pId, keyVal);
+    saveVerifiedStatus(pId, false);
     showNotice(`SAVED CREDENTIALS FOR ${PROVIDER_CATALOG[pId].name.toUpperCase()}`);
   };
 
   const handleSaveBaseUrl = (pId: ProviderId, urlVal: string) => {
     setProviderBaseUrls((prev) => ({ ...prev, [pId]: urlVal }));
     CredentialStorage.setBaseUrl(pId, urlVal);
+    saveVerifiedStatus(pId, false);
     showNotice(`UPDATED BASE URL FOR ${PROVIDER_CATALOG[pId].name.toUpperCase()}`);
   };
 
@@ -135,33 +174,66 @@ export default function SettingsPage() {
     CredentialStorage.removeApiKey(pId);
     setProviderKeys((prev) => ({ ...prev, [pId]: "" }));
     setTestStatus((prev) => ({ ...prev, [pId]: {} }));
+    saveVerifiedStatus(pId, false);
     showNotice(`CREDENTIALS REMOVED FOR ${PROVIDER_CATALOG[pId].name.toUpperCase()}`);
   };
 
   const handleTestConnection = async (pId: ProviderId) => {
     setTestStatus((prev) => ({ ...prev, [pId]: { loading: true } }));
-    const config = providerRegistry.resolveConfig(pId);
 
-    config.apiKey = providerKeys[pId];
-    config.baseUrl = providerBaseUrls[pId];
-    config.defaultModel = providerModels[pId];
+    // Read latest values from state
+    const currentKey = providerKeys[pId]?.trim() || CredentialStorage.getApiKey(pId);
+    const currentBaseUrl = providerBaseUrls[pId]?.trim() || CredentialStorage.getBaseUrl(pId);
+    const currentModel = providerModels[pId] || CredentialStorage.getDefaultModel(pId);
+
+    if (currentKey) CredentialStorage.setApiKey(pId, currentKey);
+    if (currentBaseUrl) CredentialStorage.setBaseUrl(pId, currentBaseUrl);
+
+    const config = {
+      id: pId,
+      name: PROVIDER_CATALOG[pId]?.name || pId,
+      apiKey: currentKey || undefined,
+      baseUrl: currentBaseUrl || undefined,
+      defaultModel: currentModel,
+      enabled: true,
+    };
 
     try {
       const result = await providerRegistry.testConnection(config);
+      const sanitizedMessage = sanitizeErrorMessage(result.message, currentKey);
       setTestStatus((prev) => ({
         ...prev,
-        [pId]: { loading: false, success: result.success, message: result.message },
+        [pId]: { loading: false, success: result.success, message: sanitizedMessage },
       }));
+      saveVerifiedStatus(pId, result.success);
     } catch (err: unknown) {
+      const rawMessage = err instanceof Error ? err.message : String(err);
+      const sanitizedMessage = sanitizeErrorMessage(rawMessage, currentKey);
       setTestStatus((prev) => ({
         ...prev,
         [pId]: {
           loading: false,
           success: false,
-          message: err instanceof Error ? err.message : String(err),
+          message: sanitizedMessage,
         },
       }));
+      saveVerifiedStatus(pId, false);
     }
+  };
+
+  const handleAddDictionaryWord = () => {
+    const word = newWordInput.trim().toLowerCase();
+    if (!word) return;
+    PersonalDictionary.addWord(word);
+    setCustomWords(PersonalDictionary.getWords());
+    setNewWordInput("");
+    showNotice(`ADDED "${word.toUpperCase()}" TO PERSONAL DICTIONARY`);
+  };
+
+  const handleRemoveDictionaryWord = (word: string) => {
+    PersonalDictionary.removeWord(word);
+    setCustomWords(PersonalDictionary.getWords());
+    showNotice(`REMOVED "${word.toUpperCase()}" FROM DICTIONARY`);
   };
 
   const handleStorageModeChange = (mode: StoragePreference) => {
@@ -295,6 +367,38 @@ export default function SettingsPage() {
                 const requiresKey = info.requiresApiKey;
                 const isConfigured = !requiresKey || Boolean(keyVal.trim());
 
+                let badgeLabel = "KEY REQUIRED";
+                let badgeClass = "border-line text-muted bg-bg";
+
+                if (status?.loading) {
+                  badgeLabel = "TESTING...";
+                  badgeClass = "border-line text-muted bg-bg animate-pulse";
+                } else if (status?.success === false) {
+                  badgeLabel = "CONNECTION FAILED";
+                  badgeClass = "border-danger/40 text-danger bg-danger/10";
+                } else if (status?.success === true || (verifiedProviders[pId] && isConfigured)) {
+                  badgeLabel = "CONFIGURED // READY";
+                  badgeClass = "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10";
+                } else if (requiresKey) {
+                  if (keyVal.trim()) {
+                    badgeLabel = "SAVED (UNTESTED)";
+                    badgeClass = "border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10";
+                  } else {
+                    badgeLabel = "KEY REQUIRED";
+                    badgeClass = "border-line text-muted bg-bg";
+                  }
+                } else {
+                  badgeLabel = "ENDPOINT (UNTESTED)";
+                  badgeClass = "border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10";
+                }
+
+                const docsLabel =
+                  pId === "ollama"
+                    ? "OLLAMA DOCS"
+                    : pId === "openai-compatible"
+                    ? "ENDPOINT DOCS"
+                    : "GET API KEY";
+
                 return (
                   <div
                     key={pId}
@@ -312,12 +416,10 @@ export default function SettingsPage() {
                           <span
                             className={cn(
                               "font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 border",
-                              isConfigured
-                                ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
-                                : "border-line text-muted bg-bg"
+                              badgeClass
                             )}
                           >
-                            {isConfigured ? "CONFIGURED // READY" : "KEY REQUIRED"}
+                            {badgeLabel}
                           </span>
                         </div>
                         <p className="font-sans text-xs text-muted">{info.description}</p>
@@ -330,7 +432,7 @@ export default function SettingsPage() {
                           rel="noopener noreferrer"
                           className="font-mono text-[10px] uppercase tracking-wider text-accent hover:underline flex items-center gap-1"
                         >
-                          <span>GET API KEY</span>
+                          <span>{docsLabel}</span>
                           <ExternalLink className="h-2.5 w-2.5" />
                         </a>
                       </div>
@@ -503,6 +605,83 @@ export default function SettingsPage() {
                   </label>
                 ))}
               </div>
+            </div>
+
+            {/* Personal Dictionary Management */}
+            <div className="p-5 border border-line bg-bg-raised space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-mono text-xs font-bold uppercase tracking-[0.15em] text-ink flex items-center gap-1.5">
+                  <BookA className="h-3.5 w-3.5 text-accent" />
+                  <span>PERSONAL DICTIONARY ({customWords.length})</span>
+                </h3>
+                {customWords.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      PersonalDictionary.clear();
+                      setCustomWords([]);
+                      showNotice("CLEARED PERSONAL DICTIONARY");
+                    }}
+                    className="font-mono text-[10px] uppercase tracking-wider text-danger hover:underline"
+                  >
+                    CLEAR DICTIONARY
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-muted font-sans leading-relaxed">
+                Words added to your personal dictionary are never flagged as spelling errors across your documents.
+              </p>
+
+              {/* Add word form */}
+              <div className="flex gap-2 pt-1 font-mono text-xs">
+                <input
+                  type="text"
+                  value={newWordInput}
+                  onChange={(e) => setNewWordInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddDictionaryWord();
+                    }
+                  }}
+                  placeholder="ADD WORD TO DICTIONARY..."
+                  className="flex-1 h-8 border border-line bg-bg px-2.5 text-xs text-ink placeholder:text-muted/50 focus:border-line-strong focus:outline-none transition rounded-none uppercase"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddDictionaryWord}
+                  className="px-3 h-8 bg-invert-bg text-invert-fg font-mono text-[10px] uppercase tracking-wider font-semibold hover:opacity-85 transition rounded-none flex items-center gap-1"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>ADD</span>
+                </button>
+              </div>
+
+              {/* Word List */}
+              {customWords.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 pt-2 max-h-48 overflow-y-auto">
+                  {customWords.map((word) => (
+                    <span
+                      key={word}
+                      className="inline-flex items-center gap-1.5 px-2 py-1 border border-line bg-bg font-mono text-[11px] text-ink"
+                    >
+                      <span>{word}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDictionaryWord(word)}
+                        aria-label={`Remove ${word} from dictionary`}
+                        className="text-muted hover:text-danger transition"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-3 border border-line/60 bg-bg text-center font-mono text-[10px] text-muted uppercase tracking-wider">
+                  NO CUSTOM WORDS IN PERSONAL DICTIONARY. CLICK &quot;DICT&quot; ON A SUGGESTION OR ADD ABOVE.
+                </div>
+              )}
             </div>
 
             {/* Data Cleanup Management */}

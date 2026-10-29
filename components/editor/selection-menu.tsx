@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { WritingToolId } from "@/types/writing-tools";
 import {
   Sparkles,
@@ -17,9 +17,29 @@ export interface SelectionMenuProps {
   isVisible: boolean;
   onActionSelect: (toolId: WritingToolId) => void;
   selectedText: string;
+  onClose?: () => void;
 }
 
-export function SelectionMenu({ isVisible, onActionSelect, selectedText }: SelectionMenuProps) {
+export function SelectionMenu({
+  isVisible,
+  onActionSelect,
+  selectedText,
+  onClose,
+}: SelectionMenuProps) {
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && onClose) {
+        onClose();
+      }
+    }
+    if (isVisible) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isVisible, onClose]);
+
   if (!isVisible || !selectedText.trim()) return null;
 
   const actions: Array<{ id: WritingToolId; label: string; icon: React.ReactNode }> = [

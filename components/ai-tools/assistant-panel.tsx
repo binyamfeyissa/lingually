@@ -14,6 +14,7 @@ import { ProviderId } from "@/types/provider";
 import { AITaskRunner } from "@/lib/ai/task-runner";
 import { CredentialStorage } from "@/lib/security/api-key-storage";
 import { PROVIDER_CATALOG } from "@/lib/ai/model-capabilities";
+import { calculateTextStatistics } from "@/lib/analysis/statistics";
 import { DiffViewer } from "./diff-viewer";
 import { GrammarTool } from "./grammar-tool";
 import { AlternativesView } from "./alternatives-view";
@@ -159,11 +160,16 @@ export function AssistantPanel({
 
   // Determine target text
   const targetText = isSelectionActive && selectedText.trim() ? selectedText : currentText;
-  const wordCount = targetText.trim() ? targetText.trim().split(/\s+/).length : 0;
+  const wordCount = calculateTextStatistics(targetText).wordCount;
 
   const handleRunTask = async () => {
     if (!targetText.trim()) {
       setError("Document or selection contains no text to process.");
+      return;
+    }
+
+    if (currentTool === "custom" && !customPrompt.trim()) {
+      setError("Please enter a custom writing instruction or prompt.");
       return;
     }
 

@@ -2,6 +2,7 @@ export type SuggestionCategory = "correctness" | "clarity" | "engagement" | "del
 
 export interface WritingSuggestion {
   id: string;
+  signature?: string;
   category: SuggestionCategory;
   originalText: string;
   replacementText: string;

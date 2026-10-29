@@ -58,10 +58,11 @@ export function analyzeAIWritingIndicators(text: string): AIWritingIndicators {
     "EXPERIMENTAL HEURISTIC ONLY: Statistical text indicators (such as sentence variance, transition density, and common tropes) are not definitive proof of AI generation or human authorship. Professional human writing and machine outputs overlap extensively. Do not use this analysis for academic, grading, disciplinary, or commercial determinations.";
 
   const trimmed = text.trim();
-  if (!trimmed || trimmed.split(/\s+/).length < 20) {
+  const words = trimmed.match(/[\p{L}\p{N}'’]+/gu) || [];
+  if (!trimmed || words.length < 20) {
     return {
-      burstinessScore: 50,
-      lexicalUniformityScore: 50,
+      burstinessScore: 0,
+      lexicalUniformityScore: 0,
       formalClichéDensity: 0,
       transitionWordDensity: 0,
       repetitiveStructureScore: 0,
@@ -148,9 +149,9 @@ export function analyzeAIWritingIndicators(text: string): AIWritingIndicators {
   const repetitiveStructureScore = Math.min(100, Math.round((consecutiveSameStarts / Math.max(1, sentences.length)) * 100));
 
   // 5. Lexical Uniformity
-  const words = lowerText.match(/[a-z]+/g) || [];
-  const uniqueWords = new Set(words);
-  const ttr = uniqueWords.size / Math.max(1, words.length); // Type-token ratio
+  const wordTokens = lowerText.match(/[a-z]+/g) || [];
+  const uniqueWords = new Set(wordTokens);
+  const ttr = uniqueWords.size / Math.max(1, wordTokens.length); // Type-token ratio
   const lexicalUniformityScore = Math.min(100, Math.max(0, Math.round((1 - ttr) * 100)));
 
   // Combined score (weighted)

@@ -4,15 +4,20 @@ import React, { useState, useEffect, useCallback } from "react";
 import { DocumentRecord } from "@/types/document";
 import { WritingToolId } from "@/types/writing-tools";
 import { WritingSuggestion } from "@/types/suggestions";
+import { ProviderId } from "@/types/provider";
 import { DocumentRepository } from "@/lib/documents/repository";
 import { runDocumentMigrations } from "@/lib/documents/migrations";
+import { calculateTextStatistics } from "@/lib/analysis/statistics";
+import { CredentialStorage } from "@/lib/security/api-key-storage";
+import { PROVIDER_CATALOG } from "@/lib/ai/model-capabilities";
 import { Sidebar } from "@/components/app-shell/sidebar";
 import { Navbar } from "@/components/app-shell/navbar";
 import { TiptapEditor } from "@/components/editor/tiptap-editor";
 import { ReviewSidebar } from "@/components/ai-tools/review-sidebar";
 import { AnalysisDrawer } from "@/components/analysis/analysis-drawer";
 import { RevisionHistoryModal } from "@/components/history/revision-history-modal";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import Link from "next/link";
 
 export default function EditorPage() {
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
@@ -28,6 +33,7 @@ export default function EditorPage() {
   const [selectedText, setSelectedText] = useState("");
   const [isSelectionActive, setIsSelectionActive] = useState(false);
   const [activeAITool, setActiveAITool] = useState<WritingToolId>("improve");
+  const [selectionNotice, setSelectionNotice] = useState<string | null>(null);
 
   // Modals
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
@@ -107,6 +113,33 @@ export default function EditorPage() {
     setActiveDocument(updated);
   };
 
+  const handleLiveTextChange = useCallback((text: string, html: string) => {
+    const stats = calculateTextStatistics(text);
+    setActiveDocument((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        plainText: text,
+        content: html,
+        wordCount: stats.wordCount,
+        characterCount: stats.characterCount,
+      };
+    });
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === activeDocumentId
+          ? {
+              ...d,
+              plainText: text,
+              content: html,
+              wordCount: stats.wordCount,
+              characterCount: stats.characterCount,
+            }
+          : d
+      )
+    );
+  }, [activeDocumentId]);
+
   const handleSelectionChange = (text: string, hasSelection: boolean) => {
     setSelectedText(text);
     setIsSelectionActive(hasSelection);
@@ -115,6 +148,15 @@ export default function EditorPage() {
   const handleTriggerAITool = (toolId: WritingToolId) => {
     setActiveAITool(toolId);
     setIsAssistantOpen(true);
+
+    const savedProvider = (localStorage.getItem("lingually_default_provider") as ProviderId) || "openai";
+    const requiresKey = PROVIDER_CATALOG[savedProvider]?.requiresApiKey ?? true;
+    const hasKey = Boolean(CredentialStorage.getApiKey(savedProvider));
+
+    if (requiresKey && !hasKey) {
+      setSelectionNotice(`API key needed for ${PROVIDER_CATALOG[savedProvider]?.name || savedProvider}. Configure in Settings.`);
+      setTimeout(() => setSelectionNotice(null), 4500);
+    }
   };
 
   const handleApplyAIRewrite = (replacement: string, selectionOnly: boolean) => {
@@ -131,6 +173,16 @@ export default function EditorPage() {
       replacementText: suggestion.replacementText,
       timestamp: Date.now(),
     });
+  };
+
+  const handleRestoreRevision = (restoredDoc?: DocumentRecord) => {
+    if (restoredDoc) {
+      setActiveDocument(restoredDoc);
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === restoredDoc.id ? restoredDoc : d))
+      );
+    }
+    loadDocuments(activeDocument?.id);
   };
 
   if (isLoading) {
@@ -168,17 +220,30 @@ export default function EditorPage() {
 
         {/* Center Editor */}
         {activeDocument ? (
-          <TiptapEditor
-            key={activeDocument.id}
-            document={activeDocument}
-            onDocumentChange={handleDocumentChange}
-            onSelectionChange={handleSelectionChange}
-            onTriggerAITool={handleTriggerAITool}
-            onOpenAnalysis={() => setIsAnalysisOpen(true)}
-            onOpenHistory={() => setIsHistoryOpen(true)}
-            replacementPayload={replacementPayload}
-            suggestionPayload={suggestionPayload}
-          />
+          <div className="flex-1 flex flex-col relative overflow-hidden">
+            {/* Key needed notice toast for selection AI action (Bug 5) */}
+            {selectionNotice && (
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-40 bg-bg border border-accent/40 shadow-xl px-3 py-1.5 flex items-center gap-2 font-mono text-[11px] text-ink animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span>{selectionNotice}</span>
+                <Link href="/settings" className="underline font-bold text-accent hover:opacity-80">
+                  SETTINGS
+                </Link>
+              </div>
+            )}
+            <TiptapEditor
+              key={`${activeDocument.id}-${activeDocument.updatedAt}`}
+              document={activeDocument}
+              onDocumentChange={handleDocumentChange}
+              onLiveTextChange={handleLiveTextChange}
+              onSelectionChange={handleSelectionChange}
+              onTriggerAITool={handleTriggerAITool}
+              onOpenAnalysis={() => setIsAnalysisOpen(true)}
+              onOpenHistory={() => setIsHistoryOpen(true)}
+              replacementPayload={replacementPayload}
+              suggestionPayload={suggestionPayload}
+            />
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-muted font-mono">
             <p className="text-sm font-semibold uppercase tracking-wider text-ink">NO DOCUMENT SELECTED</p>
@@ -190,6 +255,7 @@ export default function EditorPage() {
         {isAssistantOpen && activeDocument && (
           <div className="w-80 sm:w-96 shrink-0 h-full overflow-hidden">
             <ReviewSidebar
+              documentId={activeDocument.id}
               currentText={activeDocument.plainText}
               selectedText={selectedText}
               isSelectionActive={isSelectionActive}
@@ -218,7 +284,7 @@ export default function EditorPage() {
           onClose={() => setIsHistoryOpen(false)}
           documentId={activeDocument.id}
           currentText={activeDocument.plainText}
-          onRestore={() => loadDocuments(activeDocument.id)}
+          onRestore={handleRestoreRevision}
         />
       )}
     </div>

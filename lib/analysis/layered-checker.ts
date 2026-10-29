@@ -1,11 +1,17 @@
 import {
   SuggestionCategory,
   WritingSuggestion,
+  WritingGoals,
   LayeredCheckResult,
 } from "@/types/suggestions";
 
 // Layer A: Common deterministic spelling / typographical corrections
 const DETERMINISTIC_TYPOS: Record<string, { replacement: string; explanation: string }> = {
+  testt: { replacement: "test", explanation: "Correct spelling contains a single 't'." },
+  dogss: { replacement: "dogs", explanation: "Spelled 'dogs' with a single 's'." },
+  quikly: { replacement: "quickly", explanation: "Spelled 'quickly'." },
+  timelyy: { replacement: "timely", explanation: "Spelled 'timely'." },
+  systm: { replacement: "system", explanation: "Spelled 'system'." },
   teh: { replacement: "the", explanation: "Corrects typographical inversion." },
   recieve: { replacement: "receive", explanation: "Remember 'i' before 'e' except after 'c'." },
   seperate: { replacement: "separate", explanation: "Correct spelling contains 'para'." },
@@ -102,12 +108,95 @@ const DETERMINISTIC_TYPOS: Record<string, { replacement: string; explanation: st
   thx: { replacement: "thanks", explanation: "Spelled 'thanks'." },
 };
 
-// Layer A: Common grammatical confusions
+// Layer A: Common grammatical confusions & Subject-Verb Agreement
 const DETERMINISTIC_CONFUSIONS: Array<{
   pattern: RegExp;
   replacement: string;
   explanation: string;
 }> = [
+  // Subject-Verb Agreement: Plural nouns with singular verb (Bug 25)
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+runs\b/gi,
+    replacement: "$1$2 run",
+    explanation: "Subject-verb agreement: the plural subject requires the plural verb 'run' (not 'runs').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+walks\b/gi,
+    replacement: "$1$2 walk",
+    explanation: "Subject-verb agreement: plural subject requires 'walk' (not 'walks').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+writes\b/gi,
+    replacement: "$1$2 write",
+    explanation: "Subject-verb agreement: plural subject requires 'write' (not 'writes').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+reads\b/gi,
+    replacement: "$1$2 read",
+    explanation: "Subject-verb agreement: plural subject requires 'read' (not 'reads').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+speaks\b/gi,
+    replacement: "$1$2 speak",
+    explanation: "Subject-verb agreement: plural subject requires 'speak' (not 'speaks').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+shows\b/gi,
+    replacement: "$1$2 show",
+    explanation: "Subject-verb agreement: plural subject requires 'show' (not 'shows').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+makes\b/gi,
+    replacement: "$1$2 make",
+    explanation: "Subject-verb agreement: plural subject requires 'make' (not 'makes').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+creates\b/gi,
+    replacement: "$1$2 create",
+    explanation: "Subject-verb agreement: plural subject requires 'create' (not 'creates').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+causes\b/gi,
+    replacement: "$1$2 cause",
+    explanation: "Subject-verb agreement: plural subject requires 'cause' (not 'causes').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+works\b/gi,
+    replacement: "$1$2 work",
+    explanation: "Subject-verb agreement: plural subject requires 'work' (not 'works').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+helps\b/gi,
+    replacement: "$1$2 help",
+    explanation: "Subject-verb agreement: plural subject requires 'help' (not 'helps').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+needs\b/gi,
+    replacement: "$1$2 need",
+    explanation: "Subject-verb agreement: plural subject requires 'need' (not 'needs').",
+  },
+  {
+    pattern: /\b(the\s+)?(dogs|cats|birds|people|students|users|systems|members|authors|children|computers|results|tests|programs|animals|workers|cars)\s+wants\b/gi,
+    replacement: "$1$2 want",
+    explanation: "Subject-verb agreement: plural subject requires 'want' (not 'wants').",
+  },
+  // Singular third-person pronouns with base verb
+  {
+    pattern: /\b(he|she|it)\s+run\b/gi,
+    replacement: "$1 runs",
+    explanation: "Subject-verb agreement: singular third-person subject requires 'runs'.",
+  },
+  {
+    pattern: /\b(he|she|it)\s+walk\b/gi,
+    replacement: "$1 walks",
+    explanation: "Subject-verb agreement: singular third-person subject requires 'walks'.",
+  },
+  {
+    pattern: /\b(he|she|it)\s+write\b/gi,
+    replacement: "$1 writes",
+    explanation: "Subject-verb agreement: singular third-person subject requires 'writes'.",
+  },
+  // Grammatical confusions
   { pattern: /\bcould of\b/gi, replacement: "could have", explanation: "Use 'could have' instead of 'could of'." },
   { pattern: /\bshould of\b/gi, replacement: "should have", explanation: "Use 'should have' instead of 'should of'." },
   { pattern: /\bwould of\b/gi, replacement: "would have", explanation: "Use 'would have' instead of 'would of'." },
@@ -123,6 +212,11 @@ const DETERMINISTIC_CLARITY: Array<{
   explanation: string;
 }> = [
   { pattern: /\bin order to\b/gi, replacement: "to", explanation: "Simplify 'in order to' to simply 'to'." },
+  { pattern: /\bin a timely manner\b/gi, replacement: "promptly", explanation: "Replace the wordy phrase 'in a timely manner' with 'promptly' or 'on time'." },
+  { pattern: /\bvery slow\b/gi, replacement: "sluggish", explanation: "Replace the weak modifier 'very slow' with 'sluggish' or 'slow'." },
+  { pattern: /\bvery fast\b/gi, replacement: "rapid", explanation: "Use 'rapid' or 'swift' instead of 'very fast'." },
+  { pattern: /\bin spite of the fact that\b/gi, replacement: "although", explanation: "Simplify wordy phrase to 'although'." },
+  { pattern: /\bwith the exception of\b/gi, replacement: "except for", explanation: "Simplify to 'except for' or 'except'." },
   { pattern: /\bat this point in time\b/gi, replacement: "now", explanation: "Concise alternative: 'now' or 'currently'." },
   { pattern: /\bdue to the fact that\b/gi, replacement: "because", explanation: "Simplify wordy phrase to 'because'." },
   { pattern: /\bhas the ability to\b/gi, replacement: "can", explanation: "Direct verb 'can' improves conciseness." },
@@ -202,7 +296,8 @@ function isLikelyGibberish(word: string, isProperNoun: boolean = false): boolean
  */
 export function runLocalDeterministicCheck(
   text: string,
-  personalDictionary: Set<string> = new Set()
+  personalDictionary: Set<string> = new Set(),
+  goals?: Partial<WritingGoals>
 ): WritingSuggestion[] {
   if (!text || text.trim().length === 0) return [];
 
@@ -226,6 +321,7 @@ export function runLocalDeterministicCheck(
       length: 1,
       ruleId: "sentence_capitalization",
       severity: "error",
+      signature: `sentence_capitalization:${letter.toLowerCase()}:${offset}`,
     });
   }
 
@@ -242,6 +338,7 @@ export function runLocalDeterministicCheck(
       length: match[0].length,
       ruleId: "redundant_whitespace",
       severity: "info",
+      signature: `redundant_whitespace:${match.index}`,
     });
   }
 
@@ -262,6 +359,7 @@ export function runLocalDeterministicCheck(
         length: match[0].length,
         ruleId: "dangling_phrase",
         severity: "warning",
+        signature: `dangling_phrase:${match[0].toLowerCase()}`,
       });
     }
   }
@@ -280,11 +378,13 @@ export function runLocalDeterministicCheck(
       length: 1,
       ruleId: "missing_question_mark",
       severity: "error",
+      signature: "missing_question_mark",
     });
   }
 
   // 5. Repeated words check (e.g. "the the")
-  const repeatedRegex = /\b([a-zA-Z]+)\s+\1\b/gi;
+  // Only match repeated words on the same line (horizontal whitespace only, not newlines)
+  const repeatedRegex = /\b([a-zA-Z]+)[^\S\r\n]+\1\b/gi;
   while ((match = repeatedRegex.exec(text)) !== null) {
     const word = match[1];
     if (!personalDictionary.has(word.toLowerCase())) {
@@ -298,6 +398,7 @@ export function runLocalDeterministicCheck(
         length: match[0].length,
         ruleId: "repeated_word",
         severity: "error",
+        signature: `repeated_word:${match[0].toLowerCase()}`,
       });
     }
   }
@@ -310,8 +411,33 @@ export function runLocalDeterministicCheck(
     linkSpans.push({ start: lMatch.index, end: lMatch.index + lMatch[0].length });
   }
 
-  // 2. Common Typos check
-  const wordRegex = /\b[a-zA-Z]+\b/g;
+  // 6. Missing space after period (e.g. 'red.because' -> 'red. Because')
+  const missingSpaceRegex = /\b([a-zA-Z]{2,})\.([a-zA-Z]{2,})\b/g;
+  while ((match = missingSpaceRegex.exec(text)) !== null) {
+    const word1 = match[1];
+    const word2 = match[2];
+    const commonExts = new Set(["com", "org", "net", "edu", "gov", "io", "app", "dev", "co", "ai", "uk", "de", "fr", "ca", "me", "ts", "js", "jsx", "tsx", "py", "md", "json", "css", "html", "svg", "png", "jpg"]);
+    if (commonExts.has(word2.toLowerCase())) continue;
+    if (linkSpans.some((span) => match!.index >= span.start && match!.index < span.end)) continue;
+
+    const replacement = `${word1}. ${word2.charAt(0).toUpperCase() + word2.slice(1)}`;
+    suggestions.push({
+      id: `det_period_space_${idCounter++}`,
+      category: "correctness",
+      originalText: match[0],
+      replacementText: replacement,
+      explanation: "Missing space after period.",
+      offset: match.index,
+      length: match[0].length,
+      ruleId: "missing_space_after_period",
+      severity: "error",
+      signature: `missing_space_after_period:${match[0].toLowerCase()}`,
+    });
+  }
+
+  // 7. Common Typos & Word Analysis check
+  // Tokenize whole words including possessives like browser's and contractions like don't
+  const wordRegex = /\b[a-zA-Z]+(?:['’][a-zA-Z]+)?\b/g;
   while ((match = wordRegex.exec(text)) !== null) {
     const rawWord = match[0];
     const lower = rawWord.toLowerCase();
@@ -330,9 +456,13 @@ export function runLocalDeterministicCheck(
     const isKnownName = COMMON_NAMES.has(lower);
     const isProperNoun = isCamelCase || isKnownName || (isCap && !isSentenceStart);
 
+    // If word is possessive (e.g. browser's, cat's), check if base word is known or in dictionary
+    const isPossessive = /['’]s$/i.test(rawWord);
+    const baseWord = isPossessive ? lower.replace(/['’]s$/, "") : lower;
+    if (personalDictionary.has(baseWord)) continue;
+
     if (DETERMINISTIC_TYPOS[lower]) {
       const entry = DETERMINISTIC_TYPOS[lower];
-      // Preserve uppercase start if original was capitalized
       const isCapitalized = isCap;
       const replacement = isCapitalized
         ? entry.replacement.charAt(0).toUpperCase() + entry.replacement.slice(1)
@@ -348,6 +478,25 @@ export function runLocalDeterministicCheck(
         length: rawWord.length,
         ruleId: "spelling_typo",
         severity: "error",
+        signature: `spelling_typo:${lower}`,
+      });
+      continue;
+    }
+
+    // Trailing repeated consonants typo (e.g. 'testt' -> 'test' if not already handled)
+    if (lower.endsWith("tt") && lower.length > 3 && !["scott", "matt", "watt", "butt", "pitt"].includes(lower)) {
+      const singleT = rawWord.slice(0, -1);
+      suggestions.push({
+        id: `det_typo_tt_${idCounter++}`,
+        category: "correctness",
+        originalText: rawWord,
+        replacementText: singleT,
+        explanation: "Correct spelling contains a single 't'.",
+        offset: match.index,
+        length: rawWord.length,
+        ruleId: "spelling_repeated_consonant",
+        severity: "error",
+        signature: `spelling_repeated_consonant:${lower}`,
       });
       continue;
     }
@@ -373,13 +522,15 @@ export function runLocalDeterministicCheck(
           length: rawWord.length,
           ruleId: "spelling_double_i",
           severity: "error",
+          signature: `spelling_double_i:${lower}`,
         });
         continue;
       }
     }
 
-    // Unrecognized word / Gibberish detection (e.g. 'ffgvffv')
-    if (isLikelyGibberish(rawWord, isProperNoun)) {
+    // Unrecognized word / Gibberish detection (e.g. 'ffgvffv' or stray isolated consonants)
+    // Check baseWord so possessives like "browser's" aren't flagged as gibberish
+    if (isLikelyGibberish(baseWord, isProperNoun)) {
       suggestions.push({
         id: `det_gib_${idCounter++}`,
         category: "correctness",
@@ -390,12 +541,13 @@ export function runLocalDeterministicCheck(
         length: rawWord.length,
         ruleId: "unrecognized_word",
         severity: "error",
+        signature: `unrecognized_word:${lower}`,
       });
       continue;
     }
   }
 
-  // 3. Grammar Confusions
+  // 8. Grammar Confusions & Subject-Verb Agreement
   for (const item of DETERMINISTIC_CONFUSIONS) {
     while ((match = item.pattern.exec(text)) !== null) {
       suggestions.push({
@@ -408,11 +560,12 @@ export function runLocalDeterministicCheck(
         length: match[0].length,
         ruleId: "grammar_confusion",
         severity: "error",
+        signature: `grammar_confusion:${match[0].toLowerCase()}`,
       });
     }
   }
 
-  // 4. Clarity & Conciseness
+  // 9. Clarity & Conciseness
   for (const item of DETERMINISTIC_CLARITY) {
     while ((match = item.pattern.exec(text)) !== null) {
       suggestions.push({
@@ -425,11 +578,12 @@ export function runLocalDeterministicCheck(
         length: match[0].length,
         ruleId: "clarity_conciseness",
         severity: "warning",
+        signature: `clarity_conciseness:${match[0].toLowerCase()}`,
       });
     }
   }
 
-  // 5. Engagement
+  // 10. Engagement
   for (const item of DETERMINISTIC_ENGAGEMENT) {
     while ((match = item.pattern.exec(text)) !== null) {
       suggestions.push({
@@ -442,11 +596,12 @@ export function runLocalDeterministicCheck(
         length: match[0].length,
         ruleId: "engagement_variety",
         severity: "info",
+        signature: `engagement_variety:${match[0].toLowerCase()}`,
       });
     }
   }
 
-  // 6. Delivery
+  // 11. Delivery & Tone
   for (const item of DETERMINISTIC_DELIVERY) {
     while ((match = item.pattern.exec(text)) !== null) {
       suggestions.push({
@@ -459,7 +614,84 @@ export function runLocalDeterministicCheck(
         length: match[0].length,
         ruleId: "delivery_tone",
         severity: "info",
+        signature: `delivery_tone:${match[0].toLowerCase()}`,
       });
+    }
+  }
+
+  // 12. Writing Goals Rules: Formality and Domain (Bug 28)
+  if (goals?.formality === "formal" || goals?.domain === "academic") {
+    const FORMAL_CONTRACTIONS: Record<string, string> = {
+      "don't": "do not",
+      "doesn't": "does not",
+      "didn't": "did not",
+      "can't": "cannot",
+      "won't": "will not",
+      "wouldn't": "would not",
+      "shouldn't": "should not",
+      "couldn't": "could not",
+      "isn't": "is not",
+      "aren't": "are not",
+      "wasn't": "was not",
+      "weren't": "were not",
+      "haven't": "have not",
+      "hasn't": "has not",
+      "hadn't": "had not",
+      "it's": "it is",
+      "they're": "they are",
+      "we're": "we are",
+      "you're": "you are",
+      "i'm": "I am",
+      "that's": "that is",
+      "there's": "there is",
+      "what's": "what is",
+      "who's": "who is",
+      "let's": "let us",
+    };
+
+    for (const [contraction, expansion] of Object.entries(FORMAL_CONTRACTIONS)) {
+      const cRegex = new RegExp(`\\b${contraction.replace("'", "['’]")}\\b`, "gi");
+      while ((match = cRegex.exec(text)) !== null) {
+        const isCap = match[0][0] === match[0][0].toUpperCase();
+        const repl = isCap ? expansion.charAt(0).toUpperCase() + expansion.slice(1) : expansion;
+        suggestions.push({
+          id: `det_goal_contr_${idCounter++}`,
+          category: "delivery",
+          originalText: match[0],
+          replacementText: repl,
+          explanation: `Avoid contractions in formal or academic writing. Use '${repl}'.`,
+          offset: match.index,
+          length: match[0].length,
+          ruleId: "formal_contractions",
+          severity: "warning",
+          signature: `formal_contractions:${match[0].toLowerCase()}`,
+        });
+      }
+    }
+  }
+
+  if (goals?.domain === "academic") {
+    const ACADEMIC_HEDGES = [
+      { pattern: /\bin my opinion\b/gi, replacement: "the evidence indicates", explanation: "Use objective phrasing in academic writing." },
+      { pattern: /\bI think that\b/gi, replacement: "the findings suggest", explanation: "Adopt formal, objective framing for academic tone." },
+      { pattern: /\ba lot of\b/gi, replacement: "numerous", explanation: "Use precise academic phrasing rather than 'a lot of'." },
+    ];
+
+    for (const hedge of ACADEMIC_HEDGES) {
+      while ((match = hedge.pattern.exec(text)) !== null) {
+        suggestions.push({
+          id: `det_goal_acad_${idCounter++}`,
+          category: "delivery",
+          originalText: match[0],
+          replacementText: hedge.replacement,
+          explanation: hedge.explanation,
+          offset: match.index,
+          length: match[0].length,
+          ruleId: "academic_style",
+          severity: "info",
+          signature: `academic_style:${match[0].toLowerCase()}`,
+        });
+      }
     }
   }
 
@@ -534,6 +766,7 @@ export function runLocalDeterministicCheck(
             length: trimmed.length,
             ruleId: "sentence_rephrase",
             severity: "warning",
+            signature: `sentence_rephrase:${trimmed.toLowerCase()}`,
           });
         }
       }

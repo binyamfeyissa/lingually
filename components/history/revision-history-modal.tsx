@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { DocumentRevision } from "@/types/document";
+import { DocumentRecord, DocumentRevision } from "@/types/document";
 import { DocumentRepository } from "@/lib/documents/repository";
 import { computeWordDiff } from "@/lib/utils/diff";
 import { Modal } from "../shared/modal";
@@ -15,7 +15,7 @@ export interface RevisionHistoryModalProps {
   onClose: () => void;
   documentId: string;
   currentText: string;
-  onRestore: () => void;
+  onRestore: (restoredDoc?: DocumentRecord) => void;
 }
 
 export function RevisionHistoryModal({
@@ -58,8 +58,8 @@ export function RevisionHistoryModal({
     if (!selectedRevision) return;
     setIsRestoring(true);
     try {
-      await DocumentRepository.restoreRevision(documentId, selectedRevision.id);
-      onRestore();
+      const restored = await DocumentRepository.restoreRevision(documentId, selectedRevision.id);
+      onRestore(restored);
       onClose();
     } catch {
       //
@@ -91,9 +91,9 @@ export function RevisionHistoryModal({
       description="Inspect previous states, compare modifications, and restore any previous version."
       maxWidth="4xl"
     >
-      <div className="flex h-[480px] -mx-6 -mb-6 border-t border-line font-mono text-xs">
+      <div className="flex h-[480px] border border-line font-mono text-xs">
         {/* Left: Revisions List */}
-        <div className="w-72 border-r border-line overflow-y-auto bg-bg-raised p-2 space-y-1">
+        <div className="w-72 border-r border-line overflow-y-auto bg-bg-raised p-3 space-y-1.5 shrink-0">
           {isLoading && (
             <div className="p-4 text-center text-muted">LOADING REVISIONS...</div>
           )}

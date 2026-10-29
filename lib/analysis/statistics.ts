@@ -46,10 +46,12 @@ export function calculateTextStatistics(text: string): TextStatistics {
   
   const wordCount = words.length;
 
-  // Sentences: match punctuation followed by whitespace or end of string
-  // Handles common abbreviations heuristically
-  const rawSentences = trimmed
-    .split(/(?<=[.?!])\s+(?=[A-Z0-9"“'’\p{Lu}])/u)
+  // Sentences: match punctuation followed by whitespace or end of string.
+  // Handles common abbreviations heuristically while correctly counting segments
+  // even if the subsequent word begins in lowercase (Bug 26).
+  const normalized = trimmed.replace(/\b(mr|mrs|ms|dr|prof|sr|jr|vs|etc|e\.g|i\.e)\./gi, "$1_DOT_");
+  const rawSentences = normalized
+    .split(/(?<=[.?!])\s+/)
     .filter((s) => s.trim().length > 0);
   
   const sentenceCount = Math.max(1, rawSentences.length);

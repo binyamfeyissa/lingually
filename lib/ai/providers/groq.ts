@@ -1,6 +1,7 @@
 import { ModelCapability, ProviderConfig } from "@/types/provider";
 import { ProviderAdapter } from "./types";
 import { PROVIDER_CATALOG } from "../model-capabilities";
+import { sanitizeErrorMessage } from "@/lib/security/sanitization";
 
 export class GroqAdapter implements ProviderAdapter {
   id = "groq" as const;
@@ -33,7 +34,8 @@ export class GroqAdapter implements ProviderAdapter {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const msg = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+        const rawMsg = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+        const msg = sanitizeErrorMessage(rawMsg, config.apiKey);
         return { success: false, message: msg, latencyMs };
       }
 
@@ -45,7 +47,7 @@ export class GroqAdapter implements ProviderAdapter {
     } catch (err: unknown) {
       return {
         success: false,
-        message: this.normalizeError(err),
+        message: sanitizeErrorMessage(this.normalizeError(err), config.apiKey),
         latencyMs: Date.now() - start,
       };
     }

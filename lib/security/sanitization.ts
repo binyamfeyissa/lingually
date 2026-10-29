@@ -76,3 +76,37 @@ export function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+/**
+ * Sanitizes provider error messages before display to prevent leaking sensitive API credentials.
+ * Redacts submitted credentials, known key patterns, and error substrings.
+ */
+export function sanitizeErrorMessage(rawMessage: string, submittedKey?: string): string {
+  if (!rawMessage || typeof rawMessage !== "string") {
+    return "An unknown error occurred.";
+  }
+
+  let sanitized = rawMessage;
+
+  // Redact submitted key if provided
+  if (submittedKey && submittedKey.trim()) {
+    const key = submittedKey.trim();
+    // Escape special regex chars
+    const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    sanitized = sanitized.replace(new RegExp(escaped, "gi"), "[REDACTED]");
+  }
+
+  // Redact OpenAI error pattern: "Incorrect API key provided: <key>."
+  sanitized = sanitized.replace(
+    /(Incorrect API key provided:\s*)([^\s.]+)/gi,
+    "$1[REDACTED]"
+  );
+
+  // Redact common API key format patterns (sk-, gsk_, anthropic, gemini keys)
+  sanitized = sanitized.replace(/\b(sk-[a-zA-Z0-9_\-]{6,})\b/g, "[REDACTED]");
+  sanitized = sanitized.replace(/\b(gsk_[a-zA-Z0-9_\-]{6,})\b/g, "[REDACTED]");
+  sanitized = sanitized.replace(/\b(AIzaSy[a-zA-Z0-9_\-]{6,})\b/g, "[REDACTED]");
+
+  return sanitized;
+}
+

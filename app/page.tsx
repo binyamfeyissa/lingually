@@ -341,78 +341,63 @@ export default function HomePage() {
                 </span>
 
                 <div className="text-lg sm:text-xl leading-[1.85] text-ink font-sans select-text">
+                  Lingually is{" "}
                   {suggestions.find((s) => s.id === "s1")?.applied ? (
-                    <span>Lingually is <span className="text-accent bg-accent/15 px-1 font-semibold">definitely</span> </span>
+                    <span className="text-accent bg-accent/15 px-1 font-semibold">definitely</span>
                   ) : (
-                    <span>
-                      Lingually is{" "}
-                      <button
-                        onClick={() => setActiveSuggestionId("s1")}
-                        className={cn(
-                          "underline decoration-danger decoration-2 cursor-pointer transition px-1",
-                          activeSuggestionId === "s1" ? "bg-danger/15 text-danger font-semibold" : "text-ink"
-                        )}
-                      >
-                        definately
-                      </button>{" "}
-                    </span>
-                  )}
-
-                  <span>the best tool </span>
-
+                    <button
+                      onClick={() => setActiveSuggestionId("s1")}
+                      className={cn(
+                        "underline decoration-danger decoration-2 cursor-pointer transition px-1",
+                        activeSuggestionId === "s1" ? "bg-danger/15 text-danger font-semibold" : "text-ink"
+                      )}
+                    >
+                      definately
+                    </button>
+                  )}{" "}
+                  the best tool{" "}
                   {suggestions.find((s) => s.id === "s2")?.applied ? (
-                    <span><span className="text-accent bg-accent/15 px-1 font-semibold">to</span> </span>
+                    <span className="text-accent bg-accent/15 px-1 font-semibold">to</span>
                   ) : (
-                    <span>
-                      <button
-                        onClick={() => setActiveSuggestionId("s2")}
-                        className={cn(
-                          "underline decoration-accent decoration-2 cursor-pointer transition px-1",
-                          activeSuggestionId === "s2" ? "bg-accent/15 text-accent font-semibold" : "text-ink"
-                        )}
-                      >
-                        in order to
-                      </button>{" "}
-                    </span>
-                  )}
-
-                  <span>write with clarity. </span>
-
+                    <button
+                      onClick={() => setActiveSuggestionId("s2")}
+                      className={cn(
+                        "underline decoration-accent decoration-2 cursor-pointer transition px-1",
+                        activeSuggestionId === "s2" ? "bg-accent/15 text-accent font-semibold" : "text-ink"
+                      )}
+                    >
+                      in order to
+                    </button>
+                  )}{" "}
+                  write with clarity.{" "}
                   {suggestions.find((s) => s.id === "s4")?.applied ? (
-                    <span><span className="text-accent bg-accent/15 px-1 font-semibold">We recommend</span> </span>
+                    <span className="text-accent bg-accent/15 px-1 font-semibold">We recommend</span>
                   ) : (
-                    <span>
-                      <button
-                        onClick={() => setActiveSuggestionId("s4")}
-                        className={cn(
-                          "underline decoration-purple-500 decoration-2 cursor-pointer transition px-1",
-                          activeSuggestionId === "s4" ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold" : "text-ink"
-                        )}
-                      >
-                        You should probably consider
-                      </button>{" "}
-                    </span>
-                  )}
-
-                  <span>using it for </span>
-
+                    <button
+                      onClick={() => setActiveSuggestionId("s4")}
+                      className={cn(
+                        "underline decoration-purple-500 decoration-2 cursor-pointer transition px-1",
+                        activeSuggestionId === "s4" ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold" : "text-ink"
+                      )}
+                    >
+                      You should probably consider
+                    </button>
+                  )}{" "}
+                  using it for{" "}
                   {suggestions.find((s) => s.id === "s3")?.applied ? (
-                    <span><span className="text-accent bg-accent/15 px-1 font-semibold">exceptional</span> </span>
+                    <span className="text-accent bg-accent/15 px-1 font-semibold">exceptional</span>
                   ) : (
-                    <span>
-                      <button
-                        onClick={() => setActiveSuggestionId("s3")}
-                        className={cn(
-                          "underline decoration-emerald-500 decoration-2 cursor-pointer transition px-1",
-                          activeSuggestionId === "s3" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold" : "text-ink"
-                        )}
-                      >
-                        very good
-                      </button>{" "}
-                    </span>
-                  )}
-
-                  <span>results across all your daily communications.</span>
+                    <button
+                      onClick={() => setActiveSuggestionId("s3")}
+                      className={cn(
+                        "underline decoration-emerald-500 decoration-2 cursor-pointer transition px-1",
+                        activeSuggestionId === "s3" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold" : "text-ink"
+                      )}
+                    >
+                      very good
+                    </button>
+                  )}{" "}
+                  results across all your daily communications.
                 </div>
               </div>
 
@@ -490,7 +475,7 @@ export default function HomePage() {
                 {/* Suggestions List */}
                 <div className="space-y-1">
                   <span className="text-[10px] uppercase tracking-wider text-muted block mb-1">
-                    SUGGESTION QUEUE ({suggestions.length})
+                    SUGGESTION QUEUE ({suggestions.length - appliedCount})
                   </span>
                   {suggestions.map((s) => (
                     <button

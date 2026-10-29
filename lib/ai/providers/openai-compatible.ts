@@ -2,6 +2,7 @@ import { ModelCapability, ProviderConfig } from "@/types/provider";
 import { ProviderAdapter } from "./types";
 import { PROVIDER_CATALOG } from "../model-capabilities";
 import { validateBaseUrl } from "@/lib/security/validation";
+import { sanitizeErrorMessage } from "@/lib/security/sanitization";
 
 export class OpenAICompatibleAdapter implements ProviderAdapter {
   id = "openai-compatible" as const;

@@ -14,6 +14,7 @@ import { WritingToolId } from "@/types/writing-tools";
 export interface TiptapEditorProps {
   document: DocumentRecord;
   onDocumentChange?: (doc: DocumentRecord) => void;
+  onLiveTextChange?: (plainText: string, html: string) => void;
   onSelectionChange?: (selectedText: string, hasSelection: boolean) => void;
   onTriggerAITool?: (toolId: WritingToolId) => void;
   onOpenAnalysis: () => void;
@@ -33,6 +34,7 @@ export interface TiptapEditorProps {
 export function TiptapEditor({
   document,
   onDocumentChange,
+  onLiveTextChange,
   onSelectionChange,
   onTriggerAITool,
   onOpenAnalysis,
@@ -54,12 +56,15 @@ export function TiptapEditor({
     content: document.content,
     editorProps: {
       attributes: {
-        class: "focus:outline-none min-h-[520px] px-8 sm:px-12 py-6 max-w-3xl mx-auto font-sans text-[16px] sm:text-[17px] leading-[1.85] text-ink",
+        class: "focus:outline-none min-h-[520px] px-8 sm:px-12 py-6 max-w-3xl mx-auto font-sans text-[16px] sm:text-[17px] leading-[1.85] text-ink whitespace-pre-wrap",
       },
     },
-    onUpdate: () => {
+    onUpdate: ({ editor: currentEditor }) => {
       setSaveStatus("unsaved");
       triggerDebouncedAutosave();
+      if (onLiveTextChange) {
+        onLiveTextChange(currentEditor.getText(), currentEditor.getHTML());
+      }
     },
     onSelectionUpdate: ({ editor: currentEditor }) => {
       const snapshot = getEditorSnapshot(currentEditor);
@@ -76,7 +81,7 @@ export function TiptapEditor({
     },
   });
 
-  // Keep editor content in sync when switching documents
+  // Keep editor content in sync when switching documents or restoring snapshots
   useEffect(() => {
     if (editor && document) {
       setTitle(document.title);
@@ -87,7 +92,7 @@ export function TiptapEditor({
       setSaveStatus("saved");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [document?.id, editor]);
+  }, [document?.id, document?.updatedAt, editor]);
 
   // Handle incoming AI replacements
   useEffect(() => {
@@ -171,6 +176,38 @@ export function TiptapEditor({
     }, 800);
   }, [saveDocumentNow]);
 
+  const editorRef = useRef(editor);
+  editorRef.current = editor;
+  const saveStatusRef = useRef(saveStatus);
+  saveStatusRef.current = saveStatus;
+  const documentRef = useRef(document);
+  documentRef.current = document;
+  const titleRef = useRef(title);
+  titleRef.current = title;
+
+  // Flush unsaved changes on beforeunload or unmount (Bug 24)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (editorRef.current && saveStatusRef.current === "unsaved" && documentRef.current) {
+        const snapshot = getEditorSnapshot(editorRef.current);
+        DocumentRepository.updateDocument(documentRef.current.id, {
+          title: titleRef.current.trim() || "Untitled Document",
+          content: snapshot.html,
+          plainText: snapshot.plainText,
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+      }
+      handleBeforeUnload();
+    };
+  }, []);
+
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
     setSaveStatus("unsaved");
@@ -184,14 +221,18 @@ export function TiptapEditor({
       {/* Formatting Toolbar */}
       <EditorToolbar editor={editor} />
 
-      {/* Floating Selection Action Menu */}
+      {/* Floating Selection Action Menu (Offset below toolbar with clearance over title - Bug 12, 19) */}
       {selectedText && (
-        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-30">
+        <div className="absolute top-11 right-4 z-30 shadow-2xl animate-in fade-in zoom-in-95 duration-100">
           <SelectionMenu
             isVisible={Boolean(selectedText)}
             selectedText={selectedText}
             onActionSelect={(toolId) => {
               if (onTriggerAITool) onTriggerAITool(toolId);
+            }}
+            onClose={() => {
+              setSelectedText("");
+              if (onSelectionChange) onSelectionChange("", false);
             }}
           />
         </div>

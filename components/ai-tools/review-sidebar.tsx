@@ -10,7 +10,7 @@ import {
 } from "@/types/suggestions";
 import { WritingToolId } from "@/types/writing-tools";
 import { runLocalDeterministicCheck, compileLayeredCheckResult } from "@/lib/analysis/layered-checker";
-import { checkPlagiarism } from "@/lib/analysis/plagiarism";
+import { checkPlagiarism, extractDistinctiveQueries } from "@/lib/analysis/plagiarism";
 import { PersonalDictionary, WritingGoalsManager } from "@/lib/settings/dictionary-and-goals";
 import { AssistantPanel } from "./assistant-panel";
 import { AIDetectorTool } from "./ai-detector-tool";
@@ -30,6 +30,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 
 export interface ReviewSidebarProps {
+  documentId?: string;
   currentText: string;
   selectedText: string;
   isSelectionActive: boolean;
@@ -41,6 +42,7 @@ export interface ReviewSidebarProps {
 }
 
 export function ReviewSidebar({
+  documentId,
   currentText,
   selectedText,
   isSelectionActive,
@@ -57,50 +59,116 @@ export function ReviewSidebar({
   const [filterCategory, setFilterCategory] = useState<SuggestionCategory | "all">("all");
   const [checkResult, setCheckResult] = useState<LayeredCheckResult | null>(null);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState<number>(0);
-  const [ignoredIds, setIgnoredIds] = useState<Set<string>>(new Set());
+  const [dismissedSignatures, setDismissedSignatures] = useState<Set<string>>(new Set());
 
   // Plagiarism state
   const [plagiarismReport, setPlagiarismReport] = useState<PlagiarismReport | null>(null);
   const [isScanningPlagiarism, setIsScanningPlagiarism] = useState(false);
+  const [distinctiveQueries, setDistinctiveQueries] = useState<string[]>([]);
   const [plagiarismSubTab, setPlagiarismSubTab] = useState<"plagiarism" | "ai-text">("plagiarism");
 
   // Goals modal
   const [isGoalsOpen, setIsGoalsOpen] = useState(false);
   const [goals, setGoals] = useState<WritingGoals>(WritingGoalsManager.getGoals());
 
-  // Run local Layer A deterministic check whenever text changes
+  // Load dismissed signatures for this document
+  useEffect(() => {
+    if (typeof window !== "undefined" && documentId) {
+      try {
+        const saved = localStorage.getItem(`lingually_dismissed_${documentId}`);
+        if (saved) {
+          setDismissedSignatures(new Set(JSON.parse(saved)));
+        } else {
+          setDismissedSignatures(new Set());
+        }
+      } catch {
+        setDismissedSignatures(new Set());
+      }
+    }
+  }, [documentId]);
+
+  const persistDismissed = (newSet: Set<string>) => {
+    setDismissedSignatures(newSet);
+    if (typeof window !== "undefined" && documentId) {
+      try {
+        localStorage.setItem(`lingually_dismissed_${documentId}`, JSON.stringify(Array.from(newSet)));
+      } catch {
+        //
+      }
+    }
+  };
+
+  // Run local Layer A deterministic check whenever text or goals change
   useEffect(() => {
     const dict = new Set(PersonalDictionary.getWords());
-    const layerA = runLocalDeterministicCheck(currentText, dict);
+    const layerA = runLocalDeterministicCheck(currentText, dict, goals);
     const compiled = compileLayeredCheckResult(currentText, layerA);
     setCheckResult(compiled);
-  }, [currentText]);
+  }, [currentText, goals]);
 
-  // Handle active suggestions filter
-  const suggestions = checkResult?.suggestions.filter((s) => !ignoredIds.has(s.id)) || [];
+  // Handle active suggestions filter using stable signatures
+  const suggestions = (checkResult?.suggestions || []).filter(
+    (s) => !dismissedSignatures.has(s.signature || s.id)
+  );
   const filteredSuggestions = suggestions.filter(
     (s) => filterCategory === "all" || s.category === filterCategory
   );
 
   const activeSuggestion = filteredSuggestions[activeSuggestionIndex] || filteredSuggestions[0];
 
+  // Derive dynamic category counts directly from active suggestions (Bug 3, Bug 18)
+  const countsByCategory: Record<SuggestionCategory, number> = {
+    correctness: 0,
+    clarity: 0,
+    engagement: 0,
+    delivery: 0,
+  };
+  for (const s of suggestions) {
+    countsByCategory[s.category] = (countsByCategory[s.category] || 0) + 1;
+  }
+
+  // Derive dynamic score from active suggestions (Bug 3, Bug 18)
+  const words = (currentText.trim().match(/\b\w+\b/g) || []).length;
+  let dynamicScore = 100;
+  if (words > 0) {
+    const penaltyPerIssue = 4;
+    const totalPenalty = Math.min(60, suggestions.length * penaltyPerIssue);
+    dynamicScore = Math.max(40, 100 - totalPenalty);
+  }
+
   const handleAcceptSuggestion = (s: WritingSuggestion) => {
     onApplySuggestion(s);
-    setIgnoredIds((prev) => new Set([...prev, s.id]));
+    const next = new Set(dismissedSignatures);
+    next.add(s.signature || s.id);
+    persistDismissed(next);
   };
 
   const handleDismissSuggestion = (s: WritingSuggestion) => {
-    setIgnoredIds((prev) => new Set([...prev, s.id]));
+    const next = new Set(dismissedSignatures);
+    next.add(s.signature || s.id);
+    persistDismissed(next);
   };
 
   const handleAddToDictionary = (s: WritingSuggestion) => {
     PersonalDictionary.addWord(s.originalText);
-    handleDismissSuggestion(s);
+    const next = new Set(dismissedSignatures);
+    next.add(s.signature || s.id);
+    persistDismissed(next);
+
+    // Re-run immediately so that word is dismissed from suggestions across the whole document (Bug 8)
+    const dict = new Set(PersonalDictionary.getWords());
+    const layerA = runLocalDeterministicCheck(currentText, dict, goals);
+    const compiled = compileLayeredCheckResult(currentText, layerA);
+    setCheckResult(compiled);
   };
 
   const handleRunPlagiarismScan = async () => {
     setIsScanningPlagiarism(true);
     try {
+      const queries = extractDistinctiveQueries(currentText);
+      setDistinctiveQueries(queries);
+      // Realistic simulated analysis latency for local n-gram scan
+      await new Promise((resolve) => setTimeout(resolve, 650));
       const report = await checkPlagiarism({
         text: currentText,
       });
@@ -189,7 +257,7 @@ export function ReviewSidebar({
           <div className="px-3.5 py-2 border-b border-line bg-bg flex items-center justify-between text-xs">
             <div className="flex items-center gap-2.5">
               <div className="h-7 w-7 border border-line-strong flex items-center justify-center font-mono font-bold text-xs text-ink bg-bg-raised">
-                {checkResult?.overallScore || 100}
+                {dynamicScore}
               </div>
               <div className="font-mono text-[10px] uppercase tracking-wider text-muted">
                 <span>{"SCORE // "}</span>
@@ -235,7 +303,7 @@ export function ReviewSidebar({
                   : "bg-bg border-line text-muted hover:text-ink"
               )}
             >
-              <span>CORRECTNESS ({checkResult?.countsByCategory.correctness || 0})</span>
+              <span>CORRECTNESS ({countsByCategory.correctness})</span>
             </button>
 
             <button
@@ -250,7 +318,7 @@ export function ReviewSidebar({
                   : "bg-bg border-line text-muted hover:text-ink"
               )}
             >
-              <span>CLARITY ({checkResult?.countsByCategory.clarity || 0})</span>
+              <span>CLARITY ({countsByCategory.clarity})</span>
             </button>
 
             <button
@@ -265,7 +333,7 @@ export function ReviewSidebar({
                   : "bg-bg border-line text-muted hover:text-ink"
               )}
             >
-              <span>ENGAGE ({checkResult?.countsByCategory.engagement || 0})</span>
+              <span>ENGAGE ({countsByCategory.engagement})</span>
             </button>
 
             <button
@@ -280,7 +348,7 @@ export function ReviewSidebar({
                   : "bg-bg border-line text-muted hover:text-ink"
               )}
             >
-              <span>DELIVERY ({checkResult?.countsByCategory.delivery || 0})</span>
+              <span>DELIVERY ({countsByCategory.delivery})</span>
             </button>
           </div>
 
@@ -328,17 +396,26 @@ export function ReviewSidebar({
                   </p>
 
                   <div className="flex items-center justify-between pt-2 border-t border-line">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToDictionary(s);
-                      }}
-                      className="font-mono text-[10px] uppercase tracking-wider text-muted hover:text-ink flex items-center gap-1 transition"
-                    >
-                      <Plus className="h-3 w-3" />
-                      <span>DICT</span>
-                    </button>
+                    {s.category === "correctness" &&
+                    (s.ruleId === "spelling_typo" ||
+                      s.ruleId === "unrecognized_word" ||
+                      s.ruleId === "spelling_double_i" ||
+                      s.ruleId === "spelling_repeated_consonant") ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToDictionary(s);
+                        }}
+                        className="font-mono text-[10px] uppercase tracking-wider text-muted hover:text-ink flex items-center gap-1 transition"
+                        title="Add to personal dictionary"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>DICT</span>
+                      </button>
+                    ) : (
+                      <div />
+                    )}
 
                     <div className="flex items-center gap-1.5">
                       <button
@@ -448,7 +525,7 @@ export function ReviewSidebar({
                   </div>
 
                   <p className="font-sans text-[11px] text-muted">
-                    Scans distinctive text fragments against web index queries.
+                    {plagiarismReport?.summary || "Local n-gram & corpus heuristic scan. Evaluates distinctive phrases against internal references."}
                   </p>
 
                   <Button
@@ -459,9 +536,24 @@ export function ReviewSidebar({
                     className="w-full h-8"
                   >
                     <RefreshCw className="h-3 w-3 mr-1" />
-                    RUN CORPUS SCAN
+                    RUN LOCAL N-GRAM SCAN
                   </Button>
                 </div>
+
+                {distinctiveQueries.length > 0 && (
+                  <div className="p-2.5 border border-line bg-bg space-y-1.5 font-mono text-[10px]">
+                    <span className="text-muted uppercase tracking-wider block">
+                      EXTRACTED N-GRAM QUERY PHRASES ({distinctiveQueries.length})
+                    </span>
+                    <div className="space-y-1">
+                      {distinctiveQueries.map((q, idx) => (
+                        <div key={idx} className="text-ink truncate bg-bg-raised px-1.5 py-0.5 border border-line">
+                          {q}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {plagiarismReport?.matches && plagiarismReport.matches.length > 0 && (
                   <div className="space-y-2">
