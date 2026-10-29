@@ -475,30 +475,33 @@ export default function HomePage() {
                 {/* Suggestions List */}
                 <div className="space-y-1">
                   <span className="text-[10px] uppercase tracking-wider text-muted block mb-1">
-                    SUGGESTION QUEUE ({suggestions.length - appliedCount})
+                    SUGGESTION QUEUE ({suggestions.filter((s) => !s.applied).length})
                   </span>
-                  {suggestions.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setActiveSuggestionId(s.id)}
-                      className={cn(
-                        "w-full flex items-center justify-between p-2 border text-left text-xs transition rounded-none",
-                        activeSuggestionId === s.id
-                          ? "bg-bg border-line-strong text-ink font-semibold"
-                          : "bg-transparent border-line text-muted hover:text-ink",
-                        s.applied && "opacity-40"
-                      )}
-                    >
-                      <span className="truncate pr-2">
-                        {s.original} → {s.replacement}
-                      </span>
-                      {s.applied ? (
-                        <Check className="w-3 h-3 text-emerald-500 shrink-0" />
-                      ) : (
-                        <span className="text-accent text-[10px] uppercase shrink-0">VIEW</span>
-                      )}
-                    </button>
-                  ))}
+                  {suggestions.filter((s) => !s.applied).length === 0 ? (
+                    <div className="text-center text-[10px] font-mono text-muted py-3 border border-line bg-bg">
+                      ALL SUGGESTIONS APPLIED // 100/100
+                    </div>
+                  ) : (
+                    suggestions
+                      .filter((s) => !s.applied)
+                      .map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => setActiveSuggestionId(s.id)}
+                          className={cn(
+                            "w-full flex items-center justify-between p-2 border text-left text-xs transition rounded-none",
+                            activeSuggestionId === s.id
+                              ? "bg-bg border-line-strong text-ink font-semibold"
+                              : "bg-transparent border-line text-muted hover:text-ink"
+                          )}
+                        >
+                          <span className="truncate pr-2">
+                            {s.original} → {s.replacement}
+                          </span>
+                          <span className="text-accent text-[10px] uppercase shrink-0">VIEW</span>
+                        </button>
+                      ))
+                  )}
                 </div>
               </div>
             </div>

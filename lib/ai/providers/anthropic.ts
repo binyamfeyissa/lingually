@@ -21,6 +21,14 @@ export class AnthropicAdapter implements ProviderAdapter {
   }
 
   async testConnection(config: ProviderConfig): Promise<{ success: boolean; message: string; latencyMs?: number }> {
+    const validation = this.validateConfig(config);
+    if (!validation.isValid) {
+      return {
+        success: false,
+        message: validation.error || "Invalid Anthropic configuration.",
+      };
+    }
+
     const start = Date.now();
     try {
       const response = await fetch("https://api.anthropic.com/v1/models", {
@@ -28,6 +36,7 @@ export class AnthropicAdapter implements ProviderAdapter {
         headers: {
           "x-api-key": config.apiKey?.trim() || "",
           "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
         },
       });
 
@@ -62,6 +71,7 @@ export class AnthropicAdapter implements ProviderAdapter {
         headers: {
           "x-api-key": config.apiKey.trim(),
           "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
         },
       });
       if (!res.ok) return PROVIDER_CATALOG.anthropic.popularModels;
@@ -76,7 +86,12 @@ export class AnthropicAdapter implements ProviderAdapter {
   }
 
   normalizeError(error: unknown): string {
-    if (typeof error === "string") return error;
+    if (typeof error === "string") {
+      if (/failed to fetch/i.test(error)) {
+        return "Unable to reach Anthropic Claude API from browser. Please check network connection and credentials.";
+      }
+      return error;
+    }
     if (error && typeof error === "object") {
       const err = error as { message?: string; status?: number };
       if (err.status === 401) {
@@ -85,7 +100,12 @@ export class AnthropicAdapter implements ProviderAdapter {
       if (err.status === 429) {
         return "Anthropic rate limit reached. Please wait a moment before trying again.";
       }
-      if (err.message) return err.message;
+      if (err.message) {
+        if (/failed to fetch/i.test(err.message)) {
+          return "Unable to reach Anthropic Claude API from browser. Please check network connection and credentials.";
+        }
+        return err.message;
+      }
     }
     return "Failed to connect to Anthropic Claude. Check network and API credentials.";
   }

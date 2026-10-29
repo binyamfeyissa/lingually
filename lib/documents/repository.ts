@@ -186,24 +186,30 @@ export const DocumentRepository = {
   async createRevision(
     documentId: string,
     trigger: DocumentTrigger,
-    changeSummary?: string
+    changeSummary?: string,
+    snapshotData?: { title?: string; content?: string; plainText?: string }
   ): Promise<DocumentRevision> {
     const doc = await db.documents.get(documentId);
-    if (!doc) {
+    if (!doc && !snapshotData) {
       throw new Error(`Cannot snapshot: document "${documentId}" not found.`);
     }
+
+    const title = snapshotData?.title ?? doc?.title ?? "Untitled";
+    const content = snapshotData?.content ?? doc?.content ?? "";
+    const plainText = snapshotData?.plainText ?? doc?.plainText ?? "";
+    const wordCount = (plainText.match(/[\p{L}\p{N}'’]+/gu) || []).length;
 
     const revId = generateId();
     const revision: DocumentRevision = {
       id: revId,
       documentId,
-      title: doc.title,
-      content: doc.content,
-      plainText: doc.plainText,
+      title,
+      content,
+      plainText,
       createdAt: Date.now(),
       trigger,
       changeSummary,
-      wordCount: doc.wordCount,
+      wordCount,
     };
 
     await db.revisions.put(revision);
@@ -250,6 +256,8 @@ export const DocumentRepository = {
       title: rev.title,
       content: rev.content,
       plainText: rev.plainText,
+      wordCount: rev.wordCount,
+      updatedAt: Date.now(),
     });
   },
 

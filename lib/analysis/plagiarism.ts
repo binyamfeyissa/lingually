@@ -58,7 +58,7 @@ export interface PlagiarismCheckOptions {
 export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<PlagiarismReport> {
   const { text, searchApiKey, searchEndpoint, referenceCorpus = [] } = options;
   const trimmed = text.trim();
-  const words = trimmed.match(/\b\w+\b/g) || [];
+  const words = trimmed.match(/[\p{L}\p{N}'’]+/gu) || [];
   const totalWords = words.length;
 
   if (totalWords < 20) {
@@ -86,7 +86,7 @@ export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<
         const similarity = computeTextSimilarity(sentence, ref.content);
         if (similarity >= 0.7) {
           const offset = trimmed.indexOf(sentence);
-          const sentenceWords = (sentence.match(/\b\w+\b/g) || []).length;
+          const sentenceWords = (sentence.match(/[\p{L}\p{N}'’]+/gu) || []).length;
           matchedWordCount += sentenceWords;
 
           matches.push({

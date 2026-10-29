@@ -133,4 +133,18 @@ describe("Provider Adapters & Streaming Pipeline", () => {
     expect(alts[0].text).toBe("First rewrite option");
     expect(alts[1].label).toBe("Formal");
   });
+
+  it("handles Anthropic invalid key format cleanly with actionable error (Bug 32)", async () => {
+    const res = await providerRegistry.testConnection({
+      id: "anthropic",
+      name: "Anthropic Claude",
+      apiKey: "test-key",
+      defaultModel: "claude-3-5-sonnet-20241022",
+      enabled: true,
+    });
+
+    expect(res.success).toBe(false);
+    expect(res.message).toContain("sk-ant-");
+    expect(res.message).not.toContain("Failed to fetch");
+  });
 });

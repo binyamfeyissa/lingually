@@ -104,10 +104,17 @@ export function TiptapEditor({
       lastProcessedReplacementRef.current = replacementPayload.timestamp;
 
       // 1. Snapshot revision before applying AI rewrite
+      const preRewriteHtml = editor.getHTML();
+      const preRewritePlain = editor.getText();
       DocumentRepository.createRevision(
         document.id,
         "before-ai-apply",
-        `Before applying AI rewrite (${replacementPayload.selectionOnly ? "selection" : "document"})`
+        `Before applying AI rewrite (${replacementPayload.selectionOnly ? "selection" : "document"})`,
+        {
+          title: title.trim() || document.title,
+          content: preRewriteHtml,
+          plainText: preRewritePlain,
+        }
       ).catch(() => {});
 
       // 2. Apply replacement
@@ -130,11 +137,18 @@ export function TiptapEditor({
 
       const currentHtml = editor.getHTML();
       if (currentHtml.includes(suggestionPayload.originalText)) {
-        // Create revision snapshot
+        const preHtml = currentHtml;
+        const prePlain = editor.getText();
+        // Create revision snapshot with TRUE pre-replacement text
         DocumentRepository.createRevision(
           document.id,
           "before-ai-apply",
-          `Accepted suggestion for "${suggestionPayload.originalText}"`
+          `Accepted suggestion for "${suggestionPayload.originalText}"`,
+          {
+            title: title.trim() || document.title,
+            content: preHtml,
+            plainText: prePlain,
+          }
         ).catch(() => {});
 
         // Replace first occurrence in content
@@ -185,9 +199,9 @@ export function TiptapEditor({
   const titleRef = useRef(title);
   titleRef.current = title;
 
-  // Flush unsaved changes on beforeunload or unmount (Bug 24)
+  // Flush unsaved changes on beforeunload or warn on SPA navigation (Bug 24)
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (editorRef.current && saveStatusRef.current === "unsaved" && documentRef.current) {
         const snapshot = getEditorSnapshot(editorRef.current);
         DocumentRepository.updateDocument(documentRef.current.id, {
@@ -195,16 +209,36 @@ export function TiptapEditor({
           content: snapshot.html,
           plainText: snapshot.plainText,
         }).catch(() => {});
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes. Leave this page?";
+        return "You have unsaved changes. Leave this page?";
+      }
+    };
+
+    const handlePopState = () => {
+      if (saveStatusRef.current === "unsaved") {
+        const leave = window.confirm("You have unsaved changes. Leave this page?");
+        if (!leave) {
+          window.history.pushState(null, "", window.location.href);
+        } else if (editorRef.current && documentRef.current) {
+          const snapshot = getEditorSnapshot(editorRef.current);
+          DocumentRepository.updateDocument(documentRef.current.id, {
+            title: titleRef.current.trim() || "Untitled Document",
+            content: snapshot.html,
+            plainText: snapshot.plainText,
+          }).catch(() => {});
+        }
       }
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
       if (autosaveTimeoutRef.current) {
         clearTimeout(autosaveTimeoutRef.current);
       }
-      handleBeforeUnload();
     };
   }, []);
 

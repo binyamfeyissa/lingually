@@ -53,6 +53,40 @@ describe("DocumentRepository (Local-First IndexedDB)", () => {
     expect(restored.plainText).toBe("Original version");
   });
 
+  it("creates revision with explicit snapshotData and restores pre-replacement state (Bug 4)", async () => {
+    const doc = await DocumentRepository.createDocument({
+      title: "Doc with Typo",
+      content: "<p>We will definately win.</p>",
+      plainText: "We will definately win.",
+    });
+
+    // Synchronous snapshot passed before replacement
+    const rev = await DocumentRepository.createRevision(
+      doc.id,
+      "before-ai-apply",
+      "Accepted suggestion for definately",
+      {
+        title: "Doc with Typo",
+        content: "<p>We will definately win.</p>",
+        plainText: "We will definately win.",
+      }
+    );
+
+    // Document is updated with fix
+    await DocumentRepository.updateDocument(doc.id, {
+      content: "<p>We will definitely win.</p>",
+      plainText: "We will definitely win.",
+    });
+
+    const docAfterFix = await DocumentRepository.getDocument(doc.id);
+    expect(docAfterFix?.plainText).toBe("We will definitely win.");
+
+    // User restores revision
+    const restored = await DocumentRepository.restoreRevision(doc.id, rev.id);
+    expect(restored.plainText).toBe("We will definately win.");
+    expect(restored.updatedAt).toBeGreaterThan(0);
+  });
+
   it("duplicates documents accurately", async () => {
     const doc = await DocumentRepository.createDocument({
       title: "Original Work",

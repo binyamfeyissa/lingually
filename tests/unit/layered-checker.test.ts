@@ -36,12 +36,30 @@ describe("Layered Deterministic Checker & Security", () => {
     expect(repSugg?.replacementText.toLowerCase()).toBe("the");
   });
 
-  it("flags subject-verb agreement error 'The dogs runs' (Bug 25)", () => {
+  it("flags subject-verb agreement error 'The dogs runs' without literal regex placeholders (Bug 25, Bug 29)", () => {
     const text = "The dogs runs quickly.";
     const suggestions = runLocalDeterministicCheck(text);
     const agrSugg = suggestions.find((s) => s.ruleId === "grammar_confusion" && s.originalText.includes("runs"));
     expect(agrSugg).toBeDefined();
-    expect(agrSugg?.replacementText).toContain("run");
+    expect(agrSugg?.replacementText).toBe("The dogs run");
+    expect(agrSugg?.replacementText).not.toContain("$1");
+  });
+
+  it("flags capitalized misspellings like 'Definately' and preserves capitalization (Bug 30)", () => {
+    const text = "Definately we will succeed.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const typo = suggestions.find((s) => s.ruleId === "spelling_typo");
+    expect(typo).toBeDefined();
+    expect(typo?.originalText).toBe("Definately");
+    expect(typo?.replacementText).toBe("Definitely");
+  });
+
+  it("flags generic unrecognized words like 'blorp' (Bug 31)", () => {
+    const text = "The blorp is here. A blorp is there.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const unrecognized = suggestions.filter((s) => s.ruleId === "unrecognized_word");
+    expect(unrecognized.length).toBeGreaterThan(0);
+    expect(unrecognized.some((s) => s.originalText.toLowerCase() === "blorp")).toBe(true);
   });
 
   it("flags wordiness like 'in a timely manner' and 'very slow' (Bug 25)", () => {

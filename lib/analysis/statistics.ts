@@ -50,7 +50,18 @@ export function calculateTextStatistics(text: string): TextStatistics {
   // Handles common abbreviations heuristically while correctly counting segments
   // even if the subsequent word begins in lowercase (Bug 26).
   const normalized = trimmed.replace(/\b(mr|mrs|ms|dr|prof|sr|jr|vs|etc|e\.g|i\.e)\./gi, "$1_DOT_");
-  const rawSentences = normalized
+  // Expand missing spaces after period between words (e.g. "red.because"), excluding known web domains and file extensions (Bug 26)
+  const normalizedWithSpaces = normalized.replace(
+    /(?<=[a-zA-Z]{2,})\.(?=[a-zA-Z]{2,})/g,
+    (match, offset, str) => {
+      const rest = str.slice(offset + 1);
+      if (/^(com|org|net|edu|gov|io|ai|co|uk|app|dev|html|json|png|jpg|pdf)\b/i.test(rest)) {
+        return ".";
+      }
+      return ". ";
+    }
+  );
+  const rawSentences = normalizedWithSpaces
     .split(/(?<=[.?!])\s+/)
     .filter((s) => s.trim().length > 0);
   

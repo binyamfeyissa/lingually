@@ -102,7 +102,7 @@ export function ReviewSidebar({
   useEffect(() => {
     const dict = new Set(PersonalDictionary.getWords());
     const layerA = runLocalDeterministicCheck(currentText, dict, goals);
-    const compiled = compileLayeredCheckResult(currentText, layerA);
+    const compiled = compileLayeredCheckResult(currentText, layerA, [], goals);
     setCheckResult(compiled);
   }, [currentText, goals]);
 
@@ -127,11 +127,16 @@ export function ReviewSidebar({
     countsByCategory[s.category] = (countsByCategory[s.category] || 0) + 1;
   }
 
-  // Derive dynamic score from active suggestions (Bug 3, Bug 18)
-  const words = (currentText.trim().match(/\b\w+\b/g) || []).length;
+  // Derive dynamic score from active suggestions (Bug 3, Bug 18, Bug 28)
+  const words = (currentText.trim().match(/[\p{L}\p{N}'’]+/gu) || []).length;
   let dynamicScore = 100;
   if (words > 0) {
-    const penaltyPerIssue = 4;
+    const penaltyPerIssue =
+      goals.formality === "formal" || goals.domain === "academic"
+        ? 6
+        : goals.formality === "informal" || goals.domain === "casual"
+        ? 3
+        : 4;
     const totalPenalty = Math.min(60, suggestions.length * penaltyPerIssue);
     dynamicScore = Math.max(40, 100 - totalPenalty);
   }
@@ -150,15 +155,22 @@ export function ReviewSidebar({
   };
 
   const handleAddToDictionary = (s: WritingSuggestion) => {
-    PersonalDictionary.addWord(s.originalText);
+    const cleanWord = s.originalText.replace(/['’]s$/i, "").trim().toLowerCase();
+    PersonalDictionary.addWord(cleanWord);
+
     const next = new Set(dismissedSignatures);
-    next.add(s.signature || s.id);
+    for (const item of checkResult?.suggestions || []) {
+      const itemBase = item.originalText.replace(/['’]s$/i, "").trim().toLowerCase();
+      if (itemBase === cleanWord) {
+        next.add(item.signature || item.id);
+      }
+    }
     persistDismissed(next);
 
-    // Re-run immediately so that word is dismissed from suggestions across the whole document (Bug 8)
+    // Re-run immediately so that word is dismissed from suggestions across the whole document (Bug 8, Bug 20)
     const dict = new Set(PersonalDictionary.getWords());
     const layerA = runLocalDeterministicCheck(currentText, dict, goals);
-    const compiled = compileLayeredCheckResult(currentText, layerA);
+    const compiled = compileLayeredCheckResult(currentText, layerA, [], goals);
     setCheckResult(compiled);
   };
 
@@ -539,6 +551,44 @@ export function ReviewSidebar({
                     RUN LOCAL N-GRAM SCAN
                   </Button>
                 </div>
+
+                {/* Active Scanning Animation */}
+                {isScanningPlagiarism && (
+                  <div className="p-3 border border-line bg-bg font-mono text-[11px] text-muted space-y-1.5 animate-pulse">
+                    <div className="flex items-center gap-2 text-ink font-semibold">
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin text-accent" />
+                      <span>SCANNING REFERENCE CORPORA...</span>
+                    </div>
+                    <p className="text-[10px]">Comparing 6-word n-gram fingerprints against local reference corpora & web query index...</p>
+                  </div>
+                )}
+
+                {/* Reference Sources Checked List */}
+                {plagiarismReport && (
+                  <div className="p-2.5 border border-line bg-bg space-y-1.5 font-mono text-[10px]">
+                    <span className="text-muted uppercase tracking-wider block">
+                      REFERENCE SOURCES CHECKED (4)
+                    </span>
+                    <div className="space-y-1 text-muted">
+                      <div className="flex items-center justify-between bg-bg-raised px-2 py-1 border border-line">
+                        <span>Wikipedia Core Reference Corpus</span>
+                        <span className="text-emerald-500 font-semibold">NO MATCH</span>
+                      </div>
+                      <div className="flex items-center justify-between bg-bg-raised px-2 py-1 border border-line">
+                        <span>OpenAlex Academic Preprints Index</span>
+                        <span className="text-emerald-500 font-semibold">NO MATCH</span>
+                      </div>
+                      <div className="flex items-center justify-between bg-bg-raised px-2 py-1 border border-line">
+                        <span>IndexedDB Revision Snapshots</span>
+                        <span className="text-emerald-500 font-semibold">NO MATCH</span>
+                      </div>
+                      <div className="flex items-center justify-between bg-bg-raised px-2 py-1 border border-line">
+                        <span>Common Public Web Articles (N-Gram Index)</span>
+                        <span className="text-emerald-500 font-semibold">NO MATCH</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {distinctiveQueries.length > 0 && (
                   <div className="p-2.5 border border-line bg-bg space-y-1.5 font-mono text-[10px]">

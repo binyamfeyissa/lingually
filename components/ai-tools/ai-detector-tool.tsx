@@ -37,6 +37,10 @@ export function AIDetectorTool({ text, currentText }: AIDetectorToolProps) {
             style={{ width: `${analysis.overallIndicatorScore}%` }}
           />
         </div>
+
+        <div className="text-[10px] text-muted font-sans pt-1 border-t border-line/50">
+          Weighted index: 35% Uniformity + 35% Stock phrasing + 20% Transition openers + 10% Repetition structure.
+        </div>
       </div>
 
       {/* Heuristic Breakdown Grid */}

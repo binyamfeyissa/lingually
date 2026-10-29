@@ -178,11 +178,11 @@ export default function EditorPage() {
   const handleRestoreRevision = (restoredDoc?: DocumentRecord) => {
     if (restoredDoc) {
       setActiveDocument(restoredDoc);
+      setActiveDocumentId(restoredDoc.id);
       setDocuments((prev) =>
         prev.map((d) => (d.id === restoredDoc.id ? restoredDoc : d))
       );
     }
-    loadDocuments(activeDocument?.id);
   };
 
   if (isLoading) {

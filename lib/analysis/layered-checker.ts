@@ -278,17 +278,165 @@ const COMMON_NAMES = new Set([
   "london", "paris", "tokyo", "berlin", "york", "california", "america", "europe", "asia", "africa"
 ]);
 
+const VALID_SHORT_WORDS = new Set([
+  "a", "i", "am", "an", "as", "at", "be", "by", "do", "go", "he", "hi", "if", "in", "is", "it",
+  "me", "my", "no", "of", "ok", "on", "or", "so", "to", "up", "us", "we"
+]);
+
+const COMMON_VOCABULARY = new Set([
+  "the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", "on", "with",
+  "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her",
+  "she", "or", "an", "will", "my", "one", "all", "would", "there", "their", "what", "so", "up",
+  "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time",
+  "no", "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could",
+  "them", "see", "other", "than", "then", "now", "look", "only", "come", "its", "over", "think",
+  "also", "back", "after", "use", "two", "how", "our", "work", "first", "well", "way", "even",
+  "new", "want", "because", "any", "these", "give", "day", "most", "us", "is", "are", "was",
+  "were", "has", "had", "been", "am", "ready", "here", "help", "please", "write", "chat", "send",
+  "message", "text", "search", "press", "open", "close", "view", "edit", "save", "delete", "create",
+  "start", "stop", "check", "review", "find", "read", "run", "file", "page", "app", "web", "tool",
+  "user", "input", "mode", "screen", "code", "data", "test", "issue", "error", "word", "line",
+  "paragraph", "sentence", "grammar", "spell", "correct", "fix", "tone", "formal", "clear",
+  "fast", "free", "key", "setting", "privacy", "model", "ai", "assistant", "lingually", "chrome",
+  "system", "click", "select", "type", "today", "tomorrow", "yesterday", "always", "never",
+  "often", "sometimes", "very", "much", "many", "few", "little", "big", "small", "high", "low",
+  "long", "short", "right", "wrong", "true", "false", "yes", "sure", "fine", "great", "best",
+  "better", "worse", "worst", "more", "less", "least", "again", "already", "still", "yet",
+  "maybe", "perhaps", "actually", "really", "simply", "quite", "rather", "pretty", "almost",
+  "enough", "too", "both", "either", "neither", "each", "every", "own", "same", "such",
+  "why", "where", "how", "while", "since", "until", "before", "during", "through", "across",
+  "under", "above", "between", "among", "against", "without", "within", "around", "behind",
+  "beyond", "upon", "towards", "near", "off", "down", "left", "front", "side", "center",
+  "hello", "hi", "hey", "thanks", "thank", "welcome", "sorry", "excuse", "pardon", "bye",
+  "question", "answer", "reason", "problem", "solution", "result", "action", "change", "point",
+  "thing", "place", "part", "number", "group", "fact", "idea", "story", "life", "world",
+  "hand", "eye", "head", "face", "voice", "sound", "mind", "heart", "body", "name", "call",
+  "keep", "let", "begin", "seem", "help", "talk", "turn", "start", "show", "hear", "play",
+  "move", "live", "believe", "hold", "bring", "happen", "must", "write", "provide", "sit",
+  "stand", "lose", "pay", "meet", "include", "continue", "set", "learn", "lead", "understand",
+  "watch", "follow", "stop", "allow", "add", "spend", "grow", "open", "walk", "win", "offer",
+  "remember", "love", "consider", "appear", "buy", "wait", "serve", "die", "send", "expect",
+  "build", "stay", "fall", "cut", "reach", "kill", "remain", "suggest", "raise", "pass",
+  "sell", "require", "report", "decide", "pull", "thinking", "thought", "going", "night", "tonight",
+  "evening", "weekend", "outside", "dinner", "lunch", "breakfast", "food", "movie", "fun", "friend",
+  "friends", "family", "house", "home", "car", "drive", "sleep", "felt", "feel", "wants", "wanted",
+  "consequently", "essence", "agenda", "furthermore", "moreover", "therefore", "accordingly", "considering",
+  "heading", "venturing", "contemplating", "endeavoring", "assistance", "specifically", "regarding",
+  "deliberate", "perspective", "performance", "recommendation", "structure", "development", "workbench",
+  "interface", "platform", "extension", "application", "browser", "document", "paragraph", "sentence",
+  "selection", "dictionary", "paraphrase", "clarity", "engagement", "delivery", "correctness", "accuracy",
+  "context", "definition", "information", "experience", "opportunity", "knowledge", "strategy", "solution",
+  "possible", "important", "necessary", "problem", "difficult", "simple", "example", "already", "general",
+  "particular", "usually", "certain", "different", "similar", "available", "several", "together", "against",
+  "without", "within", "between", "toward", "course", "matter", "perhaps", "however", "although", "except",
+  "dog", "dogs", "cat", "cats", "bird", "birds", "toy", "toys", "cache", "slow", "sluggish", "fast", "rapid",
+  "swift", "promptly", "timely", "manner", "unable", "complete", "task", "red", "blue", "green", "yellow",
+  "black", "white", "orange", "purple", "brown", "gray", "grey", "dark", "light", "color", "colors",
+  "someone", "anyone", "everyone", "nobody", "cloud", "local", "indexeddb", "storage", "library", "studio",
+  "export", "import", "download", "backup", "version", "revision", "restore", "snapshot", "history", "score",
+  "metrics", "reading", "grade", "flesch", "kincaid", "fog", "gunning", "index", "count", "character", "characters",
+  "sentence", "sentences", "word", "words", "paragraph", "paragraphs", "plural", "singular", "verb", "subject",
+  "agreement", "phrase", "clause", "modifier", "adjective", "adverb", "pronoun", "noun", "preposition",
+  "conjunction", "interjection", "article", "punctuation", "capitalization", "period", "comma", "question",
+  "exclamation", "mark", "hyphen", "dash", "apostrophe", "quote", "parenthesis", "bracket", "space", "whitespace",
+  "format", "formatting", "bold", "italic", "underline", "strike", "undo", "redo", "paste", "copy", "cut",
+  "favorite", "duplicate", "delete", "clear", "cancel", "confirm", "theme", "sidebar", "navbar", "modal", "dialog",
+  "drawer", "card", "badge", "button", "input", "dropdown", "select", "toggle", "panel", "tab", "tabs",
+  "recent", "saved", "unsaved", "draft", "drafts", "title", "content", "body", "heading", "list", "bullet",
+  "ordered", "number", "quote", "codeblock", "link", "image", "table", "row", "col", "column", "cell",
+  "student", "students", "teacher", "teachers", "worker", "workers", "member", "members", "author", "authors",
+  "child", "children", "computer", "computers", "program", "programs", "animal", "animals", "car", "cars",
+  "system", "systems", "result", "results", "case", "cases", "state", "states", "order", "orders",
+  "level", "levels", "form", "forms", "water", "room", "area", "money", "story", "fact", "month", "side",
+  "book", "business", "power", "game", "line", "end", "member", "law", "city", "community", "name", "president",
+  "team", "minute", "idea", "kid", "body", "back", "parent", "face", "others", "office", "door", "health",
+  "person", "art", "war", "history", "party", "result", "change", "morning", "reason", "research", "girl",
+  "guy", "moment", "air", "teacher", "force", "education", "foot", "boy", "age", "policy", "music",
+  "market", "sense", "nation", "plan", "college", "interest", "death", "experience", "effect", "use", "class",
+  "control", "care", "field", "development", "role", "effort", "rate", "heart", "drug", "show", "leader",
+  "light", "voice", "wife", "police", "mind", "price", "report", "decision", "view", "relationship", "town",
+  "road", "arm", "difference", "value", "building", "action", "model", "season", "society", "tax", "director",
+  "position", "player", "agree", "range", "style", "court", "security", "paper", "space", "ground", "form",
+  "event", "official", "whose", "matter", "everyone", "center", "couple", "site", "project", "activity", "star",
+  "table", "need", "court", "american", "oil", "situation", "cost", "industry", "figure", "street", "image",
+  "phone", "data", "picture", "practice", "piece", "land", "recent", "product", "doctor", "wall", "patient",
+  "worker", "news", "test", "movie", "certain", "north", "love", "personal", "support", "technology", "step",
+  "baby", "computer", "type", "attention", "draw", "film", "republican", "tree", "source", "organization", "hair",
+  "look", "point", "century", "evidence", "window", "brother", "culture", "bill", "chance", "energy",
+  "period", "summer", "realize", "hundred", "available", "plant", "likely", "opportunity", "term", "short",
+  "letter", "condition", "choice", "place", "single", "rule", "daughter", "administration", "south", "husband",
+  "floor", "economy", "medical", "hospital", "church", "close", "thousand", "risk", "current", "fire",
+  "future", "wrong", "involve", "defense", "anyone", "hall", "bank", "myself", "west", "sport",
+  "board", "seek", "subject", "officer", "private", "rest", "behavior", "deal", "performance", "fight",
+  "throw", "top", "quickly", "past", "goal", "bed", "order", "fill", "represent", "drop", "plan", "push",
+  "blood", "nature", "color", "recently", "store", "reduce", "sound", "note", "fine", "near", "movement",
+  "page", "enter", "share", "common", "poor", "natural", "race", "concern", "series",
+  "significant", "similar", "hot", "language", "response", "dead", "rise", "factor",
+  "decade", "article", "shoot", "east", "save", "seven", "artist", "away", "scene", "stock", "career",
+  "despite", "central", "eight", "thus", "treatment", "happy", "protect", "approach",
+  "lie", "size", "fund", "serious", "occur", "media", "sign", "list", "individual",
+  "quality", "pressure", "accept", "hard", "resource", "identify", "meeting",
+  "determine", "prepare", "disease", "whatever", "success", "argue", "cup", "particularly", "amount", "ability",
+  "staff", "recognize", "indicate", "growth", "loss", "degree", "wonder", "attack", "herself",
+  "contain", "television", "hope", "camera", "weight", "treat", "trouble",
+  "develop", "manage", "popular", "maintain", "measure", "standard",
+  "discussion", "collection", "beautiful", "station", "surface",
+  "operation", "material", "statement",
+  "production", "generation", "population",
+  "commercial", "especially", "understand", "government",
+  "successful", "everything", "throughout", "difficulty", "management", "historical", "conference", "investment",
+  "immediately", "association", "institution", "responsibility", "professional", "international",
+  "environmental", "communication", "understandable", "representation", "characteristic", "transportation",
+  "congratulations", "nevertheless", "notwithstanding", "definitely", "separate", "receive",
+  "occurred", "truly", "weird", "achieve", "believe", "calendar", "accommodate",
+  "embarrass", "beginning", "misspell", "surprise",
+  "publicly", "noticeable", "guarantee", "foreign", "disappear", "definite", "colleague", "category",
+  "basically", "conscious", "dilemma", "existence", "fascinating", "grateful", "happened",
+  "harass", "humorous", "incidentally", "interrupt", "liaison", "millennium", "mischievous", "parallel",
+  "possession", "privilege", "pronunciation", "questionnaire", "recommend", "referred", "relevant", "rhythm",
+  "seize", "succeed", "tendency", "threshold", "unfortunately", "vacuum", "visible", "weirdly"
+]);
+
+const COMMON_CONTRACTIONS = new Set([
+  "don't", "doesn't", "didn't", "can't", "cannot", "won't", "wouldn't", "shouldn't", "couldn't",
+  "isn't", "aren't", "wasn't", "weren't", "haven't", "hasn't", "hadn't", "it's", "they're",
+  "we're", "you're", "i'm", "that's", "there's", "what's", "who's", "let's", "he's", "she's",
+  "where's", "how's", "here's", "mustn't", "ain't", "i've", "we've", "you've", "they've",
+  "i'd", "he'd", "she'd", "we'd", "they'd", "you'd", "i'll", "he'll", "she'll", "we'll", "they'll", "you'll"
+]);
+
+function isKnownWord(lower: string): boolean {
+  const normalized = lower.replace(/’/g, "'");
+  if (COMMON_CONTRACTIONS.has(normalized)) return true;
+  if (normalized.endsWith("'s")) {
+    const stem = normalized.slice(0, -2);
+    if (isKnownWord(stem)) return true;
+  }
+  if (VALID_SHORT_WORDS.has(normalized) || COMMON_VOCABULARY.has(normalized) || COMMON_NAMES.has(normalized) || DETERMINISTIC_TYPOS[normalized]) {
+    return true;
+  }
+  const suffixes = ["s", "es", "ed", "ing", "ly", "ment", "tion", "able", "ible", "ness", "ful", "less", "er", "est", "ive", "al"];
+  for (const suf of suffixes) {
+    if (normalized.endsWith(suf) && normalized.length > suf.length + 2) {
+      const stem = normalized.slice(0, -suf.length);
+      if (COMMON_VOCABULARY.has(stem) || COMMON_VOCABULARY.has(stem + "e")) return true;
+    }
+  }
+  return false;
+}
+
 function isLikelyGibberish(word: string, isProperNoun: boolean = false): boolean {
   const lower = word.toLowerCase();
-  if (isProperNoun || COMMON_NAMES.has(lower) || /[a-z][A-Z]/.test(word)) return false;
+  if (isKnownWord(lower) || isProperNoun || COMMON_NAMES.has(lower) || /[a-z][A-Z]/.test(word)) return false;
   if (lower.length <= 2) {
-    return !["a", "i", "am", "an", "as", "at", "be", "by", "do", "go", "he", "hi", "if", "in", "is", "it", "me", "my", "no", "of", "ok", "on", "or", "so", "to", "up", "us", "we"].includes(lower);
+    return !VALID_SHORT_WORDS.has(lower);
   }
   if (/([a-zA-Z])\1\1/.test(lower)) return true;
   if (/[b-df-hj-np-tv-z]{5,}/.test(lower)) return true;
   if (/(hgg|ggu|zzk|xkz|qq|q[^u]|ii|uu)/.test(lower)) return true;
   if (lower.length >= 4 && !/[aeiouy]/.test(lower)) return true;
-  return false;
+  // Generic unrecognized word (e.g. 'blorp')
+  return !isKnownWord(lower);
 }
 
 /**
@@ -468,6 +616,8 @@ export function runLocalDeterministicCheck(
         ? entry.replacement.charAt(0).toUpperCase() + entry.replacement.slice(1)
         : entry.replacement;
 
+      const contextSnippet = text.slice(Math.max(0, match.index - 12), Math.min(text.length, match.index + rawWord.length + 12)).replace(/\s+/g, " ").trim().toLowerCase();
+
       suggestions.push({
         id: `det_typo_${idCounter++}`,
         category: "correctness",
@@ -478,7 +628,7 @@ export function runLocalDeterministicCheck(
         length: rawWord.length,
         ruleId: "spelling_typo",
         severity: "error",
-        signature: `spelling_typo:${lower}`,
+        signature: `spelling_typo:${lower}:${contextSnippet}`,
       });
       continue;
     }
@@ -486,6 +636,7 @@ export function runLocalDeterministicCheck(
     // Trailing repeated consonants typo (e.g. 'testt' -> 'test' if not already handled)
     if (lower.endsWith("tt") && lower.length > 3 && !["scott", "matt", "watt", "butt", "pitt"].includes(lower)) {
       const singleT = rawWord.slice(0, -1);
+      const contextSnippet = text.slice(Math.max(0, match.index - 12), Math.min(text.length, match.index + rawWord.length + 12)).replace(/\s+/g, " ").trim().toLowerCase();
       suggestions.push({
         id: `det_typo_tt_${idCounter++}`,
         category: "correctness",
@@ -496,7 +647,7 @@ export function runLocalDeterministicCheck(
         length: rawWord.length,
         ruleId: "spelling_repeated_consonant",
         severity: "error",
-        signature: `spelling_repeated_consonant:${lower}`,
+        signature: `spelling_repeated_consonant:${lower}:${contextSnippet}`,
       });
       continue;
     }
@@ -512,6 +663,7 @@ export function runLocalDeterministicCheck(
       if (DETERMINISTIC_TYPOS[singleI] || ["this", "thinking", "is", "it", "fix", "will", "like", "drive", "since"].includes(singleI)) {
         const isCapitalized = isCap;
         const replacement = isCapitalized ? singleI.charAt(0).toUpperCase() + singleI.slice(1) : singleI;
+        const contextSnippet = text.slice(Math.max(0, match.index - 12), Math.min(text.length, match.index + rawWord.length + 12)).replace(/\s+/g, " ").trim().toLowerCase();
         suggestions.push({
           id: `det_double_i_${idCounter++}`,
           category: "correctness",
@@ -522,15 +674,15 @@ export function runLocalDeterministicCheck(
           length: rawWord.length,
           ruleId: "spelling_double_i",
           severity: "error",
-          signature: `spelling_double_i:${lower}`,
+          signature: `spelling_double_i:${lower}:${contextSnippet}`,
         });
         continue;
       }
     }
 
-    // Unrecognized word / Gibberish detection (e.g. 'ffgvffv' or stray isolated consonants)
-    // Check baseWord so possessives like "browser's" aren't flagged as gibberish
+    // Unrecognized word / Gibberish detection (e.g. 'ffgvffv', 'blorp')
     if (isLikelyGibberish(baseWord, isProperNoun)) {
+      const contextSnippet = text.slice(Math.max(0, match.index - 12), Math.min(text.length, match.index + rawWord.length + 12)).replace(/\s+/g, " ").trim().toLowerCase();
       suggestions.push({
         id: `det_gib_${idCounter++}`,
         category: "correctness",
@@ -541,7 +693,7 @@ export function runLocalDeterministicCheck(
         length: rawWord.length,
         ruleId: "unrecognized_word",
         severity: "error",
-        signature: `unrecognized_word:${lower}`,
+        signature: `unrecognized_word:${lower}:${contextSnippet}`,
       });
       continue;
     }
@@ -549,72 +701,84 @@ export function runLocalDeterministicCheck(
 
   // 8. Grammar Confusions & Subject-Verb Agreement
   for (const item of DETERMINISTIC_CONFUSIONS) {
+    item.pattern.lastIndex = 0;
     while ((match = item.pattern.exec(text)) !== null) {
+      const resolved = match[0].replace(new RegExp(item.pattern.source, item.pattern.flags), item.replacement);
+      const contextSnippet = text.slice(Math.max(0, match.index - 12), Math.min(text.length, match.index + match[0].length + 12)).replace(/\s+/g, " ").trim().toLowerCase();
       suggestions.push({
         id: `det_conf_${idCounter++}`,
         category: "correctness",
         originalText: match[0],
-        replacementText: item.replacement,
+        replacementText: resolved,
         explanation: item.explanation,
         offset: match.index,
         length: match[0].length,
         ruleId: "grammar_confusion",
         severity: "error",
-        signature: `grammar_confusion:${match[0].toLowerCase()}`,
+        signature: `grammar_confusion:${match[0].toLowerCase()}:${contextSnippet}`,
       });
     }
   }
 
   // 9. Clarity & Conciseness
   for (const item of DETERMINISTIC_CLARITY) {
+    item.pattern.lastIndex = 0;
     while ((match = item.pattern.exec(text)) !== null) {
+      const resolved = match[0].replace(new RegExp(item.pattern.source, item.pattern.flags), item.replacement);
+      const contextSnippet = text.slice(Math.max(0, match.index - 12), Math.min(text.length, match.index + match[0].length + 12)).replace(/\s+/g, " ").trim().toLowerCase();
       suggestions.push({
         id: `det_clarity_${idCounter++}`,
         category: "clarity",
         originalText: match[0],
-        replacementText: item.replacement,
+        replacementText: resolved,
         explanation: item.explanation,
         offset: match.index,
         length: match[0].length,
         ruleId: "clarity_conciseness",
         severity: "warning",
-        signature: `clarity_conciseness:${match[0].toLowerCase()}`,
+        signature: `clarity_conciseness:${match[0].toLowerCase()}:${contextSnippet}`,
       });
     }
   }
 
   // 10. Engagement
   for (const item of DETERMINISTIC_ENGAGEMENT) {
+    item.pattern.lastIndex = 0;
     while ((match = item.pattern.exec(text)) !== null) {
+      const resolved = match[0].replace(new RegExp(item.pattern.source, item.pattern.flags), item.replacement);
+      const contextSnippet = text.slice(Math.max(0, match.index - 12), Math.min(text.length, match.index + match[0].length + 12)).replace(/\s+/g, " ").trim().toLowerCase();
       suggestions.push({
         id: `det_eng_${idCounter++}`,
         category: "engagement",
         originalText: match[0],
-        replacementText: item.replacement,
+        replacementText: resolved,
         explanation: item.explanation,
         offset: match.index,
         length: match[0].length,
         ruleId: "engagement_variety",
         severity: "info",
-        signature: `engagement_variety:${match[0].toLowerCase()}`,
+        signature: `engagement_variety:${match[0].toLowerCase()}:${contextSnippet}`,
       });
     }
   }
 
   // 11. Delivery & Tone
   for (const item of DETERMINISTIC_DELIVERY) {
+    item.pattern.lastIndex = 0;
     while ((match = item.pattern.exec(text)) !== null) {
+      const resolved = match[0].replace(new RegExp(item.pattern.source, item.pattern.flags), item.replacement);
+      const contextSnippet = text.slice(Math.max(0, match.index - 12), Math.min(text.length, match.index + match[0].length + 12)).replace(/\s+/g, " ").trim().toLowerCase();
       suggestions.push({
         id: `det_del_${idCounter++}`,
         category: "delivery",
         originalText: match[0],
-        replacementText: item.replacement,
+        replacementText: resolved,
         explanation: item.explanation,
         offset: match.index,
         length: match[0].length,
         ruleId: "delivery_tone",
         severity: "info",
-        signature: `delivery_tone:${match[0].toLowerCase()}`,
+        signature: `delivery_tone:${match[0].toLowerCase()}:${contextSnippet}`,
       });
     }
   }
@@ -670,14 +834,41 @@ export function runLocalDeterministicCheck(
     }
   }
 
+  if (goals?.formality === "formal") {
+    const FORMAL_DELIVERY = [
+      { pattern: /\bwe were unable to\b/gi, replacement: "it was not possible to", explanation: "Adopt objective formal style rather than first-person 'we were unable to'." },
+      { pattern: /\bvery slow\b/gi, replacement: "sluggish", explanation: "Use precise formal vocabulary instead of 'very slow'." },
+      { pattern: /\ba lot of\b/gi, replacement: "numerous", explanation: "Use precise vocabulary in formal writing." },
+    ];
+    for (const item of FORMAL_DELIVERY) {
+      item.pattern.lastIndex = 0;
+      while ((match = item.pattern.exec(text)) !== null) {
+        suggestions.push({
+          id: `det_goal_formal_${idCounter++}`,
+          category: "delivery",
+          originalText: match[0],
+          replacementText: item.replacement,
+          explanation: item.explanation,
+          offset: match.index,
+          length: match[0].length,
+          ruleId: "formal_style",
+          severity: "info",
+          signature: `formal_style:${match[0].toLowerCase()}`,
+        });
+      }
+    }
+  }
+
   if (goals?.domain === "academic") {
     const ACADEMIC_HEDGES = [
+      { pattern: /\b(we were|we are|we have|we did)\b/gi, replacement: "the researchers", explanation: "Academic style favors objective phrasing over first-person pronouns." },
       { pattern: /\bin my opinion\b/gi, replacement: "the evidence indicates", explanation: "Use objective phrasing in academic writing." },
       { pattern: /\bI think that\b/gi, replacement: "the findings suggest", explanation: "Adopt formal, objective framing for academic tone." },
       { pattern: /\ba lot of\b/gi, replacement: "numerous", explanation: "Use precise academic phrasing rather than 'a lot of'." },
     ];
 
     for (const hedge of ACADEMIC_HEDGES) {
+      hedge.pattern.lastIndex = 0;
       while ((match = hedge.pattern.exec(text)) !== null) {
         suggestions.push({
           id: `det_goal_acad_${idCounter++}`,
@@ -791,7 +982,8 @@ export function runLocalDeterministicCheck(
 export function compileLayeredCheckResult(
   text: string,
   layerASuggestions: WritingSuggestion[],
-  layerBSuggestions: WritingSuggestion[] = []
+  layerBSuggestions: WritingSuggestion[] = [],
+  goals?: Partial<WritingGoals>
 ): LayeredCheckResult {
   const merged = [...layerASuggestions];
   const occupiedRanges: Array<{ start: number; end: number }> = layerASuggestions.map((s) => ({
@@ -834,10 +1026,10 @@ export function compileLayeredCheckResult(
     countsByCategory.delivery;
 
   // Calculate overall writing score based on issue density per 100 words
-  const words = (text.trim().match(/\b\w+\b/g) || []).length;
+  const words = (text.trim().match(/[\p{L}\p{N}'’]+/gu) || []).length;
   let overallScore = 100;
   if (words > 0) {
-    const penaltyPerIssue = 4;
+    const penaltyPerIssue = (goals?.formality === "formal" || goals?.domain === "academic") ? 6 : (goals?.formality === "informal" || goals?.domain === "casual") ? 3 : 4;
     const totalPenalty = Math.min(60, totalIssues * penaltyPerIssue);
     overallScore = Math.max(40, 100 - totalPenalty);
   }

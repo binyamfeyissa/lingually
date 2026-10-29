@@ -48,5 +48,10 @@ describe("calculateTextStatistics", () => {
     const qaParagraph = "This is a testt. of the the browser's cache. The dogs runs quickly. Due to the fact that the system is very slow, we were unable to complete the task in a timely manner. More words follow.";
     const res = calculateTextStatistics(qaParagraph);
     expect(res.sentenceCount).toBe(5);
+
+    const extendedQa = "This is a testt. of the the browser's cache. The dogs runs quickly. Due to the fact that the system is very slow, we were unable to complete the task in a timely manner. The cat's toy is red.because the system is slow.";
+    const extendedRes = calculateTextStatistics(extendedQa);
+    expect(extendedRes.wordCount).toBe(44);
+    expect(extendedRes.sentenceCount).toBe(6);
   });
 });
