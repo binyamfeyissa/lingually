@@ -12,12 +12,6 @@ export class GroqAdapter implements ProviderAdapter {
     if (!key) {
       return { isValid: false, error: "Groq API key is required." };
     }
-    if (!key.startsWith("gsk_")) {
-      return {
-        isValid: false,
-        error: "Groq API keys typically start with 'gsk_'. Please check your key from console.groq.com.",
-      };
-    }
     return { isValid: true };
   }
 

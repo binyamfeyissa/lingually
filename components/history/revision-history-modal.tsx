@@ -7,7 +7,7 @@ import { computeWordDiff } from "@/lib/utils/diff";
 import { Modal } from "../shared/modal";
 import { Button } from "../shared/button";
 import { Badge } from "../shared/badge";
-import { History, RotateCcw, Clock, ArrowRight } from "lucide-react";
+import { History, RotateCcw, Clock, ArrowRight, Plus, Eye, GitCompare } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 export interface RevisionHistoryModalProps {
@@ -29,6 +29,7 @@ export function RevisionHistoryModal({
   const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [viewMode, setViewMode] = useState<"snapshot" | "diff">("snapshot");
 
   useEffect(() => {
     if (isOpen && documentId) {
@@ -45,6 +46,32 @@ export function RevisionHistoryModal({
       if (list.length > 0 && !selectedRevisionId) {
         setSelectedRevisionId(list[0].id);
       }
+    } catch {
+      //
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateSnapshot = async () => {
+    setIsLoading(true);
+    try {
+      const doc = await DocumentRepository.getDocument(documentId);
+      const title = doc?.title || "Untitled Document";
+      const content = doc?.content || `<p>${currentText}</p>`;
+      const rev = await DocumentRepository.createRevision(
+        documentId,
+        "manual",
+        `Manual Snapshot (${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`,
+        {
+          title,
+          content,
+          plainText: currentText,
+        }
+      );
+      const list = await DocumentRepository.getRevisions(documentId);
+      setRevisions(list);
+      setSelectedRevisionId(rev.id);
     } catch {
       //
     } finally {
@@ -93,7 +120,18 @@ export function RevisionHistoryModal({
     >
       <div className="flex h-[480px] border border-line font-mono text-xs">
         {/* Left: Revisions List */}
-        <div className="w-72 border-r border-line overflow-y-auto bg-bg-raised p-3 space-y-1.5 shrink-0">
+        <div className="w-72 border-r border-line overflow-y-auto bg-bg-raised p-3 space-y-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCreateSnapshot}
+            isLoading={isLoading}
+            className="w-full h-7 text-[10px] justify-center"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            CREATE MANUAL SNAPSHOT
+          </Button>
+
           {isLoading && (
             <div className="p-4 text-center text-muted">LOADING REVISIONS...</div>
           )}
@@ -137,7 +175,7 @@ export function RevisionHistoryModal({
         <div className="flex-1 flex flex-col bg-bg overflow-hidden">
           {selectedRevision ? (
             <>
-              <div className="p-3 border-b border-line flex items-center justify-between bg-bg-raised">
+              <div className="p-3 border-b border-line flex items-center justify-between bg-bg-raised gap-2">
                 <div>
                   <div className="font-semibold text-ink uppercase tracking-wider text-[11px]">
                     SNAPSHOT FROM {new Date(selectedRevision.createdAt).toLocaleString()}
@@ -145,20 +183,47 @@ export function RevisionHistoryModal({
                   <p className="font-sans text-muted text-[11px]">{selectedRevision.changeSummary}</p>
                 </div>
 
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleRestore}
-                  isLoading={isRestoring}
-                  className="h-7 text-[10px]"
-                >
-                  <RotateCcw className="h-3 w-3 mr-1" />
-                  RESTORE THIS REVISION
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="flex border border-line bg-bg text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("snapshot")}
+                      className={cn(
+                        "px-2 py-1 flex items-center gap-1 transition",
+                        viewMode === "snapshot" ? "bg-invert-bg text-invert-fg font-semibold" : "text-muted hover:text-ink"
+                      )}
+                    >
+                      <Eye className="h-3 w-3" />
+                      SNAPSHOT
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("diff")}
+                      className={cn(
+                        "px-2 py-1 flex items-center gap-1 border-l border-line transition",
+                        viewMode === "diff" ? "bg-invert-bg text-invert-fg font-semibold" : "text-muted hover:text-ink"
+                      )}
+                    >
+                      <GitCompare className="h-3 w-3" />
+                      DIFF
+                    </button>
+                  </div>
+
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleRestore}
+                    isLoading={isRestoring}
+                    className="h-7 text-[10px]"
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    RESTORE THIS REVISION
+                  </Button>
+                </div>
               </div>
 
               <div className="flex-1 p-4 overflow-y-auto font-sans text-xs leading-relaxed">
-                {diff ? (
+                {viewMode === "diff" && diff ? (
                   <div className="whitespace-pre-wrap">
                     {diff.parts.map((part, index) => {
                       if (part.added) {
@@ -185,7 +250,11 @@ export function RevisionHistoryModal({
                     })}
                   </div>
                 ) : (
-                  <div className="whitespace-pre-wrap text-ink">{selectedRevision.plainText}</div>
+                  <div className="whitespace-pre-wrap text-ink">
+                    {selectedRevision.plainText || (
+                      <span className="text-muted italic">Empty snapshot (0 words)</span>
+                    )}
+                  </div>
                 )}
               </div>
             </>

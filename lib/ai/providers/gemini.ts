@@ -12,12 +12,6 @@ export class GeminiAdapter implements ProviderAdapter {
     if (!key) {
       return { isValid: false, error: "Google Gemini API key is required." };
     }
-    if (!key.startsWith("AIza")) {
-      return {
-        isValid: false,
-        error: "Google Gemini API keys typically start with 'AIza'. Please check your key from Google AI Studio.",
-      };
-    }
     return { isValid: true };
   }
 

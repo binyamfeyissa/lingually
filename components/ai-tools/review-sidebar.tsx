@@ -128,11 +128,48 @@ export function ReviewSidebar({
       onSuggestionsChange(suggestions);
     }
   }, [suggestionsSignature, suggestions, onSuggestionsChange]);
+
   const filteredSuggestions = suggestions.filter(
     (s) => filterCategory === "all" || s.category === filterCategory
   );
 
   const activeSuggestion = filteredSuggestions[activeSuggestionIndex] || filteredSuggestions[0];
+
+  // Click-to-locate: listen for clicks on underlined words in editor (Bug 37, 41)
+  useEffect(() => {
+    const handleSelectSuggestion = (e: Event) => {
+      const customEvent = e as CustomEvent<{ id: string }>;
+      const targetId = customEvent.detail?.id;
+      if (!targetId) return;
+
+      setActiveMainTab("review");
+
+      const inFilteredIdx = filteredSuggestions.findIndex((s) => s.id === targetId);
+      if (inFilteredIdx !== -1) {
+        setActiveSuggestionIndex(inFilteredIdx);
+        setTimeout(() => {
+          const el = document.getElementById(`suggestion-card-${targetId}`);
+          el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 50);
+      } else {
+        const inAll = suggestions.find((s) => s.id === targetId);
+        if (inAll) {
+          setFilterCategory("all");
+          const allIdx = suggestions.findIndex((s) => s.id === targetId);
+          setActiveSuggestionIndex(allIdx !== -1 ? allIdx : 0);
+          setTimeout(() => {
+            const el = document.getElementById(`suggestion-card-${targetId}`);
+            el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }, 50);
+        }
+      }
+    };
+
+    window.addEventListener("lingually_select_suggestion", handleSelectSuggestion);
+    return () => {
+      window.removeEventListener("lingually_select_suggestion", handleSelectSuggestion);
+    };
+  }, [filteredSuggestions, suggestions]);
 
   // Derive dynamic category counts directly from active suggestions (Bug 3, Bug 18)
   const countsByCategory: Record<SuggestionCategory, number> = {
@@ -161,9 +198,6 @@ export function ReviewSidebar({
 
   const handleAcceptSuggestion = (s: WritingSuggestion) => {
     onApplySuggestion(s);
-    const next = new Set(dismissedSignatures);
-    next.add(s.signature || s.id);
-    persistDismissed(next);
   };
 
   const handleDismissSuggestion = (s: WritingSuggestion) => {
@@ -388,6 +422,7 @@ export function ReviewSidebar({
               filteredSuggestions.map((s, idx) => (
                 <div
                   key={s.id}
+                  id={`suggestion-card-${s.id}`}
                   onClick={() => {
                     setActiveSuggestionIndex(idx);
                     if (onJumpToSuggestion) onJumpToSuggestion(s);
@@ -590,7 +625,11 @@ export function ReviewSidebar({
                     <div className="space-y-1 text-muted">
                       <div className="flex items-center justify-between bg-bg-raised px-2 py-1 border border-line">
                         <span>Wikipedia Core Reference Corpus</span>
-                        <span className="text-emerald-500 font-semibold">NO MATCH</span>
+                        {plagiarismReport.matches.some((m) => m.sourceTitle.toLowerCase().includes("wikipedia")) ? (
+                          <span className="text-danger font-semibold">MATCH FOUND</span>
+                        ) : (
+                          <span className="text-emerald-500 font-semibold">NO MATCH</span>
+                        )}
                       </div>
                       <div className="flex items-center justify-between bg-bg-raised px-2 py-1 border border-line">
                         <span>OpenAlex Academic Preprints Index</span>
@@ -598,7 +637,11 @@ export function ReviewSidebar({
                       </div>
                       <div className="flex items-center justify-between bg-bg-raised px-2 py-1 border border-line">
                         <span>IndexedDB Revision Snapshots</span>
-                        <span className="text-emerald-500 font-semibold">NO MATCH</span>
+                        {plagiarismReport.matches.some((m) => m.sourceTitle.toLowerCase().includes("internal")) ? (
+                          <span className="text-danger font-semibold">MATCH FOUND</span>
+                        ) : (
+                          <span className="text-emerald-500 font-semibold">NO MATCH</span>
+                        )}
                       </div>
                       <div className="flex items-center justify-between bg-bg-raised px-2 py-1 border border-line">
                         <span>Common Public Web Articles (N-Gram Index)</span>

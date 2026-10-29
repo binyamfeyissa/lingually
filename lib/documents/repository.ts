@@ -96,7 +96,11 @@ export const DocumentRepository = {
     await db.documents.put(doc);
 
     // Create initial revision
-    await this.createRevision(id, "manual", "Created document");
+    await this.createRevision(id, "manual", "Created document", {
+      title,
+      content,
+      plainText,
+    });
 
     return doc;
   },
@@ -252,9 +256,16 @@ export const DocumentRepository = {
     // Save a snapshot of the current state before restoring
     await this.createRevision(documentId, "restore", `Restored to revision from ${new Date(rev.createdAt).toLocaleTimeString()}`);
 
+    const restoredContent =
+      rev.content && rev.content !== "<p></p>"
+        ? rev.content
+        : rev.plainText
+        ? `<p>${rev.plainText.replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br/>")}</p>`
+        : "<p></p>";
+
     return this.updateDocument(documentId, {
       title: rev.title,
-      content: rev.content,
+      content: restoredContent,
       plainText: rev.plainText,
       wordCount: rev.wordCount,
       updatedAt: Date.now(),

@@ -86,7 +86,7 @@ export function Navbar({
               </span>
               <span
                 title={document?.title || "Untitled Document"}
-                className="font-mono text-xs text-ink truncate max-w-[180px] sm:max-w-[420px] cursor-default"
+                className="font-mono text-xs text-ink truncate max-w-[240px] sm:max-w-[500px] md:max-w-[700px] cursor-default"
               >
                 {document?.title || "Untitled Document"}
               </span>

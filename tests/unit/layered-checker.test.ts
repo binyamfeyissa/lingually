@@ -160,12 +160,45 @@ Try highlighting this sentence right now and clicking Improve Writing or Paraphr
     expect(sv?.replacementText).toBe("The dogs are");
   });
 
-  it("flags missing possessive apostrophe in 'dogs bone' (Bug 6)", () => {
+  it("flags missing possessive apostrophe in 'dogs bone' with clean explanation (Bug 6)", () => {
     const text = "The dogs bone is small.";
     const suggestions = runLocalDeterministicCheck(text);
     const poss = suggestions.find((s) => s.originalText.includes("dogs bone"));
     expect(poss).toBeDefined();
     expect(poss?.replacementText).toContain("dog's bone");
+    expect(poss?.explanation).not.toContain("$2");
+    expect(poss?.explanation).not.toContain("$1");
+  });
+
+  it("recognizes prefixed words like 'redeploy' without flagging them (Bug 33)", () => {
+    const text = "We should redeploy the application now.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const unknown = suggestions.find((s) => s.ruleId === "unrecognized_word" && s.originalText === "redeploy");
+    expect(unknown).toBeUndefined();
+  });
+
+  it("flags and corrects contractions without apostrophes like 'didnt' (Pass 5 grammar)", () => {
+    const text = "He didnt know about the update.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const contraction = suggestions.find((s) => s.originalText === "didnt");
+    expect(contraction).toBeDefined();
+    expect(contraction?.replacementText).toBe("didn't");
+  });
+
+  it("flags singular noun + 'are' agreement like 'my name are Binyam' (Pass 5 grammar)", () => {
+    const text = "my name are Binyam.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const agreement = suggestions.find((s) => s.originalText.includes("name are"));
+    expect(agreement).toBeDefined();
+    expect(agreement?.replacementText).toContain("name is");
+  });
+
+  it("flags split words like 'with out' (Pass 5 grammar)", () => {
+    const text = "We can proceed with out delay.";
+    const suggestions = runLocalDeterministicCheck(text);
+    const splitWord = suggestions.find((s) => s.originalText === "with out");
+    expect(splitWord).toBeDefined();
+    expect(splitWord?.replacementText).toBe("without");
   });
 
   it("visibly expands issue list when switching GOALS to formal/academic (Bug 28)", () => {

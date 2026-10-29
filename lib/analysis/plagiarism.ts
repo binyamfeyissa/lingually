@@ -104,6 +104,45 @@ export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<
     }
   }
 
+  // 2. Query Wikipedia Public Search Corpus (Open API)
+  try {
+    const wikiQueries = extractDistinctiveQueries(trimmed, 3);
+    for (const query of wikiQueries) {
+      const cleanQuery = query.replace(/["']/g, "").trim();
+      if (!cleanQuery) continue;
+      const res = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQuery)}&format=json&origin=*`,
+        { headers: { Accept: "application/json" } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const items = data.query?.search || [];
+        for (const item of items.slice(0, 2)) {
+          const rawSnippet = (item.snippet || "").replace(/<[^>]+>/g, " ");
+          const sim = computeTextSimilarity(cleanQuery, rawSnippet);
+          if (sim >= 0.25) {
+            const queryWords = cleanQuery.split(/\s+/).filter(Boolean).length;
+            const simPct = Math.min(100, Math.round(sim * 140));
+            matchedWordCount += Math.min(totalWords - matchedWordCount, Math.round(queryWords * (simPct / 100)));
+            matches.push({
+              id: `wiki_match_${matches.length + 1}`,
+              matchedText: cleanQuery,
+              similarityPercentage: simPct,
+              sourceTitle: `Wikipedia: ${item.title}`,
+              sourceUrl: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title)}`,
+              matchContext: rawSnippet,
+              offset: Math.max(0, trimmed.toLowerCase().indexOf(cleanQuery.toLowerCase())),
+              length: cleanQuery.length,
+            });
+            break;
+          }
+        }
+      }
+    }
+  } catch {
+    // Graceful offline fallback
+  }
+
   // 2. Check if a live search API is provided
   const isSearchApiConfigured = Boolean(searchApiKey);
   let sourceCoverageNotice = "";

@@ -12,12 +12,6 @@ export class OpenAIAdapter implements ProviderAdapter {
     if (!key) {
       return { isValid: false, error: "OpenAI API key is required." };
     }
-    if (!key.startsWith("sk-")) {
-      return {
-        isValid: false,
-        error: "OpenAI API keys typically start with 'sk-'. Please check your key.",
-      };
-    }
     return { isValid: true };
   }
 

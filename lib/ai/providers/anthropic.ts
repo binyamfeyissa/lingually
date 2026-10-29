@@ -12,12 +12,6 @@ export class AnthropicAdapter implements ProviderAdapter {
     if (!key) {
       return { isValid: false, error: "Anthropic API key is required." };
     }
-    if (!key.startsWith("sk-ant-")) {
-      return {
-        isValid: false,
-        error: "Anthropic API keys typically start with 'sk-ant-'. Please check your key from console.anthropic.com.",
-      };
-    }
     return { isValid: true };
   }
 

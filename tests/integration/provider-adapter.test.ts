@@ -144,7 +144,7 @@ describe("Provider Adapters & Streaming Pipeline", () => {
     });
 
     expect(res.success).toBe(false);
-    expect(res.message).toContain("sk-ant-");
+    expect(res.message).toMatch(/(invalid.*key|sk-ant-)/i);
     expect(res.message).not.toContain("Failed to fetch");
   });
 });

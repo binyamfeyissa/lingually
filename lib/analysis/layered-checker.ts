@@ -107,6 +107,21 @@ const DETERMINISTIC_TYPOS: Record<string, { replacement: string; explanation: st
   wud: { replacement: "would", explanation: "Spelled 'would'." },
   pls: { replacement: "please", explanation: "Spelled 'please'." },
   thx: { replacement: "thanks", explanation: "Spelled 'thanks'." },
+  didnt: { replacement: "didn't", explanation: "Missing apostrophe: use 'didn't'." },
+  doesnt: { replacement: "doesn't", explanation: "Missing apostrophe: use 'doesn't'." },
+  dont: { replacement: "don't", explanation: "Missing apostrophe: use 'don't'." },
+  cant: { replacement: "can't", explanation: "Missing apostrophe: use 'can't'." },
+  wont: { replacement: "won't", explanation: "Missing apostrophe: use 'won't'." },
+  isnt: { replacement: "isn't", explanation: "Missing apostrophe: use 'isn't'." },
+  arent: { replacement: "aren't", explanation: "Missing apostrophe: use 'aren't'." },
+  wasnt: { replacement: "wasn't", explanation: "Missing apostrophe: use 'wasn't'." },
+  werent: { replacement: "weren't", explanation: "Missing apostrophe: use 'weren't'." },
+  hasnt: { replacement: "hasn't", explanation: "Missing apostrophe: use 'hasn't'." },
+  havent: { replacement: "haven't", explanation: "Missing apostrophe: use 'haven't'." },
+  hadnt: { replacement: "hadn't", explanation: "Missing apostrophe: use 'hadn't'." },
+  wouldnt: { replacement: "wouldn't", explanation: "Missing apostrophe: use 'wouldn't'." },
+  shouldnt: { replacement: "shouldn't", explanation: "Missing apostrophe: use 'shouldn't'." },
+  couldnt: { replacement: "couldn't", explanation: "Missing apostrophe: use 'couldn't'." },
 };
 
 // Layer A: Common grammatical confusions & Subject-Verb Agreement
@@ -364,23 +379,39 @@ const DETERMINISTIC_CONFUSIONS: Array<{
   {
     pattern: /\b(the\s+)?dogs\s+(bone|toy|food|collar|leash|bowl|bed|house|coat|tail|paw|name)\b/gi,
     replacement: "$1dog's $2",
-    explanation: "Missing possessive apostrophe. Did you mean \"dog's $2\"?",
+    explanation: "Missing possessive apostrophe. Use an apostrophe to indicate possession.",
   },
   {
     pattern: /\b(the\s+)?cats\s+(toy|food|collar|bowl|bed|house|tail|paw|name)\b/gi,
     replacement: "$1cat's $2",
-    explanation: "Missing possessive apostrophe. Did you mean \"cat's $2\"?",
+    explanation: "Missing possessive apostrophe. Use an apostrophe to indicate possession.",
   },
   {
     pattern: /\b(the\s+)?birds\s+(nest|food|cage|wing|beak|feathers|song)\b/gi,
     replacement: "$1bird's $2",
-    explanation: "Missing possessive apostrophe. Did you mean \"bird's $2\"?",
+    explanation: "Missing possessive apostrophe. Use an apostrophe to indicate possession.",
   },
   {
     pattern: /\b(the\s+)?(students|teachers|authors|users|members|fathers|mothers|brothers|sisters)\s+(book|desk|room|car|laptop|computer|name|work)\b/gi,
     replacement: "$1$2's $3",
     explanation: "Missing possessive apostrophe. Use an apostrophe to indicate ownership.",
   },
+  // Deterministic sentence-grammar: Singular noun + plural auxiliary 'are' (e.g. 'my name are Binyam')
+  {
+    pattern: /\b(my\s+|the\s+|this\s+|that\s+|his\s+|her\s+|our\s+|its\s+)?(name|dog|cat|bird|student|user|system|member|author|child|computer|result|test|program|animal|worker|car|person|problem|solution|task|book|story)\s+are\b/gi,
+    replacement: "$1$2 is",
+    explanation: "Subject-verb agreement: singular subject requires 'is' (not 'are').",
+  },
+  // Deterministic sentence-grammar: Split-word merge list
+  { pattern: /\bwith\s+out\b/gi, replacement: "without", explanation: "Use 'without' as a single word." },
+  { pattern: /\ball\s+though\b/gi, replacement: "although", explanation: "Use 'although' as a single word." },
+  { pattern: /\bevery\s+thing\b/gi, replacement: "everything", explanation: "Use 'everything' as a single word." },
+  { pattern: /\bsome\s+thing\b/gi, replacement: "something", explanation: "Use 'something' as a single word." },
+  { pattern: /\bany\s+thing\b/gi, replacement: "anything", explanation: "Use 'anything' as a single word." },
+  { pattern: /\bno\s+body\b/gi, replacement: "nobody", explanation: "Use 'nobody' as a single word." },
+  { pattern: /\bsome\s+one\b/gi, replacement: "someone", explanation: "Use 'someone' as a single word." },
+  { pattern: /\bany\s+one\b/gi, replacement: "anyone", explanation: "Use 'anyone' as a single word." },
+  { pattern: /\bcan\s+not\b/gi, replacement: "cannot", explanation: "Use 'cannot' as a single word." },
   // Grammatical confusions
   { pattern: /\bcould of\b/gi, replacement: "could have", explanation: "Use 'could have' instead of 'could of'." },
   { pattern: /\bshould of\b/gi, replacement: "should have", explanation: "Use 'should have' instead of 'should of'." },
@@ -519,6 +550,7 @@ const COMMON_VOCABULARY = new Set([
   "black", "white", "orange", "purple", "brown", "gray", "grey", "dark", "light", "color", "colors",
   "someone", "anyone", "everyone", "nobody", "cloud", "local", "indexeddb", "storage", "library", "studio",
   "export", "import", "download", "backup", "version", "revision", "restore", "snapshot", "history", "score",
+  "deploy", "redeploy", "deploying", "redeploying", "deployed", "redeployed",
   "metrics", "reading", "grade", "flesch", "kincaid", "fog", "gunning", "index", "count", "character", "characters",
   "sentence", "sentences", "word", "words", "paragraph", "paragraphs", "plural", "singular", "verb", "subject",
   "agreement", "phrase", "clause", "modifier", "adjective", "adverb", "pronoun", "noun", "preposition",
@@ -624,6 +656,36 @@ function isKnownWord(lower: string, personalDictionary?: Set<string>): boolean {
         const singleConsonant = stem.slice(0, -1);
         if (ENGLISH_WORDLIST.has(singleConsonant) || COMMON_VOCABULARY.has(singleConsonant)) {
           return true;
+        }
+      }
+    }
+  }
+
+  // Morphology: common prefixes (re-, un-, dis-, pre-, post-, sub-, non-, etc.)
+  const prefixes = ["re", "un", "dis", "pre", "post", "sub", "non", "anti", "de", "auto", "multi", "super", "micro", "inter", "intra", "co", "semi", "over", "under", "out", "mis"];
+  for (const pref of prefixes) {
+    if (normalized.startsWith(pref) && normalized.length > pref.length + 2) {
+      const stem = normalized.slice(pref.length);
+      if (
+        ENGLISH_WORDLIST.has(stem) ||
+        COMMON_VOCABULARY.has(stem) ||
+        VALID_SHORT_WORDS.has(stem) ||
+        personalDictionary?.has(stem)
+      ) {
+        return true;
+      }
+      // Prefixed stem with suffixes (e.g. redeployed -> deploy)
+      for (const suf of suffixes) {
+        if (stem.endsWith(suf) && stem.length > suf.length + 2) {
+          const subStem = stem.slice(0, -suf.length);
+          if (
+            ENGLISH_WORDLIST.has(subStem) ||
+            ENGLISH_WORDLIST.has(subStem + "e") ||
+            COMMON_VOCABULARY.has(subStem) ||
+            COMMON_VOCABULARY.has(subStem + "e")
+          ) {
+            return true;
+          }
         }
       }
     }
@@ -910,13 +972,16 @@ export function runLocalDeterministicCheck(
     item.pattern.lastIndex = 0;
     while ((match = item.pattern.exec(text)) !== null) {
       const resolved = match[0].replace(new RegExp(item.pattern.source, item.pattern.flags), item.replacement);
+      const resolvedExplanation = item.explanation.includes("$")
+        ? match[0].replace(new RegExp(item.pattern.source, item.pattern.flags), item.explanation)
+        : item.explanation;
       const contextSnippet = text.slice(Math.max(0, match.index - 12), Math.min(text.length, match.index + match[0].length + 12)).replace(/\s+/g, " ").trim().toLowerCase();
       suggestions.push({
         id: `det_conf_${idCounter++}`,
         category: "correctness",
         originalText: match[0],
         replacementText: resolved,
-        explanation: item.explanation,
+        explanation: resolvedExplanation,
         offset: match.index,
         length: match[0].length,
         ruleId: "grammar_confusion",
@@ -1211,12 +1276,13 @@ export function runLocalDeterministicCheck(
     }
   }
 
-  // Deduplicate and sort by offset ascending
-  const seenOffsets = new Set<number>();
+  // Deduplicate by signature and sort by offset ascending
+  const seenSignatures = new Set<string>();
   return suggestions
     .filter((s) => {
-      if (seenOffsets.has(s.offset)) return false;
-      seenOffsets.add(s.offset);
+      const sig = s.signature || `${s.offset}:${s.length}:${s.originalText}`;
+      if (seenSignatures.has(sig)) return false;
+      seenSignatures.add(sig);
       return true;
     })
     .sort((a, b) => a.offset - b.offset);

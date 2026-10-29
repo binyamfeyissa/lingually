@@ -260,10 +260,10 @@ export function Sidebar({
                   : "bg-transparent hover:bg-bg-raised/60 text-muted hover:text-ink border-transparent"
               )}
             >
-              <div className="space-y-0.5 overflow-hidden pr-2">
-                <div className="font-sans text-xs font-semibold text-ink truncate flex items-center gap-1.5">
+              <div className="space-y-0.5 overflow-hidden pr-2 min-w-0 flex-1" title={doc.title || "Untitled Document"}>
+                <div className="font-sans text-xs font-semibold text-ink truncate flex items-center gap-1.5" title={doc.title || "Untitled Document"}>
                   <FileText className={cn("h-3 w-3 shrink-0", isActive ? "text-accent" : "text-muted")} />
-                  <span className="truncate">{doc.title || "Untitled Document"}</span>
+                  <span className="truncate" title={doc.title || "Untitled Document"}>{doc.title || "Untitled Document"}</span>
                 </div>
                 <div className="font-mono text-[10px] text-muted flex items-center gap-1.5">
                   <span>{doc.wordCount} words</span>

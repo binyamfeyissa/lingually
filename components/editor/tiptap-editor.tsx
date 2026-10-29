@@ -68,6 +68,19 @@ export function TiptapEditor({
       attributes: {
         class: "focus:outline-none min-h-[520px] px-8 sm:px-12 py-6 max-w-3xl mx-auto font-sans text-[16px] sm:text-[17px] leading-[1.85] text-ink whitespace-pre-wrap",
       },
+      handleClick: (view, pos, event) => {
+        const target = (event.target as HTMLElement)?.closest("[data-suggestion-id]");
+        const suggestionId = target?.getAttribute("data-suggestion-id");
+        if (suggestionId) {
+          window.dispatchEvent(
+            new CustomEvent("lingually_select_suggestion", {
+              detail: { id: suggestionId },
+            })
+          );
+          return false;
+        }
+        return false;
+      },
     },
     onUpdate: ({ editor: currentEditor }) => {
       setSaveStatus("unsaved");
@@ -297,6 +310,15 @@ export function TiptapEditor({
       window.removeEventListener("popstate", handlePopState);
       if (autosaveTimeoutRef.current) {
         clearTimeout(autosaveTimeoutRef.current);
+      }
+      // Immediately flush any pending debounced autosave on unmount so edits are NEVER lost (Bug 24)
+      if (editorRef.current && saveStatusRef.current === "unsaved" && documentRef.current) {
+        const snapshot = getEditorSnapshot(editorRef.current);
+        DocumentRepository.updateDocument(documentRef.current.id, {
+          title: titleRef.current.trim() || "Untitled Document",
+          content: snapshot.html,
+          plainText: snapshot.plainText,
+        }).catch(() => {});
       }
     };
   }, []);
