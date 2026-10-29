@@ -86,6 +86,14 @@ export function TiptapEditor({
     },
     onUpdate: ({ editor: currentEditor }) => {
       setSaveStatus("unsaved");
+      if (!hasHistoryTrapRef.current) {
+        try {
+          window.history.pushState({ isLinguallyUnsavedTrap: true }, "");
+          hasHistoryTrapRef.current = true;
+        } catch {
+          //
+        }
+      }
       triggerDebouncedAutosave();
       if (onLiveTextChange) {
         onLiveTextChange(currentEditor.getText(), currentEditor.getHTML());
@@ -115,6 +123,7 @@ export function TiptapEditor({
         titleRef.current = document.title;
         editor.commands.setContent(document.content || "<p></p>");
         setSaveStatus("saved");
+      hasHistoryTrapRef.current = false;
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,6 +140,7 @@ export function TiptapEditor({
       lastProcessedRestoreRef.current = restorePayload.timestamp;
       editor.commands.setContent(restorePayload.content || "<p></p>");
       setSaveStatus("saved");
+      hasHistoryTrapRef.current = false;
     }
   }, [restorePayload, editor]);
 
@@ -190,7 +200,15 @@ export function TiptapEditor({
 
       const currentHtml = editor.getHTML();
       const currentPlain = editor.getText();
-      if (currentHtml.includes(suggestionPayload.originalText) || currentPlain.includes(suggestionPayload.originalText)) {
+      const isWhitespace = /^\s+$/.test(suggestionPayload.originalText);
+      const normalizedOrig = suggestionPayload.originalText.replace(/\u00a0/g, " ");
+
+      const hasMatch =
+        currentHtml.includes(suggestionPayload.originalText) ||
+        currentPlain.includes(suggestionPayload.originalText) ||
+        (isWhitespace && (currentHtml.includes("&nbsp;") || currentPlain.replace(/\u00a0/g, " ").includes(normalizedOrig)));
+
+      if (hasMatch) {
         // Create revision snapshot with TRUE pre-replacement text
         DocumentRepository.createRevision(
           document.id,
@@ -219,7 +237,11 @@ export function TiptapEditor({
           if (mapped) {
             try {
               const docText = editor.state.doc.textBetween(mapped.from, mapped.to);
-              if (docText === suggestionPayload.originalText) {
+              const matchesText =
+                docText === suggestionPayload.originalText ||
+                (isWhitespace && docText.replace(/\u00a0/g, " ") === normalizedOrig);
+
+              if (matchesText) {
                 if (suggestionPayload.replacementText === "") {
                   editor.chain().focus().deleteRange({ from: mapped.from, to: mapped.to }).run();
                 } else {
@@ -243,7 +265,12 @@ export function TiptapEditor({
           editor.state.doc.descendants((node, pos) => {
             if (replacedWithRange) return false;
             if (node.isText && node.text) {
-              const idx = node.text.indexOf(suggestionPayload.originalText);
+              let idx = node.text.indexOf(suggestionPayload.originalText);
+              if (idx === -1 && isWhitespace) {
+                const normNodeText = node.text.replace(/\u00a0/g, " ");
+                idx = normNodeText.indexOf(normalizedOrig);
+              }
+
               if (idx !== -1) {
                 const from = pos + idx;
                 const to = from + suggestionPayload.originalText.length;
@@ -266,7 +293,10 @@ export function TiptapEditor({
 
         // 3. Fallback to HTML replace if cross-node
         if (!replacedWithRange) {
-          const updatedHtml = currentHtml.replace(suggestionPayload.originalText, suggestionPayload.replacementText);
+          let updatedHtml = currentHtml.replace(suggestionPayload.originalText, suggestionPayload.replacementText);
+          if (updatedHtml === currentHtml && isWhitespace) {
+            updatedHtml = currentHtml.replace(/ &nbsp;|&nbsp; |  /g, suggestionPayload.replacementText || " ");
+          }
           editor.commands.setContent(updatedHtml);
         }
         saveDocumentNow();
@@ -288,6 +318,7 @@ export function TiptapEditor({
       });
 
       setSaveStatus("saved");
+      hasHistoryTrapRef.current = false;
       if (onDocumentChange) {
         onDocumentChange(updated);
       }
@@ -313,17 +344,10 @@ export function TiptapEditor({
   documentRef.current = document;
   const titleRef = useRef(title);
   titleRef.current = title;
-  const isNavigatingAwayRef = useRef(false);
+  const hasHistoryTrapRef = useRef(false);
 
   // Flush unsaved changes on beforeunload or warn on SPA navigation (Bug 24)
   useEffect(() => {
-    isNavigatingAwayRef.current = false;
-    try {
-      window.history.pushState({ linguallyEditorTrap: true }, "", window.location.href);
-    } catch {
-      //
-    }
-
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (editorRef.current && saveStatusRef.current === "unsaved" && documentRef.current) {
         const snapshot = getEditorSnapshot(editorRef.current);
@@ -339,18 +363,19 @@ export function TiptapEditor({
     };
 
     const handlePopState = () => {
-      if (isNavigatingAwayRef.current) return;
-
-      if (saveStatusRef.current === "unsaved") {
+      if (hasHistoryTrapRef.current && saveStatusRef.current === "unsaved") {
         const leave = window.confirm("You have unsaved changes. Leave this page?");
         if (!leave) {
           // Re-arm history trap to stay on the page
           try {
-            window.history.pushState({ linguallyEditorTrap: true }, "", window.location.href);
+            window.history.pushState({ isLinguallyUnsavedTrap: true }, "");
+            hasHistoryTrapRef.current = true;
           } catch {
             //
           }
+          return;
         } else {
+          hasHistoryTrapRef.current = false;
           if (editorRef.current && documentRef.current) {
             const snapshot = getEditorSnapshot(editorRef.current);
             DocumentRepository.updateDocument(documentRef.current.id, {
@@ -359,19 +384,18 @@ export function TiptapEditor({
               plainText: snapshot.plainText,
             }).catch(() => {});
           }
-          isNavigatingAwayRef.current = true;
           window.history.back();
+          return;
         }
-      } else {
-        isNavigatingAwayRef.current = true;
-        window.history.back();
       }
+
+      hasHistoryTrapRef.current = false;
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("popstate", handlePopState);
     return () => {
-      isNavigatingAwayRef.current = true;
+      hasHistoryTrapRef.current = false;
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("popstate", handlePopState);
       if (autosaveTimeoutRef.current) {
@@ -394,6 +418,14 @@ export function TiptapEditor({
     titleRef.current = val;
     setTitle(val);
     setSaveStatus("unsaved");
+    if (!hasHistoryTrapRef.current) {
+      try {
+        window.history.pushState({ isLinguallyUnsavedTrap: true }, "");
+        hasHistoryTrapRef.current = true;
+      } catch {
+        //
+      }
+    }
     triggerDebouncedAutosave();
   };
 

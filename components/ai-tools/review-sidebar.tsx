@@ -82,6 +82,25 @@ export function ReviewSidebar({
   const [isScanningPlagiarism, setIsScanningPlagiarism] = useState(false);
   const [distinctiveQueries, setDistinctiveQueries] = useState<string[]>([]);
   const [plagiarismSubTab, setPlagiarismSubTab] = useState<"plagiarism" | "ai-text">("plagiarism");
+  const plagiarismCacheRef = useRef<Map<string, { report: PlagiarismReport; queries: string[] }>>(new Map());
+
+  // Reset or load document-specific plagiarism report on document switch (Bug 47)
+  useEffect(() => {
+    if (!documentId) {
+      setPlagiarismReport(null);
+      setDistinctiveQueries([]);
+      return;
+    }
+
+    const cached = plagiarismCacheRef.current.get(documentId);
+    if (cached) {
+      setPlagiarismReport(cached.report);
+      setDistinctiveQueries(cached.queries);
+    } else {
+      setPlagiarismReport(null);
+      setDistinctiveQueries([]);
+    }
+  }, [documentId]);
 
   // Goals modal
   const [isGoalsOpen, setIsGoalsOpen] = useState(false);
@@ -260,6 +279,9 @@ export function ReviewSidebar({
         searchApiKey: activeKey,
       });
       setPlagiarismReport(report);
+      if (documentId) {
+        plagiarismCacheRef.current.set(documentId, { report, queries });
+      }
     } catch {
       //
     } finally {
@@ -640,7 +662,7 @@ export function ReviewSidebar({
                   </div>
 
                   <p className="font-sans text-[11px] text-muted">
-                    {plagiarismReport?.summary || "Local n-gram & corpus heuristic scan. Evaluates distinctive phrases against internal references."}
+                    {plagiarismReport?.summary || "Document unscanned. Evaluates distinctive phrases against Wikipedia and reference sources."}
                   </p>
 
                   <Button

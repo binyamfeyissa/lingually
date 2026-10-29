@@ -4,6 +4,7 @@ import {
   computeTextSimilarity,
   checkPlagiarism,
 } from "@/lib/analysis/plagiarism";
+import { runLocalDeterministicCheck } from "@/lib/analysis/layered-checker";
 
 describe("Plagiarism Engine & N-Gram Analyzer", () => {
   it("extracts distinctive queries from sentences with sufficient words", () => {
@@ -84,5 +85,14 @@ describe("Plagiarism Engine & N-Gram Analyzer", () => {
     } finally {
       global.fetch = originalFetch;
     }
+  });
+
+  it("recognizes writing and workbench terminology without flagging as unknown words (Bug 33)", () => {
+    const sample = "The plagiarism detector has a fallback shingle algorithm.";
+    const result = runLocalDeterministicCheck(sample);
+    const unknownIssues = result.filter((r: any) =>
+      r.message.includes("Unrecognized word")
+    );
+    expect(unknownIssues.length).toBe(0);
   });
 });

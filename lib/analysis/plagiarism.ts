@@ -7,7 +7,7 @@ export function extractDistinctiveQueries(text: string, maxQueries = 5): string[
   const sentences = text
     .split(/(?<=[.?!])\s+/)
     .map((s) => s.trim())
-    .filter((s) => s.length > 25);
+    .filter((s) => s.length > 20);
 
   const queries: string[] = [];
   for (const sentence of sentences) {
@@ -17,6 +17,18 @@ export function extractDistinctiveQueries(text: string, maxQueries = 5): string[
       const phrase = words.slice(0, 6).join(" ").replace(/["'’]/g, "");
       queries.push(`"${phrase}"`);
       if (queries.length >= maxQueries) break;
+    }
+  }
+
+  // If text has few long sentences, extract from word chunks
+  if (queries.length < maxQueries) {
+    const allWords = text.split(/\s+/).filter((w) => w.length > 2);
+    for (let i = 0; i < allWords.length - 6 && queries.length < maxQueries; i += 12) {
+      const chunk = allWords.slice(i, i + 6).join(" ").replace(/["'’]/g, "");
+      const formatted = `"${chunk}"`;
+      if (!queries.includes(formatted)) {
+        queries.push(formatted);
+      }
     }
   }
 
@@ -55,7 +67,7 @@ export interface PlagiarismCheckOptions {
 /**
  * Analyzes text for potential similarity matches against public web searches or local reference corpus.
  */
-export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<PlagiarismReport> {
+export async function checkPlagiarismCore(options: PlagiarismCheckOptions): Promise<PlagiarismReport> {
   const { text, searchApiKey, searchEndpoint, referenceCorpus = [] } = options;
   const trimmed = text.trim();
   const words = trimmed.match(/[\p{L}\p{N}'’]+/gu) || [];
@@ -286,4 +298,31 @@ export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<
     sourceCoverageNotice,
     summary,
   };
+}
+
+/**
+ * Public entrypoint for plagiarism checking.
+ * When running in a browser, dispatches to the server endpoint `/api/plagiarism`
+ * to bypass browser ad-blockers and CORS restrictions, falling back gracefully to client execution.
+ */
+export async function checkPlagiarism(options: PlagiarismCheckOptions): Promise<PlagiarismReport> {
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/plagiarism", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: options.text,
+          searchApiKey: options.searchApiKey,
+        }),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // Fallback to local client-side evaluation
+    }
+  }
+
+  return checkPlagiarismCore(options);
 }

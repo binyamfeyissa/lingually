@@ -29,7 +29,7 @@ export function DiffViewer({
   title = "SUGGESTED REWRITE",
   selectionOnly = false,
 }: DiffViewerProps) {
-  const [viewMode, setViewMode] = useState<"inline" | "side-by-side">("inline");
+  const [viewMode, setViewMode] = useState<"inline" | "clean" | "side-by-side">("inline");
   const [copied, setCopied] = useState(false);
 
   const orig = originalText ?? original ?? "";
@@ -42,6 +42,75 @@ export function DiffViewer({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     if (onCopy) onCopy();
+  };
+
+  const renderFormattedInlineText = (text: string) => {
+    if (!text) return null;
+    if (!text.includes("**") && !text.includes("*") && !text.includes("`")) {
+      return text;
+    }
+    const parts = [];
+    const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+      const token = match[0];
+      if (token.startsWith("**") && token.endsWith("**")) {
+        parts.push(
+          <strong key={match.index} className="font-semibold text-ink">
+            {token.slice(2, -2)}
+          </strong>
+        );
+      } else if (token.startsWith("*") && token.endsWith("*")) {
+        parts.push(
+          <em key={match.index} className="italic text-ink">
+            {token.slice(1, -1)}
+          </em>
+        );
+      } else if (token.startsWith("`") && token.endsWith("`")) {
+        parts.push(
+          <code key={match.index} className="font-mono text-[10px] bg-bg px-0.5 border border-line">
+            {token.slice(1, -1)}
+          </code>
+        );
+      }
+      lastIndex = regex.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+    return <React.Fragment>{parts}</React.Fragment>;
+  };
+
+  const renderCleanFormattedText = (text: string) => {
+    const lines = text.split("\n");
+    return lines.map((line, idx) => {
+      const isBullet = /^\s*[-*•]\s+(.*)$/.exec(line);
+      const content = isBullet ? isBullet[1] : line;
+
+      if (isBullet) {
+        return (
+          <div key={idx} className="flex items-start gap-2 my-0.5 ml-2 text-ink">
+            <span className="text-accent font-bold">•</span>
+            <div>{renderFormattedInlineText(content)}</div>
+          </div>
+        );
+      }
+
+      if (line.trim() === "") {
+        return <div key={idx} className="h-2" />;
+      }
+
+      return (
+        <div key={idx} className="text-ink my-0.5">
+          {renderFormattedInlineText(content)}
+        </div>
+      );
+    });
   };
 
   return (
@@ -60,14 +129,46 @@ export function DiffViewer({
           </span>
         </div>
 
-        <div className="flex items-center gap-1">
+        {/* View mode toggle: DIFF vs CLEAN TEXT vs SIDE-BY-SIDE (Bug 46) */}
+        <div className="flex items-center gap-1 font-mono text-[9px]">
           <button
             type="button"
-            onClick={() => setViewMode(viewMode === "inline" ? "side-by-side" : "inline")}
-            className="p-1 text-muted hover:text-ink transition-colors"
-            title={viewMode === "inline" ? "Switch to Side-by-Side view" : "Switch to Inline Diff view"}
+            onClick={() => setViewMode("inline")}
+            className={cn(
+              "px-1.5 py-0.5 border transition-colors",
+              viewMode === "inline"
+                ? "bg-invert-bg text-invert-fg border-invert-bg font-semibold"
+                : "bg-bg text-muted border-line hover:text-ink"
+            )}
+            title="Inline diff showing word changes"
           >
-            {viewMode === "inline" ? <Columns className="h-3 w-3" /> : <Rows className="h-3 w-3" />}
+            DIFF
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("clean")}
+            className={cn(
+              "px-1.5 py-0.5 border transition-colors",
+              viewMode === "clean"
+                ? "bg-invert-bg text-invert-fg border-invert-bg font-semibold"
+                : "bg-bg text-muted border-line hover:text-ink"
+            )}
+            title="Clean text formatted without deletions"
+          >
+            CLEAN TEXT
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("side-by-side")}
+            className={cn(
+              "p-1 border transition-colors",
+              viewMode === "side-by-side"
+                ? "bg-invert-bg text-invert-fg border-invert-bg"
+                : "bg-bg text-muted border-line hover:text-ink"
+            )}
+            title="Side-by-side original and modified comparison"
+          >
+            <Columns className="h-2.5 w-2.5" />
           </button>
         </div>
       </div>
@@ -83,7 +184,7 @@ export function DiffViewer({
                     key={index}
                     className="bg-accent/15 text-accent font-semibold px-0.5 rounded-none"
                   >
-                    {part.value}
+                    {renderFormattedInlineText(part.value)}
                   </span>
                 );
               }
@@ -93,12 +194,16 @@ export function DiffViewer({
                     key={index}
                     className="bg-danger/15 text-danger line-through opacity-80 px-0.5 rounded-none"
                   >
-                    {part.value}
+                    {renderFormattedInlineText(part.value)}
                   </span>
                 );
               }
-              return <span key={index}>{part.value}</span>;
+              return <span key={index}>{renderFormattedInlineText(part.value)}</span>;
             })}
+          </div>
+        ) : viewMode === "clean" ? (
+          <div className="select-text space-y-1">
+            {renderCleanFormattedText(sug)}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2">
@@ -113,7 +218,9 @@ export function DiffViewer({
               <div className="font-mono text-[9px] uppercase tracking-wider text-accent mb-1">
                 MODIFIED
               </div>
-              <div className="text-[11px] text-ink font-medium whitespace-pre-wrap">{sug}</div>
+              <div className="text-[11px] text-ink font-medium select-text">
+                {renderCleanFormattedText(sug)}
+              </div>
             </div>
           </div>
         )}
