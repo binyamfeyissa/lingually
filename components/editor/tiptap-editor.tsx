@@ -32,6 +32,10 @@ export interface TiptapEditorProps {
     replacementText: string;
     timestamp: number;
   } | null;
+  restorePayload?: {
+    content: string;
+    timestamp: number;
+  } | null;
 }
 
 export function TiptapEditor({
@@ -45,6 +49,7 @@ export function TiptapEditor({
   onOpenHistory,
   replacementPayload,
   suggestionPayload,
+  restorePayload,
 }: TiptapEditorProps) {
   const [title, setTitle] = useState(document.title);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
@@ -86,30 +91,43 @@ export function TiptapEditor({
     },
   });
 
-  // Keep editor content in sync when switching documents or restoring snapshots (Bug 3, Bug 4)
+  // Keep editor content in sync when switching documents (Bug 3)
   useEffect(() => {
     if (editor && document) {
       setTitle(document.title);
-      const isDocSwitch = lastDocIdRef.current !== document.id;
-      lastDocIdRef.current = document.id;
-
-      const currentText = editor.getText();
-      const incomingText = document.plainText || "";
-
-      // Only setContent when switching documents, or when external content changed (e.g. revision restore)
-      if (isDocSwitch || (currentText !== incomingText && incomingText.length > 0)) {
+      if (lastDocIdRef.current !== document.id) {
+        lastDocIdRef.current = document.id;
         editor.commands.setContent(document.content || "<p></p>");
+        setSaveStatus("saved");
       }
-      setSaveStatus("saved");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [document?.id, document?.plainText, document?.content, editor]);
+  }, [document?.id, document?.title, editor]);
+
+  // Handle explicit snapshot restorations from History (Bug 4)
+  const lastProcessedRestoreRef = useRef<number>(0);
+  useEffect(() => {
+    if (
+      editor &&
+      restorePayload &&
+      restorePayload.timestamp !== lastProcessedRestoreRef.current
+    ) {
+      lastProcessedRestoreRef.current = restorePayload.timestamp;
+      editor.commands.setContent(restorePayload.content || "<p></p>");
+      setSaveStatus("saved");
+    }
+  }, [restorePayload, editor]);
 
   // Keep issue decorations updated when suggestions change (Bug 37)
+  const lastDecoratedSigRef = useRef<string>("");
   useEffect(() => {
     if (editor && !editor.isDestroyed) {
-      const tr = editor.state.tr.setMeta(issueDecorationsKey, { suggestions });
-      editor.view.dispatch(tr);
+      const sig = (suggestions || []).map((s) => s.signature || s.id).join("|");
+      if (sig !== lastDecoratedSigRef.current) {
+        lastDecoratedSigRef.current = sig;
+        const tr = editor.state.tr.setMeta(issueDecorationsKey, { suggestions: suggestions || [] });
+        editor.view.dispatch(tr);
+      }
     }
   }, [editor, suggestions]);
 

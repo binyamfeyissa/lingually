@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   SuggestionCategory,
   WritingSuggestion,
@@ -109,16 +109,25 @@ export function ReviewSidebar({
   }, [currentText, goals]);
 
   // Handle active suggestions filter using stable signatures
-  const suggestions = (checkResult?.suggestions || []).filter(
-    (s) => !dismissedSignatures.has(s.signature || s.id)
-  );
+  const suggestions = useMemo(() => {
+    return (checkResult?.suggestions || []).filter(
+      (s) => !dismissedSignatures.has(s.signature || s.id)
+    );
+  }, [checkResult?.suggestions, dismissedSignatures]);
+
+  const suggestionsSignature = useMemo(() => {
+    return suggestions.map((s) => s.signature || s.id).join("|");
+  }, [suggestions]);
+
+  const lastEmittedSigRef = useRef<string>("");
 
   // Notify parent of active visible suggestions for inline editor underlines (Bug 37)
   useEffect(() => {
-    if (onSuggestionsChange) {
+    if (onSuggestionsChange && suggestionsSignature !== lastEmittedSigRef.current) {
+      lastEmittedSigRef.current = suggestionsSignature;
       onSuggestionsChange(suggestions);
     }
-  }, [suggestions, onSuggestionsChange]);
+  }, [suggestionsSignature, suggestions, onSuggestionsChange]);
   const filteredSuggestions = suggestions.filter(
     (s) => filterCategory === "all" || s.category === filterCategory
   );

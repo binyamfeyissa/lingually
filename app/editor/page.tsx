@@ -53,8 +53,26 @@ export default function EditorPage() {
     timestamp: number;
   } | null>(null);
 
+  // Revision restoration payload from History modal (Bug 4)
+  const [restorePayload, setRestorePayload] = useState<{
+    content: string;
+    timestamp: number;
+  } | null>(null);
+
   // Active suggestions for inline editor underlines (Bug 37)
   const [editorSuggestions, setEditorSuggestions] = useState<WritingSuggestion[]>([]);
+
+  const activeDocumentIdRef = React.useRef(activeDocumentId);
+  activeDocumentIdRef.current = activeDocumentId;
+
+  const handleSuggestionsChange = useCallback((newSuggestions: WritingSuggestion[]) => {
+    setEditorSuggestions((prev) => {
+      const prevSig = prev.map((s) => s.signature || s.id).join("|");
+      const nextSig = newSuggestions.map((s) => s.signature || s.id).join("|");
+      if (prevSig === nextSig) return prev;
+      return newSuggestions;
+    });
+  }, []);
 
   const loadDocuments = useCallback(async (selectDocId?: string) => {
     try {
@@ -64,62 +82,71 @@ export default function EditorPage() {
       setDocuments(allDocs);
 
       if (allDocs.length > 0) {
-        const targetId = selectDocId || (allDocs.some((d) => d.id === activeDocumentId) ? activeDocumentId : allDocs[0].id);
+        const currentActiveId = activeDocumentIdRef.current;
+        const targetId = selectDocId || (allDocs.some((d) => d.id === currentActiveId) ? currentActiveId : allDocs[0].id);
         setActiveDocumentId(targetId);
         const doc = allDocs.find((d) => d.id === targetId) || allDocs[0];
         setActiveDocument(doc);
       } else {
         setActiveDocument(null);
+        setActiveDocumentId("");
       }
     } catch {
       //
     } finally {
       setIsLoading(false);
     }
-  }, [activeDocumentId]);
+  }, []);
 
   useEffect(() => {
     loadDocuments();
   }, [loadDocuments]);
 
-  const handleSelectDocument = (id: string) => {
+  const handleSelectDocument = useCallback((id: string) => {
     setActiveDocumentId(id);
-    const doc = documents.find((d) => d.id === id);
-    if (doc) setActiveDocument(doc);
+    setDocuments((docs) => {
+      const doc = docs.find((d) => d.id === id);
+      if (doc) setActiveDocument(doc);
+      return docs;
+    });
     setSelectedText("");
     setIsSelectionActive(false);
-  };
+  }, []);
 
-  const handleDocumentCreated = (doc: DocumentRecord) => {
+  const handleDocumentCreated = useCallback((doc: DocumentRecord) => {
     setDocuments((prev) => [doc, ...prev]);
     setActiveDocumentId(doc.id);
     setActiveDocument(doc);
-  };
+  }, []);
 
-  const handleDocumentDeleted = (id: string) => {
-    setDocuments((prev) => prev.filter((d) => d.id !== id));
-    if (activeDocumentId === id) {
-      const remaining = documents.filter((d) => d.id !== id);
-      if (remaining.length > 0) {
-        setActiveDocumentId(remaining[0].id);
-        setActiveDocument(remaining[0]);
-      } else {
-        setActiveDocument(null);
+  const handleDocumentDeleted = useCallback((id: string) => {
+    setDocuments((prev) => {
+      const filtered = prev.filter((d) => d.id !== id);
+      if (activeDocumentIdRef.current === id) {
+        if (filtered.length > 0) {
+          setActiveDocumentId(filtered[0].id);
+          setActiveDocument(filtered[0]);
+        } else {
+          setActiveDocumentId("");
+          setActiveDocument(null);
+        }
       }
-    }
-  };
+      return filtered;
+    });
+  }, []);
 
-  const handleDocumentChange = (updated: DocumentRecord) => {
+  const handleDocumentChange = useCallback((updated: DocumentRecord) => {
     setDocuments((prev) =>
       prev.map((d) => (d.id === updated.id ? updated : d))
     );
-    setActiveDocument(updated);
-  };
+    setActiveDocument((prev) => (prev?.id === updated.id ? updated : prev));
+  }, []);
 
   const handleLiveTextChange = useCallback((text: string, html: string) => {
     const stats = calculateTextStatistics(text);
     setActiveDocument((prev) => {
       if (!prev) return null;
+      if (prev.plainText === text && prev.content === html) return prev;
       return {
         ...prev,
         plainText: text,
@@ -128,9 +155,10 @@ export default function EditorPage() {
         characterCount: stats.characterCount,
       };
     });
+    const currentId = activeDocumentIdRef.current;
     setDocuments((prev) =>
       prev.map((d) =>
-        d.id === activeDocumentId
+        d.id === currentId
           ? {
               ...d,
               plainText: text,
@@ -141,14 +169,14 @@ export default function EditorPage() {
           : d
       )
     );
-  }, [activeDocumentId]);
+  }, []);
 
-  const handleSelectionChange = (text: string, hasSelection: boolean) => {
+  const handleSelectionChange = useCallback((text: string, hasSelection: boolean) => {
     setSelectedText(text);
     setIsSelectionActive(hasSelection);
-  };
+  }, []);
 
-  const handleTriggerAITool = (toolId: WritingToolId) => {
+  const handleTriggerAITool = useCallback((toolId: WritingToolId) => {
     setActiveAITool(toolId);
     setIsAssistantOpen(true);
 
@@ -160,33 +188,37 @@ export default function EditorPage() {
       setSelectionNotice(`API key needed for ${PROVIDER_CATALOG[savedProvider]?.name || savedProvider}. Configure in Settings.`);
       setTimeout(() => setSelectionNotice(null), 4500);
     }
-  };
+  }, []);
 
-  const handleApplyAIRewrite = (replacement: string, selectionOnly: boolean) => {
+  const handleApplyAIRewrite = useCallback((replacement: string, selectionOnly: boolean) => {
     setReplacementPayload({
       text: replacement,
       selectionOnly,
       timestamp: Date.now(),
     });
-  };
+  }, []);
 
-  const handleApplySuggestion = (suggestion: WritingSuggestion) => {
+  const handleApplySuggestion = useCallback((suggestion: WritingSuggestion) => {
     setSuggestionPayload({
       originalText: suggestion.originalText,
       replacementText: suggestion.replacementText,
       timestamp: Date.now(),
     });
-  };
+  }, []);
 
-  const handleRestoreRevision = (restoredDoc?: DocumentRecord) => {
+  const handleRestoreRevision = useCallback((restoredDoc?: DocumentRecord) => {
     if (restoredDoc) {
       setActiveDocument(restoredDoc);
       setActiveDocumentId(restoredDoc.id);
       setDocuments((prev) =>
         prev.map((d) => (d.id === restoredDoc.id ? restoredDoc : d))
       );
+      setRestorePayload({
+        content: restoredDoc.content,
+        timestamp: Date.now(),
+      });
     }
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -246,6 +278,7 @@ export default function EditorPage() {
               onOpenHistory={() => setIsHistoryOpen(true)}
               replacementPayload={replacementPayload}
               suggestionPayload={suggestionPayload}
+              restorePayload={restorePayload}
             />
           </div>
         ) : (
@@ -265,7 +298,7 @@ export default function EditorPage() {
               isSelectionActive={isSelectionActive}
               onApplySuggestion={handleApplySuggestion}
               onApplyAIRewrite={handleApplyAIRewrite}
-              onSuggestionsChange={setEditorSuggestions}
+              onSuggestionsChange={handleSuggestionsChange}
               activeToolId={activeAITool}
               onToolChange={(toolId) => setActiveAITool(toolId)}
             />
