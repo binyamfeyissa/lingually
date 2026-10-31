@@ -167,12 +167,14 @@ async function handleGemini({
   }
 
   // Gracefully upgrade retired/deprecated Gemini model IDs to active production models (Bug 45)
-  const flashFallbacks = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.5-flash"];
   let model = rawModel;
-  if (flashFallbacks.includes(rawModel)) {
-    model = "gemini-3.8-flash";
-  } else if (rawModel === "gemini-2.5-pro") {
+  const proFallbacks = ["gemini-1.5-pro", "gemini-2.5-pro", "gemini-pro"];
+  const flashFallbacks = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-flash"];
+
+  if (proFallbacks.includes(rawModel) || (rawModel.includes("pro") && !rawModel.includes("3.1"))) {
     model = "gemini-3.1-pro-preview";
+  } else if (flashFallbacks.includes(rawModel) || (rawModel.includes("flash") && !rawModel.includes("3.8"))) {
+    model = "gemini-3.8-flash";
   }
 
   // Helper to fetch with a 30s timeout to prevent 90s hangs under high demand

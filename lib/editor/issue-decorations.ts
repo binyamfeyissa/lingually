@@ -71,7 +71,11 @@ export function buildDecorations(doc: any, suggestions: WritingSuggestion[]): De
       if (mapped) {
         try {
           const docText = doc.textBetween(mapped.from, mapped.to);
-          if (docText === s.originalText) {
+          const isWhitespace = /^\s+$/.test(s.originalText);
+          if (
+            docText === s.originalText ||
+            (isWhitespace && docText.replace(/\u00a0/g, " ") === s.originalText.replace(/\u00a0/g, " "))
+          ) {
             range = mapped;
           }
         } catch {
@@ -93,6 +97,10 @@ export function buildDecorations(doc: any, suggestions: WritingSuggestion[]): De
           if (searchPattern) {
             const m = searchPattern.exec(node.text);
             if (m) idx = m.index;
+          } else if (/^\s+$/.test(target)) {
+            const normNodeText = node.text.replace(/\u00a0/g, " ");
+            const normTarget = target.replace(/\u00a0/g, " ");
+            idx = normNodeText.indexOf(normTarget);
           } else {
             idx = node.text.indexOf(target);
           }

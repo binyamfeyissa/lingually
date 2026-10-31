@@ -32,4 +32,20 @@ describe("Diff Utilities", () => {
     expect(diff.hasChanges).toBe(true);
     expect(diff.additionsCount).toBe(1); // added 'l'
   });
+
+  it("handles markdown tokens and preserves arithmetic expressions safely (Bug 46)", () => {
+    const regex = /(\*\*(?!\s)(?:[^*\n]|\*(?!\*))+?(?<!\s)\*\*|\*(?!\s)[^*\n]+?(?<!\s)\*|`(?!\s)[^`\n]+?(?<!\s)`)/g;
+
+    const arithmetic = "Formula: 3 * 4 = 12 and 5 * 6 = 30";
+    const matchesArithmetic = arithmetic.match(regex);
+    expect(matchesArithmetic).toBeNull(); // Lone arithmetic asterisks must not be parsed as formatting
+
+    const boldText = "**Select text:** and click *Improve*";
+    const matchesFormatting = boldText.match(regex);
+    expect(matchesFormatting).toEqual(["**Select text:**", "*Improve*"]);
+
+    const codeSnippet = "Use `DocumentRepository` for storage.";
+    const matchesCode = codeSnippet.match(regex);
+    expect(matchesCode).toEqual(["`DocumentRepository`"]);
+  });
 });

@@ -50,7 +50,8 @@ export function DiffViewer({
       return text;
     }
     const parts = [];
-    const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`)/g;
+    // Resilient markdown inline pattern: requires non-whitespace bounds so arithmetic like "3 * 4" or lone "*" never mis-parse (Bug 46)
+    const regex = /(\*\*(?!\s)(?:[^*\n]|\*(?!\*))+?(?<!\s)\*\*|\*(?!\s)[^*\n]+?(?<!\s)\*|`(?!\s)[^`\n]+?(?<!\s)`)/g;
     let lastIndex = 0;
     let match;
 

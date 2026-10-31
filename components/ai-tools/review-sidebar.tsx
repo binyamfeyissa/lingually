@@ -82,9 +82,9 @@ export function ReviewSidebar({
   const [isScanningPlagiarism, setIsScanningPlagiarism] = useState(false);
   const [distinctiveQueries, setDistinctiveQueries] = useState<string[]>([]);
   const [plagiarismSubTab, setPlagiarismSubTab] = useState<"plagiarism" | "ai-text">("plagiarism");
-  const plagiarismCacheRef = useRef<Map<string, { report: PlagiarismReport; queries: string[] }>>(new Map());
+  const plagiarismCacheRef = useRef<Map<string, { report: PlagiarismReport; queries: string[]; scannedText: string }>>(new Map());
 
-  // Reset or load document-specific plagiarism report on document switch (Bug 47)
+  // Reset or load document-specific plagiarism report on document switch or invalidate on edit (Bug 47)
   useEffect(() => {
     if (!documentId) {
       setPlagiarismReport(null);
@@ -94,13 +94,20 @@ export function ReviewSidebar({
 
     const cached = plagiarismCacheRef.current.get(documentId);
     if (cached) {
-      setPlagiarismReport(cached.report);
-      setDistinctiveQueries(cached.queries);
+      // Invalidate if document text has changed since the scan was performed (Bug 47)
+      if (cached.scannedText.trim() === currentText.trim()) {
+        setPlagiarismReport(cached.report);
+        setDistinctiveQueries(cached.queries);
+      } else {
+        plagiarismCacheRef.current.delete(documentId);
+        setPlagiarismReport(null);
+        setDistinctiveQueries([]);
+      }
     } else {
       setPlagiarismReport(null);
       setDistinctiveQueries([]);
     }
-  }, [documentId]);
+  }, [documentId, currentText]);
 
   // Goals modal
   const [isGoalsOpen, setIsGoalsOpen] = useState(false);
@@ -280,7 +287,7 @@ export function ReviewSidebar({
       });
       setPlagiarismReport(report);
       if (documentId) {
-        plagiarismCacheRef.current.set(documentId, { report, queries });
+        plagiarismCacheRef.current.set(documentId, { report, queries, scannedText: currentText });
       }
     } catch {
       //

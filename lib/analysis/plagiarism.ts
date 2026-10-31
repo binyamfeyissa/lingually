@@ -138,7 +138,9 @@ export async function checkPlagiarismCore(options: PlagiarismCheckOptions): Prom
 
           const rawSnippet = (item.snippet || "").replace(/<[^>]+>/g, " ");
           const sim = computeTextSimilarity(cleanQuery, rawSnippet);
-          if (sim >= 0.2) {
+          const hasQueryKeyword = cleanQuery.toLowerCase().split(/\s+/).some((w) => w.length >= 3 && rawSnippet.toLowerCase().includes(w));
+
+          if (sim >= 0.04 || hasQueryKeyword) {
             // Fetch full article extract (omitting exintro=1) for comprehensive body passage matching (Bug 40)
             let articleText = rawSnippet;
             try {
@@ -207,24 +209,22 @@ export async function checkPlagiarismCore(options: PlagiarismCheckOptions): Prom
               }
             }
 
-            if (matchedForThisSource === 0) {
-              matchedForThisSource = cleanQuery.split(/\s+/).filter(Boolean).length;
+            if (matchedForThisSource > 0) {
+              matchedWordCount = Math.min(totalWords, matchedWordCount + matchedForThisSource);
+              const simPct = Math.min(100, Math.round((matchedWordCount / Math.max(1, totalWords)) * 100));
+
+              matches.push({
+                id: `wiki_match_${matches.length + 1}`,
+                matchedText: cleanQuery,
+                similarityPercentage: simPct,
+                sourceTitle: `Wikipedia: ${item.title}`,
+                sourceUrl: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title)}`,
+                matchContext: rawSnippet,
+                offset: Math.max(0, trimmed.toLowerCase().indexOf(cleanQuery.toLowerCase())),
+                length: cleanQuery.length,
+              });
+              break;
             }
-
-            matchedWordCount = Math.min(totalWords, matchedWordCount + matchedForThisSource);
-            const simPct = Math.min(100, Math.round(Math.max(sim, matchedWordCount / Math.max(1, totalWords)) * 100));
-
-            matches.push({
-              id: `wiki_match_${matches.length + 1}`,
-              matchedText: cleanQuery,
-              similarityPercentage: simPct,
-              sourceTitle: `Wikipedia: ${item.title}`,
-              sourceUrl: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title)}`,
-              matchContext: rawSnippet,
-              offset: Math.max(0, trimmed.toLowerCase().indexOf(cleanQuery.toLowerCase())),
-              length: cleanQuery.length,
-            });
-            break;
           }
         }
       }

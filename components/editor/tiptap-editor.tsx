@@ -86,14 +86,6 @@ export function TiptapEditor({
     },
     onUpdate: ({ editor: currentEditor }) => {
       setSaveStatus("unsaved");
-      if (!hasHistoryTrapRef.current) {
-        try {
-          window.history.pushState({ isLinguallyUnsavedTrap: true }, "");
-          hasHistoryTrapRef.current = true;
-        } catch {
-          //
-        }
-      }
       triggerDebouncedAutosave();
       if (onLiveTextChange) {
         onLiveTextChange(currentEditor.getText(), currentEditor.getHTML());
@@ -123,7 +115,6 @@ export function TiptapEditor({
         titleRef.current = document.title;
         editor.commands.setContent(document.content || "<p></p>");
         setSaveStatus("saved");
-      hasHistoryTrapRef.current = false;
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -140,7 +131,6 @@ export function TiptapEditor({
       lastProcessedRestoreRef.current = restorePayload.timestamp;
       editor.commands.setContent(restorePayload.content || "<p></p>");
       setSaveStatus("saved");
-      hasHistoryTrapRef.current = false;
     }
   }, [restorePayload, editor]);
 
@@ -318,7 +308,6 @@ export function TiptapEditor({
       });
 
       setSaveStatus("saved");
-      hasHistoryTrapRef.current = false;
       if (onDocumentChange) {
         onDocumentChange(updated);
       }
@@ -344,10 +333,14 @@ export function TiptapEditor({
   documentRef.current = document;
   const titleRef = useRef(title);
   titleRef.current = title;
-  const hasHistoryTrapRef = useRef(false);
+  const currentUrlRef = useRef<string>("");
 
   // Flush unsaved changes on beforeunload or warn on SPA navigation (Bug 24)
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      currentUrlRef.current = window.location.href;
+    }
+
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (editorRef.current && saveStatusRef.current === "unsaved" && documentRef.current) {
         const snapshot = getEditorSnapshot(editorRef.current);
@@ -363,19 +356,18 @@ export function TiptapEditor({
     };
 
     const handlePopState = () => {
-      if (hasHistoryTrapRef.current && saveStatusRef.current === "unsaved") {
+      if (saveStatusRef.current === "unsaved") {
         const leave = window.confirm("You have unsaved changes. Leave this page?");
         if (!leave) {
-          // Re-arm history trap to stay on the page
+          // Re-push current editor URL to cancel navigation and stay in the editor
           try {
-            window.history.pushState({ isLinguallyUnsavedTrap: true }, "");
-            hasHistoryTrapRef.current = true;
+            window.history.pushState(null, "", currentUrlRef.current);
           } catch {
             //
           }
           return;
         } else {
-          hasHistoryTrapRef.current = false;
+          // User chose to leave: flush changes synchronously to local storage
           if (editorRef.current && documentRef.current) {
             const snapshot = getEditorSnapshot(editorRef.current);
             DocumentRepository.updateDocument(documentRef.current.id, {
@@ -384,18 +376,15 @@ export function TiptapEditor({
               plainText: snapshot.plainText,
             }).catch(() => {});
           }
-          window.history.back();
+          // Let the browser navigation proceed naturally without calling history.back()
           return;
         }
       }
-
-      hasHistoryTrapRef.current = false;
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("popstate", handlePopState);
     return () => {
-      hasHistoryTrapRef.current = false;
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("popstate", handlePopState);
       if (autosaveTimeoutRef.current) {
@@ -418,14 +407,6 @@ export function TiptapEditor({
     titleRef.current = val;
     setTitle(val);
     setSaveStatus("unsaved");
-    if (!hasHistoryTrapRef.current) {
-      try {
-        window.history.pushState({ isLinguallyUnsavedTrap: true }, "");
-        hasHistoryTrapRef.current = true;
-      } catch {
-        //
-      }
-    }
     triggerDebouncedAutosave();
   };
 
